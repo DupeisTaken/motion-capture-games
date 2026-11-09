@@ -2,7 +2,7 @@
 
 A collection of local games played through body movement, with immediate feedback over a mirrored live camera image.
 
-**Status: documentation foundation plus an isolated XYZ experiment.** There is no runnable camera/game application or selected pose model. The [two-camera XYZ experiment](docs/player-xyz-experiment.md) now provides camera-free reconstruction, tests and synthetic measurements; hardware accuracy and physical latency remain unverified.
+**Status: documentation foundation.** There is no runnable application, selected pose model, installed toolchain, or measured performance result yet. This repository establishes the design and contribution rules before implementation.
 
 ## Agreed scope
 
@@ -28,8 +28,6 @@ A collection of local games played through body movement, with immediate feedbac
 | [Contributing](CONTRIBUTING.md) | Tooling direction and review workflow |
 | [Agent instructions](AGENTS.md) | Rules for automated contributors |
 | [Foundation report](reports/foundation.html) | Standalone change report and verification record |
-| [Player XYZ experiment](docs/player-xyz-experiment.md) | Stereo algorithms, reproducible measurements and pending physical gates |
-| [XYZ experiment report](reports/xyz-experiment.html) | Self-contained results and limitations |
 
 ## Repository map
 
@@ -49,16 +47,16 @@ docs/                       Owning design documents and decisions
 reports/                    Shareable, self-contained change reports
 ```
 
-Most component directories contain ownership notes. `services/vision/xyz` and `experiments` now contain the isolated geometry experiment. Add further modules when their milestone begins; avoid speculative packages and generic utility folders.
+The component directories currently contain ownership notes, not implementation stubs. Add modules when their milestone begins; avoid speculative packages and generic utility folders.
 
 ## Next milestone
 
 Build the [diagnostic mirror experiment](docs/roadmap.md#m1-diagnostic-mirror-and-hardware-experiment) before polishing a game. Validate camera formats, the video path, and three-player crossings early enough to change the design.
 
-The isolated Python experiment can be run with `python3 tools/project.py setup`, then `check`, `experiment` and `build`. See [the experiment commands](docs/player-xyz-experiment.md#reproducing-the-experiment). These do not launch camera capture or a game; the diagnostic mirror milestone remains open.
+Setup, development, build, and test commands will be introduced with the first runnable slice. No command in this document claims an application already exists.
 
 ## Repository hosting
 
 The repository is hosted at [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games), configured locally as `origin`. The initial remote history and [MIT license](LICENSE) are preserved alongside the foundation.
 
-The local milestone briefs and GitHub templates are ready to use. [Issue #4](https://github.com/DupeisTaken/motion-capture-games/issues/4) tracks the XYZ experiment; other work is listed in the repository's issues. Branch protection is unverified. The foundation report records the earlier local-only setup.
+The local milestone briefs and GitHub templates are ready to use. No hosted issues, pull requests, or branch protection settings have been created. The foundation report records the earlier local-only setup.

@@ -2,7 +2,7 @@
 
 ## Hosting status
 
-The Git remote is [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games). Milestones remain local planning briefs; link hosted issues when each work item begins. Use the issue and PR templates under `.github/`. No PR was opened for the initial direct push, as requested.
+The Git remote is [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games). These remain local planning briefs, not GitHub issue numbers or PRs. Convert each substantive implementation work item into a hosted issue when that work begins. Use the issue and PR templates under `.github/`. No PR is opened for the initial direct push, as requested.
 
 The milestone IDs below are stable local references. Each milestone may become several focused issues/PRs rather than one large change. This sequence has no promised dates; hardware and experiment results determine effort.
 
@@ -32,14 +32,6 @@ The milestone IDs below are stable local references. Each milestone may become s
 - Update ADR 0002/0003 with the measured selection or unresolved gate and deliver the HTML report.
 
 **Exit:** A measured architecture decision, reproducible diagnostic setup, and an honest capacity profile. If a candidate misses the budget, revise it within this milestone before building polished games.
-
-### M1-XYZ: Two-camera player coordinates
-
-**Work:** [Issue #4](https://github.com/DupeisTaken/motion-capture-games/issues/4); [owning experiment](player-xyz-experiment.md); [report](../reports/xyz-experiment.html). Isolated from the diagnostic viewer work in [#3](https://github.com/DupeisTaken/motion-capture-games/issues/3).
-
-**Software evidence:** Compare DLT, closest-ray midpoint and reprojection refinement on identical seeded observations; test calibration, timing, identity, missingness and weak geometry; report spatial error, rejection coverage, one-/three-person stage timings and known unsafe acceptance. Provisional gates agreed with the user: torso p95 ≤10 cm, wrists p95 ≤15 cm, reconstruction p95 <5 ms, nominal root/wrist coverage ≥95%.
-
-**Open physical gate:** Cameras are not connected or calibrated. User-reported 4K cameras on 1.4 m stands are insufficient to certify XYZ. Identify modes/spacing, calibrate exact lens geometry and metric scale, measure exposure offset/drift/uncertainty, validate held-out static and independently referenced dynamic motion, exercise three-player identity/recovery, and measure whole-pipeline/visible feedback (<100 ms p95 proposed). Follow the experiment's explicit sample/repetition protocol. No actual rig/performance profile or authoritative 3D gameplay is enabled until this evidence passes; M1 remains open.
 
 ## M2: Whack-a-mole vertical slice
 
