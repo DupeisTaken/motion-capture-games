@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pull request integration — Motion capture games</title>
+<style>
+body{margin:0;background:#f5f4ef;color:#202d31;font:17px/1.6 system-ui,sans-serif}main{max-width:850px;margin:auto;padding:48px 24px 72px}h1{font-size:clamp(2rem,6vw,3rem);line-height:1.15;letter-spacing:-.04em}h2{margin-top:2rem;font-size:1.35rem}a{color:#075f68;text-underline-offset:3px}a:focus-visible{outline:3px solid #075f68;outline-offset:3px}.date{color:#526469}li{margin:.6rem 0}code{font-size:.86em;overflow-wrap:anywhere}table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1px solid #cbd4d2;text-align:left;vertical-align:top}th:first-child{width:4rem}.note{border-left:4px solid #075f68;padding:12px 18px;background:#e6eeeb}@media(max-width:500px){main{padding:24px 18px 48px}body{font-size:16px}}
+</style>
+</head>
+<body><main>
+<p class="date">Motion capture games · 9 November 2026</p>
+<h1>Pull request integration</h1>
+<p>The research, diagnostic viewer and single-player runner brief now share one consistent documentation set. The stereo experiment revert restores the foundation before the research and viewer are integrated. The final runner PR incorporates current main and resolves five documentation conflicts.</p>
+<h2>Scope and order</h2>
+<table><thead><tr><th>PR</th><th>Result</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/DupeisTaken/motion-capture-games/pull/9">#9</a></td><td>Revert the earlier stereo XYZ experiment. Its resulting tree exactly matches the foundation commit before subsequent work is merged.</td></tr>
+<tr><td><a href="https://github.com/DupeisTaken/motion-capture-games/pull/2">#2</a></td><td>Add the vision research and proposed M1 experiments, tracked by <a href="https://github.com/DupeisTaken/motion-capture-games/issues/1">issue #1</a>.</td></tr>
+<tr><td><a href="https://github.com/DupeisTaken/motion-capture-games/pull/8">#8</a></td><td>Retarget the tested diagnostic viewer from the research branch to main, then merge it. <a href="https://github.com/DupeisTaken/motion-capture-games/issues/3">Issue #3</a> tracks the viewer work; physical M1 gates remain open.</td></tr>
+<tr><td><a href="https://github.com/DupeisTaken/motion-capture-games/pull/6">#6</a></td><td>Preserve the runner design and M6 acceptance scenarios while updating stale foundation-only descriptions to the implemented viewer state. Tracked by <a href="https://github.com/DupeisTaken/motion-capture-games/issues/5">issue #5</a>.</td></tr>
+</tbody></table>
+<h2>Conflict resolution</h2>
+<p>The root README retains runnable setup instructions and the runner scope. Mirror and motion component notes distinguish existing diagnostic behavior from planned runner capabilities. The testing guide retains software checks plus future runner scenarios. The report index retains every report. Runtime source, schemas, dependencies and model adapters are unchanged by this resolution.</p>
+<h2>Actual verification</h2>
+<ul>
+<li>The viewer PR's hosted <code>software-checks</code> job passed before merging.</li>
+<li>The combined local tree passed <code>pnpm check</code>: schema drift, TypeScript/Python types, ESLint/Ruff, 47 Vitest tests, 54 pytest tests and formatting.</li>
+<li><code>pnpm build</code> passed for the combined local tree.</li>
+<li>Local documentation checks passed for 44 Markdown/HTML documents and 189 local references: links, anchors, UTF-8/LF, conflict-marker absence and self-contained report structure. Git whitespace checks also passed.</li>
+<li>This report was inspected in real HTTP/Chrome screenshots at 1440 × 1000 and 390 × 844. Both layouts had no horizontal overflow, page exceptions or console warnings/errors.</li>
+</ul>
+<p>For the local rerun, existing Node dependencies were copied into this checkout and all direct versions matched the pinned manifest; the existing Python environment was reused. <code>pnpm_config_verify_deps_before_run=warn</code> suppressed automatic reinstallation for the changed workspace path. The initial symlink/automatic-install attempts stopped before checks; they are not counted as passing. Hosted CI uses a frozen dependency installation.</p>
+<h2>Visual evidence and limitations</h2>
+<p>This integration changes documentation only. The original self-contained reports retain their embedded screenshots: <a href="https://github.com/DupeisTaken/motion-capture-games/blob/main/reports/vision-research.html">vision research</a>, <a href="https://github.com/DupeisTaken/motion-capture-games/blob/main/reports/skeleton-diagnostics.html">skeleton diagnostics</a> and <a href="https://github.com/DupeisTaken/motion-capture-games/blob/main/reports/motion-runner.html">motion runner brief</a>.</p>
+<p class="note">Camera capture, physical crossings, Windows execution, external motion-to-display latency and runner gameplay were not tested during integration. The runner remains planned; M1 hardware gates remain open. No participant recordings or credentials are included.</p>
+</main></body></html>

@@ -1,6 +1,6 @@
 # Motion capture games
 
-A collection of local games played through body movement, with immediate feedback over a mirrored live camera image.
+A collection of local games played through body movement, with immediate on-screen feedback in a mirrored camera view or a rendered game world.
 
 **Status: runnable skeleton diagnostic slice.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. MediaPipe and RTMDet/RTMPose adapters, two association modes and labeled synthetic input are implemented. Production model selection, game scoring, multi-view reconstruction and hardware certification remain open.
 
@@ -18,9 +18,10 @@ Open **http://127.0.0.1:5173**. Choose **Camera** and **Start camera**, or choos
 
 ## Agreed scope
 
-- A digital mirror: live camera video with graphics and sound.
+- A digital mirror: live camera video with graphics and sound for camera-overlay games; a rendered world for the motion runner.
 - Two USB cameras advertised as 4K at 60 fps; exact models and formats are unverified.
 - Start gameplay with one player and build toward three simultaneous players.
+- Add a single-player motion runner: move left, center or right to choose a lane, jump to clear low obstacles, and squat to duck overhead obstacles. Its player limit stays at one.
 - Support free movement, crossing, overlap, and explicit recovery when identity is uncertain.
 - Target Windows and macOS. A Windows machine with an RTX 3070 is the proposed reference rig; integrated graphics require separate validation.
 - Run gameplay locally and offline after installation.
@@ -30,6 +31,7 @@ Open **http://127.0.0.1:5173**. Choose **Camera** and **Start camera**, or choos
 | Document | Purpose |
 | --- | --- |
 | [Product scope](docs/product-scope.md) | Requirements, game sequence, and exclusions |
+| [Motion runner brief](docs/games/motion-runner.md) | Single-player lanes, jump/duck controls, recovery and validation |
 | [Architecture](docs/architecture.md) | Runtime boundaries, ownership, and provisional stack |
 | [Diagnostic viewer](docs/diagnostic-viewer.md) | Setup, skeleton rendering, automatic counts, algorithms and recovery |
 | [Tracking algorithms](docs/tracking-algorithms.md) | Box/motion and pose-assisted matching, uncertainty and counting |
@@ -44,6 +46,7 @@ Open **http://127.0.0.1:5173**. Choose **Camera** and **Start camera**, or choos
 | [Contributing](CONTRIBUTING.md) | Tooling direction and review workflow |
 | [Agent instructions](AGENTS.md) | Rules for automated contributors |
 | [Foundation report](reports/foundation.html) | Standalone change report and verification record |
+| [Motion runner report](reports/motion-runner.html) | Runner scaffold change and documentation verification |
 
 ## Repository map
 
@@ -73,4 +76,4 @@ Continue the [M1 diagnostic mirror experiment](docs/roadmap.md#m1-diagnostic-mir
 
 The repository is hosted at [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games), configured locally as `origin`. The initial remote history and [MIT license](LICENSE) are preserved alongside the foundation.
 
-The local milestone briefs and GitHub templates are ready to use. [Issue #1](https://github.com/DupeisTaken/motion-capture-games/issues/1) tracks the vision research and plan. No branch protection configuration is claimed here. The foundation report records the earlier local-only setup.
+The local milestone briefs and GitHub templates are ready to use. Hosted work is tracked through repository issues and pull requests; local roadmap IDs remain stable planning references. The foundation report records the earlier local-only setup and does not describe current hosting activity. Branch protection has not been verified.
