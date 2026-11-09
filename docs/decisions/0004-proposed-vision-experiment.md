@@ -2,7 +2,7 @@
 
 **Status:** Proposed; model, tracker extension and provider await evidence. **Date:** 2026-11-09. **Gate:** [M1](../roadmap.md#m1-diagnostic-mirror-and-hardware-experiment).
 
-**Research issue:** [#1](https://github.com/DupeisTaken/motion-capture-games/issues/1). Implementation and hardware gates remain open.
+**Research issue:** [#1](https://github.com/DupeisTaken/motion-capture-games/issues/1). **Review:** [PR #2](https://github.com/DupeisTaken/motion-capture-games/pull/2). Implementation and hardware gates remain open.
 
 ## Context
 

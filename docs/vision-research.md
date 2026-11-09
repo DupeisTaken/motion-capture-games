@@ -2,6 +2,8 @@
 
 Research and implementation proposal · 9 November 2026 · English
 
+Delivery: [research issue #1](https://github.com/DupeisTaken/motion-capture-games/issues/1) and [review PR #2](https://github.com/DupeisTaken/motion-capture-games/pull/2). The implementation experiments remain open.
+
 **Recommendation:** Start with pretrained person detection and pose estimation, then build confidence-aware tracking and game rules around those observations. Benchmark **RTMDet-nano + RTMPose-s**, with RTMPose-m as an accuracy variant, against **MediaPipe Pose Landmarker**. Use a **ByteTrack baseline with explicit ambiguity handling**, and evaluate pose-assisted association separately. Use a **One Euro filter** for joint motion and **geometric collisions/state machines** for the initial games. Do not train a new pose model or posture classifier before testing these baselines.
 
 This is a proposed M1 experiment, not a final model selection. The repository is still a documentation foundation: no inference, game, model conversion, camera test, or performance benchmark ran for this research. The companion [standalone HTML report](../reports/vision-research.html) contains this analysis and a delivery verification record.
