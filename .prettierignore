@@ -1,0 +1,7 @@
+reports/
+contracts/generated/
+pnpm-lock.yaml
+uv.lock
+.local/
+node_modules/
+dist/

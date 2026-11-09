@@ -1,7 +1,7 @@
 # Mirror application
 
-Future TypeScript application for primary-camera video, game graphics/audio, game selection and operator controls. PixiJS and the browser runtime are provisional under [ADR 0002](../../docs/decisions/0002-provisional-runtime-and-media.md).
+The TypeScript diagnostic viewer renders a paired camera image and canonical skeletons with Canvas2D. It automatically shows current detected-person count, camera-local association states, source controls and diagnostic timing. It never opens cameras or imports model inference libraries.
 
-Compose the session and game modules here. Keep per-frame updates outside operator UI component state. Apply identical video/overlay transforms and keep text readable. Consume vision media and observations through public interfaces; do not reopen cameras independently.
+Run `pnpm dev` at the repository root. [The viewer guide](../../docs/diagnostic-viewer.md) describes setup and controls. The frame loop keeps one decoded image and requests the next current packet after drawing; display mirroring applies equally to video and geometry. Stop/restart, missing input and source epochs invalidate old observations and image bitmaps.
 
-The first implementation belongs to [M1](../../docs/roadmap.md#m1-diagnostic-mirror-and-hardware-experiment). There is no app, dependency manifest or start command yet.
+Session/game composition and the production renderer/media path remain future work. [ADR 0005](../../docs/decisions/0005-diagnostic-skeleton-slice.md) limits this slice; [ADR 0002](../../docs/decisions/0002-provisional-runtime-and-media.md) still owns the larger performance experiment. Tests include simulated DOM integration and separately reported real-server screenshots.
