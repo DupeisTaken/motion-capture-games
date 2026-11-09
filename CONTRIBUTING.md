@@ -8,9 +8,9 @@ Use [the architecture](docs/architecture.md) for boundaries, [the roadmap](docs/
 
 The provisional implementation stack is TypeScript for the mirror and games, and Python for vision. Use a pnpm workspace and uv-managed Python environment when implementation starts. Pin runtime and package-manager versions at that point after checking model/runtime compatibility; commit lockfiles.
 
-Planned checks include strict TypeScript type checking, ESLint and Prettier, Python type checking and Ruff, Vitest for TypeScript behavior, and pytest for vision behavior. Browser integration tests accompany the first runnable interface. These tools are not installed or configured in this foundation.
+Planned full-application checks include strict TypeScript type checking, ESLint and Prettier, Python type checking and Ruff, Vitest for TypeScript behavior, and pytest for vision behavior. Browser integration tests accompany the first runnable interface. The isolated [XYZ experiment](docs/player-xyz-experiment.md) introduces pinned CPython/uv, Ruff, strict mypy and pytest now; the TypeScript toolchain and pose-model runtime remain unselected.
 
-Introduce one documented set of root commands for setup, development, formatting, linting, type checks, tests, and builds with the first runnable slice. Make the commands work on supported Windows and macOS environments; avoid requiring a POSIX shell on Windows. Use `.venv/` and repository-local dependencies. Docker is optional and must not become a prerequisite for USB camera access.
+Root commands for this experiment are `python3 tools/project.py setup|dev|format|lint|typecheck|test|check|experiment|build` (choose one command; Windows uses `python`). Build generates the experiment report; dev serves it on loopback. Extend these with the first runnable application slice. Keep commands portable without requiring a POSIX shell on Windows; only macOS execution has been verified so far. Use `.venv/` and repository-local dependencies. Docker is optional and must not become a prerequisite for USB camera access.
 
 ## Naming and boundaries
 
