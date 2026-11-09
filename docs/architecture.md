@@ -4,6 +4,8 @@
 
 The accepted boundary is a local modular platform with model-independent game input. Python vision and a TypeScript/PixiJS mirror application are the provisional stack. Local WebRTC video delivery, the pose model, acceleration providers, and final desktop packaging remain proposals until the diagnostic experiment produces evidence. See [the decision index](decisions/README.md).
 
+The first [diagnostic slice](diagnostic-viewer.md) implements Python/OpenCV capture/inference and TypeScript Canvas2D skeleton rendering. Its paired JPEG/observation transport deliberately follows inference cadence for directly inspectable alignment. [ADR 0005](decisions/0005-diagnostic-skeleton-slice.md) scopes this choice; the production WebRTC/PixiJS and full M1 performance gates remain open.
+
 ## Data flow
 
 ```mermaid
@@ -65,6 +67,8 @@ PixiJS is a 2D renderer; it does not supply our session or tracking semantics. P
 Sources: [PixiJS](https://pixijs.com/8.x/guides/getting-started/intro), [aiortc](https://aiortc.readthedocs.io/en/latest/), [RTMPose](https://github.com/open-mmlab/mmpose/tree/main/projects/rtmpose), [MediaPipe Pose](https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker), [ONNX Runtime providers](https://onnxruntime.ai/docs/execution-providers/).
 
 ## Video and transport gate
+
+The [vision research and plan](vision-research.md) and [proposed ADR 0004](decisions/0004-proposed-vision-experiment.md) expand the pose, tracking, filtering and training experiments. They recommend pretrained baselines and explicit ambiguity handling; they do not finalize the model or close M1.
 
 Do not send base64 full-resolution frames through the observation WebSocket. Video and metadata have different throughput and timing requirements.
 

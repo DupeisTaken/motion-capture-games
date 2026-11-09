@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "epoch": "synthetic-epoch-1",
+  "sequence": 1,
+  "frameId": "synthetic-frame-1",
+  "source": "demo",
+  "cameraId": "synthetic-camera",
+  "image": { "width": 960, "height": 540 },
+  "capturedAtNs": "10000000000000001",
+  "processedAtNs": "10000000016000001",
+  "clock": { "domain": "host-monotonic", "quality": "synthetic", "uncertaintyNs": null },
+  "algorithm": "synthetic",
+  "tracker": "pose",
+  "coordinateSpace": "normalized-camera",
+  "transformRevision": "synthetic-view-1",
+  "calibrationId": null,
+  "modelId": "synthetic-body-v1",
+  "people": [
+    {
+      "trackId": "camera-track-1",
+      "identity": "confident",
+      "box": { "x": 0.25, "y": 0.1, "width": 0.5, "height": 0.8 },
+      "joints": {
+        "nose": { "x": 0.5, "y": 0.18, "score": 0.95, "status": "observed", "inFrame": true },
+        "left_shoulder": { "x": 0.42, "y": 0.32, "score": 0.95, "status": "observed", "inFrame": true },
+        "left_elbow": { "x": 0.34, "y": 0.42, "score": 0.9, "status": "observed", "inFrame": true },
+        "left_wrist": { "x": 0.3, "y": 0.5, "score": 0.9, "status": "observed", "inFrame": true },
+        "right_wrist": { "x": 1.1, "y": 0.5, "score": 0.55, "status": "estimated", "inFrame": false },
+        "right_ankle": { "x": null, "y": null, "score": 0, "status": "missing", "inFrame": false }
+      }
+    }
+  ],
+  "detectedCount": 1,
+  "capacity": 6,
+  "capacityReached": false,
+  "metrics": { "inferenceMs": 12, "captureDrops": 0, "processingMs": 16 }
+}

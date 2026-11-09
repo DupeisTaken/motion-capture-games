@@ -9,3 +9,9 @@ Explain the problem, final change and rationale. Include relevant before/after s
 Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.local/`.
 
 [The motion runner report](motion-runner.html) records the single-player runner scaffold update, its documentation checks and report-rendering evidence. No game implementation or physical recognition result is claimed.
+
+[Vision research](vision-research.html) is the standalone research and planning report for location, pose, motion, identity and training. Its editable analysis is [docs/vision-research.md](../docs/vision-research.md); recommendations remain proposed until measured in M1. Its verification record concerns documentation/report delivery, not inference or hardware results.
+
+[Skeleton diagnostics](skeleton-diagnostics.html) records the runnable viewer, model smoke tests and desktop and mobile browser evidence from generated scenes.
+
+[Pull request integration](pr-integration.html) records merge order, documentation conflict resolution, combined software checks and remaining hardware gates.

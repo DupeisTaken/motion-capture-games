@@ -1,0 +1,41 @@
+{
+  "name": "motion-capture-games",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "setup": "node scripts/tasks.mjs setup",
+    "models": "node scripts/tasks.mjs models",
+    "vision": "node scripts/tasks.mjs vision",
+    "dev": "node scripts/tasks.mjs dev",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "typecheck": "tsc --noEmit && node scripts/tasks.mjs python-types",
+    "lint": "eslint apps/mirror/src contracts/src packages/motion/src tests scripts && node scripts/tasks.mjs python-lint",
+    "test": "vitest run --maxWorkers=1 && node scripts/tasks.mjs python-test",
+    "format": "prettier --write apps/mirror/src contracts/src packages/motion/src tests scripts package.json vite.config.ts tsconfig.json vitest.config.ts eslint.config.mjs && node scripts/tasks.mjs python-format",
+    "format:check": "prettier --check apps/mirror/src contracts/src packages/motion/src tests scripts package.json vite.config.ts tsconfig.json vitest.config.ts eslint.config.mjs && node scripts/tasks.mjs python-format-check",
+    "contracts:generate": "node contracts/generate.mjs",
+    "contracts:check": "node contracts/generate.mjs --check",
+    "check": "pnpm contracts:check && pnpm typecheck && pnpm lint && pnpm test && pnpm format:check"
+  },
+  "dependencies": {
+    "ajv": "8.20.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.10.1",
+    "eslint": "10.14.0",
+    "happy-dom": "21.0.4",
+    "json-schema-to-typescript": "16.0.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.2",
+    "typescript-eslint": "8.72.1",
+    "vite": "8.3.6",
+    "vitest": "5.1.0"
+  }
+}

@@ -2,7 +2,9 @@
 
 ## Current status
 
-There is no runtime implementation or automated CI workflow in the foundation. The checks described for future behavior are requirements, not results. Actual foundation checks are recorded in [the foundation report](../reports/foundation.html); the runner documentation update has its own [change report](../reports/motion-runner.html).
+The skeleton diagnostic slice has Vitest contract/motion/viewer tests, pytest vision/API/tracking tests, schema drift/type/lint/format checks, and a frontend build. A software CI workflow is configured. The viewer tests simulate DOM and I/O; real-server browser interactions/screenshots are separate evidence. Current actual results belong to [the diagnostic delivery report](../reports/skeleton-diagnostics.html), with the historical foundation checks in [the foundation report](../reports/foundation.html). Future game, hardware and physical-latency requirements below remain unverified unless explicitly recorded.
+
+The runner documentation update has its own [change report](../reports/motion-runner.html). Its acceptance scenarios below remain future implementation requirements.
 
 ## Documentation changes
 

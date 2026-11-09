@@ -4,6 +4,8 @@
 
 The Git remote is [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games). Milestone IDs remain local planning references, separate from hosted issue numbers. Reuse or create a hosted issue for each substantive work item when it begins. Use the issue and PR templates under `.github/`. The initial direct push had no PR; subsequent work follows the contribution workflow.
 
+[Issue #1](https://github.com/DupeisTaken/motion-capture-games/issues/1) tracks the vision research and plan; it does not close the implementation work.
+
 The milestone IDs below are stable local references. Each milestone may become several focused issues/PRs rather than one large change. This sequence has no promised dates; hardware and experiment results determine effort.
 
 ## M0: Documentation foundation
@@ -15,6 +17,8 @@ The milestone IDs below are stable local references. Each milestone may become s
 ## M1: Diagnostic mirror and hardware experiment
 
 **Problem:** Camera specifications and model benchmarks do not establish usable feedback or identity tracking on our installation.
+
+**Current slice:** [Issue #3](https://github.com/DupeisTaken/motion-capture-games/issues/3) implements a one-view skeleton/count diagnostic, two pretrained model adapters, two association modes, a canonical contract and synthetic verification. See [the viewer guide](diagnostic-viewer.md) and [delivery report](../reports/skeleton-diagnostics.html). This is partial M1 progress; no real three-player crossing, production media selection or hardware/latency certification gate is closed by software tests.
 
 **Owns:** Vision capture/inference adapters, the first mirror slice, draft protocol schemas, diagnostic presentation, and an initial installation/performance profile. Depends on M0.
 
@@ -32,6 +36,19 @@ The milestone IDs below are stable local references. Each milestone may become s
 - Update ADR 0002/0003 with the measured selection or unresolved gate and deliver the HTML report.
 
 **Exit:** A measured architecture decision, reproducible diagnostic setup, and an honest capacity profile. If a candidate misses the budget, revise it within this milestone before building polished games.
+
+### Vision experiment work briefs
+
+The [research plan](vision-research.md#10-m1-experiment-and-decision-gates) details the proposed protocols and exit evidence. These stable local briefs are issue-ready; M1-V1–V6 do not yet have individual hosted implementation issues.
+
+- **M1-V1:** Audit camera/USB modes and timestamps; verify exact pretrained artifacts, provenance and offline loading.
+- **M1-V2:** Build the one-player diagnostic mirror with canonical joints, correct transforms and source/video timing instrumentation.
+- **M1-V3:** Compare RTMDet + RTMPose-s/m with MediaPipe on the same task-joint and full-pipeline measurements.
+- **M1-V4:** Compare ByteTrack with pose-assisted association; verify explicit joining, three-player crossings, uncertainty and recovery.
+- **M1-V5:** Measure the second camera's benefit and cost; gate reconstructed scoring on geometry and exposure alignment.
+- **M1-V6:** Record the measured model/provider/view selection, supported capacity and evidence for or against custom training.
+
+All six remain open. [ADR 0004](decisions/0004-proposed-vision-experiment.md) records the proposal without changing the accepted identity principles.
 
 ## M2: Whack-a-mole vertical slice
 

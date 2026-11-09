@@ -2,7 +2,19 @@
 
 A collection of local games played through body movement, with immediate on-screen feedback in a mirrored camera view or a rendered game world.
 
-**Status: documentation foundation.** There is no runnable application, selected pose model, installed toolchain, or measured performance result yet. This repository establishes the design and contribution rules before implementation.
+**Status: runnable skeleton diagnostic slice.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. MediaPipe and RTMDet/RTMPose adapters, two association modes and labeled synthetic input are implemented. Production model selection, game scoring, multi-view reconstruction and hardware certification remain open.
+
+## Run the diagnostic viewer
+
+Use Node 24.21.0, pnpm 11.25.0, and an existing Python 3.9+ interpreter for the local bootstrap:
+
+```text
+pnpm install --frozen-lockfile
+pnpm setup
+pnpm dev
+```
+
+Open **http://127.0.0.1:5173**. Choose **Camera** and **Start camera**, or choose **Synthetic scene** to inspect generated bodies without camera access. Setup downloads pinned Python tools and verified model artifacts locally; preview inference works offline afterward. Nothing opens a camera until explicitly started. See [the viewer guide](docs/diagnostic-viewer.md) for controls, commands and limitations.
 
 ## Agreed scope
 
@@ -21,12 +33,16 @@ A collection of local games played through body movement, with immediate on-scre
 | [Product scope](docs/product-scope.md) | Requirements, game sequence, and exclusions |
 | [Motion runner brief](docs/games/motion-runner.md) | Single-player lanes, jump/duck controls, recovery and validation |
 | [Architecture](docs/architecture.md) | Runtime boundaries, ownership, and provisional stack |
+| [Diagnostic viewer](docs/diagnostic-viewer.md) | Setup, skeleton rendering, automatic counts, algorithms and recovery |
+| [Tracking algorithms](docs/tracking-algorithms.md) | Box/motion and pose-assisted matching, uncertainty and counting |
 | [Coordinates and timing](docs/coordinates-and-timing.md) | Observation semantics, transforms, clocks, and replay |
 | [Multiplayer](docs/multiplayer.md) | Joining, identity, uncertainty, and crossing scenarios |
 | [Installation](docs/installation.md) | Camera placement, calibration, USB constraints, and hardware profiles |
 | [Testing](docs/testing.md) | Acceptance gates, measurements, and verification expectations |
 | [Roadmap](docs/roadmap.md) | Issue-ready milestones and completion criteria |
 | [Decision index](docs/decisions/README.md) | Accepted decisions and proposals awaiting evidence |
+| [Vision research and plan](docs/vision-research.md) | Location, motion, pose algorithms, training decisions and M1 experiment plan |
+| [Vision research report](reports/vision-research.html) | Standalone, source-linked research and delivery verification |
 | [Contributing](CONTRIBUTING.md) | Tooling direction and review workflow |
 | [Agent instructions](AGENTS.md) | Rules for automated contributors |
 | [Foundation report](reports/foundation.html) | Standalone change report and verification record |
@@ -50,13 +66,11 @@ docs/                       Owning design documents and decisions
 reports/                    Shareable, self-contained change reports
 ```
 
-The component directories currently contain ownership notes, not implementation stubs. Add modules when their milestone begins; avoid speculative packages and generic utility folders.
+The diagnostic slice now implements vision, contracts, motion presentation and the mirror viewer. Session and game directories remain ownership notes until their milestones begin.
 
 ## Next milestone
 
-Build the [diagnostic mirror experiment](docs/roadmap.md#m1-diagnostic-mirror-and-hardware-experiment) before polishing a game. Validate camera formats, the video path, and three-player crossings early enough to change the design.
-
-Setup, development, build, and test commands will be introduced with the first runnable slice. No command in this document claims an application already exists.
+Continue the [M1 diagnostic mirror experiment](docs/roadmap.md#m1-diagnostic-mirror-and-hardware-experiment) before polishing a game. The single-view skeleton viewer is implemented; actual camera formats, the production video path, three-player crossings and physical latency still require evidence. Run `pnpm check` and `pnpm build` for the current software checks.
 
 ## Repository hosting
 
