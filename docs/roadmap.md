@@ -93,4 +93,4 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 
 **Current status:** Documentation scaffold only. Runtime controls, gesture thresholds, obstacle tuning, hardware capability and performance remain unimplemented and unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
 
-**Scaffold delivery:** [Issue #5](https://github.com/DupeisTaken/motion-capture-games/issues/5) tracks this documentation update; [the runner report](../reports/motion-runner.html) records its actual checks. M6 implementation needs its own issue when work begins; completing the scaffold does not close the game milestone.
+**Scaffold delivery:** [Issue #5](https://github.com/DupeisTaken/motion-capture-games/issues/5) and [PR #6](https://github.com/DupeisTaken/motion-capture-games/pull/6) track this documentation update; [the runner report](../reports/motion-runner.html) records its actual checks. M6 implementation needs its own issue when work begins; completing the scaffold does not close the game milestone.
