@@ -40,6 +40,8 @@ If cameras expose hardware timing/synchronization, inspect and validate it. Othe
 
 Unsynchronized observations may still inform presence/association, but must not be advertised as validated fast-motion 3D. See [ADR 0003](decisions/0003-player-identity-and-multi-view.md).
 
+The [XYZ experiment](player-xyz-experiment.md#hardware-validation-protocol-still-open) defines the pending physical protocol and agreed provisional error/latency gates. The reported 1.4 m stands are not a calibrated installation. Its 2 m synthetic baseline is an experiment assumption; measure actual shared coverage, scale and exposure timing before choosing spacing. A wider baseline can improve depth precision while reducing wrist coverage and making person matching harder.
+
 ## Installation and performance profiles
 
 Installation profiles describe geometry and device roles. Performance profiles describe tested operating settings and capacity. Keep them separate so changing hardware settings cannot silently redefine game coordinates.

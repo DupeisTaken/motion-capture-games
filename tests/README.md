@@ -4,4 +4,4 @@ Use this area for future contract, integration and replay coverage. Component-sp
 
 Use synthetic fixtures for joins, identity ambiguity, missing joints, timing discontinuities, trail resets and scoring. Hardware/USB runs and external latency measurements require explicitly identified rigs; ordinary hosted CI does not certify them.
 
-See [the testing plan](../docs/testing.md). No runtime tests or CI workflow exist in this foundation.
+`vision/test_xyz.py` exercises the isolated stereo experiment's metric geometry, metadata and quality rejection, anatomical root, calibration-scale blind spot and nominal accuracy/coverage. Run `python3 tools/project.py test` after setup. It uses synthetic observations only and does not certify cameras, association or a pose model. See [the testing plan](../docs/testing.md). No automated CI workflow is configured yet.

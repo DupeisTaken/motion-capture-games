@@ -2,7 +2,7 @@
 
 ## Current status
 
-There is no runtime implementation or automated CI workflow in the foundation. The checks described for future behavior are requirements, not results. Actual foundation checks are recorded in [the HTML report](../reports/foundation.html).
+There is no camera/game runtime or automated CI workflow in the foundation. The isolated [XYZ geometry experiment](player-xyz-experiment.md) has runnable Python tests and synthetic benchmarks: `python3 tools/project.py check`. Actual results are recorded in its [report](../reports/xyz-experiment.html); physical camera, inference and visible-feedback checks remain unrun. The broader checks below remain requirements, not results. Earlier foundation checks are recorded in [the foundation report](../reports/foundation.html).
 
 ## Documentation changes
 

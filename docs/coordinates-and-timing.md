@@ -24,6 +24,8 @@ A floor-plane homography maps points on that plane; it is not a general mapping 
 
 MediaPipe image depth is relative to the hips, and its world landmarks use the hip midpoint as origin. These model estimates are not our calibrated rig-world frame. Adapt them explicitly and preserve their provenance. [MediaPipe output definitions](https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker?tab=Web)
 
+The isolated [player XYZ experiment](player-xyz-experiment.md) triangulates already associated anatomical joints in this rig convention. Root XYZ is explicitly the midpoint of two valid observed hips; otherwise it is missing. It preserves both source times, clock/epoch/calibration provenance and rejection reasons. Its Python types are experimental, not a published wire schema or certified room-coordinate accuracy.
+
 ## Draft observation semantics
 
 Each observation envelope must identify:

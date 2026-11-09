@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-09",
+  "checks": [
+    "python3 tools/project.py check: Ruff lint and formatting passed; strict mypy passed for seven source files; 33 pytest behavior cases passed.",
+    "Documentation check: 75 local Markdown links/anchors, JSON parsing and offline HTML structure passed.",
+    "Full synthetic experiment: 17 scenarios × three methods, 9,180 requested joint pairs each; 18,000 measured timing batches across six workloads, with per-trial warm-up excluded.",
+    "python3 tools/project.py build and git diff --check passed.",
+    "Desktop report verified in Chrome at 1440 × 1000 from the local HTTP server. Mobile screenshot verification was blocked by Work settings disabling local browser access.",
+    "Hardware capture, pose inference, synchronized exposure, physical XYZ ground truth and externally measured visible-feedback latency: NOT RUN."
+  ],
+  "pr_url": "https://github.com/DupeisTaken/motion-capture-games/pull/7",
+  "screenshots": ["evidence/xyz-desktop.jpg"]
+}
