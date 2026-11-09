@@ -2,7 +2,7 @@
 
 ## Hosting status
 
-No Git remote is configured. These are local planning briefs, not GitHub issue numbers or PRs. Convert each substantive work item into a hosted issue once a repository destination is selected. Use the issue and PR templates under `.github/`.
+The Git remote is [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games). These remain local planning briefs, not GitHub issue numbers or PRs. Convert each substantive implementation work item into a hosted issue when that work begins. Use the issue and PR templates under `.github/`. No PR is opened for the initial direct push, as requested.
 
 The milestone IDs below are stable local references. Each milestone may become several focused issues/PRs rather than one large change. This sequence has no promised dates; hardware and experiment results determine effort.
 

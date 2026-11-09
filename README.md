@@ -57,4 +57,6 @@ Setup, development, build, and test commands will be introduced with the first r
 
 ## Repository hosting
 
-No Git remote is configured at foundation time. The local milestone briefs and GitHub templates are ready to use once a destination is selected. No hosted issues, pull requests, or branch protection settings have been created.
+The repository is hosted at [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games), configured locally as `origin`. The initial remote history and [MIT license](LICENSE) are preserved alongside the foundation.
+
+The local milestone briefs and GitHub templates are ready to use. No hosted issues, pull requests, or branch protection settings have been created. The foundation report records the earlier local-only setup.
