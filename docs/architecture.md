@@ -28,12 +28,14 @@ The video and observation paths split from a single camera acquisition owner. Th
 | `services/vision` | Capture, preprocessing, inference, camera-local tracking, multi-view association, observation export, calibration and media output | Game hits, scores or player-slot assignment |
 | `packages/motion` | Canonical joint access, confidence handling, coordinate mapping, filtering, velocity and valid motion segments | Camera drivers or a particular pose model |
 | `packages/session` | Player-slot assignments, session clock/lifecycle, pause and recovery state, capability checks | Detection or game-specific scoring |
-| `games/<game>` | Game state, targets, collision rules, scoring, tuning and game-specific presentation | Camera access, model indices or player reidentification |
+| `games/<game>` | Game state, targets, collision rules, scoring, tuning, player-limit requirements and game-specific presentation | Camera access, model indices or player reidentification |
 | `apps/mirror` | Composition, application shell, game loading, video presentation, operator controls and audio output | Inference or duplicate camera acquisition |
 | `packages/diagnostics` | Timing and health views fed by reported measurements | Authoritative game state or privileged camera ownership |
 | `contracts` | Canonical message semantics, future schemas and compatibility fixtures | Runtime-specific transport implementation |
 
 Games use public motion and session interfaces. Shared packages never import individual games. The application composes them. Inference-specific output is translated at the vision boundary, so switching models does not change every game.
+
+The compositor supports camera-overlay games and a rendered game world. The [motion runner](games/motion-runner.md) uses the latter, while setup/practice can show camera feedback. Vision still owns acquisition and publishes observations; the runner owns lane selection, jump/duck state and obstacle outcomes. A rendered perspective does not require a new 3D tracking contract or a different camera pipeline.
 
 ## Runtime arrangement
 
@@ -74,7 +76,7 @@ Control commands require acknowledgements and explicit failure states. Observati
 
 ## Capability and failure model
 
-A performance profile declares maximum players, supported joint/collision capabilities, capture modes and active inference provider. The application checks a game's requirements before starting. Admission limits and quality changes must be visible; do not silently change scoring behavior to sustain load.
+A performance profile declares maximum players, supported joint/collision capabilities, capture modes and active inference provider. The application checks a game's requirements before starting. The admission limit is bounded by both game and profile capacity; the motion runner remains single-player on a three-player rig. Admission limits and quality changes must be visible; do not silently change scoring behavior to sustain load.
 
 Disconnects, clock resets, calibration changes and tracker restarts create explicit stream epochs. Invalidate incompatible history, break motion trails, and reacquire players. A pose model must not quietly supply room-coordinate precision it has not established.
 

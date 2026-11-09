@@ -2,11 +2,11 @@
 
 ## Agreed requirements
 
-The product is a set of games with computer vision input and immediate on-screen feedback. Players see a mirrored live camera image with game graphics. The display is a digital mirror, not a physical two-way mirror.
+The product is a set of games with computer vision input and immediate on-screen feedback. Camera-overlay games show a mirrored live camera image with game graphics. The motion runner shows a rendered game world, with camera feedback available for setup and practice. The digital mirror is a display mode, not a physical two-way mirror or a requirement to place every game over video.
 
 The installation has two USB cameras advertised as 4K at 60 fps. Exact camera models, capture formats, synchronization capabilities, host computer, and room geometry are not selected or verified. Windows and macOS are target platforms; a Windows RTX 3070 rig is a proposed reference, while integrated graphics are a separate validation target.
 
-The first playable slice may support one player. The platform must grow to three simultaneous players who can move freely, cross, and overlap. The product must communicate tracking uncertainty and recover explicitly; complete occlusion does not guarantee recoverable identity.
+The first playable slice may support one player. The platform must grow to three simultaneous players who can move freely, cross, and overlap in supported games. Individual games may impose a lower limit: the motion runner is one person only, even on a three-player performance profile. The product must communicate tracking uncertainty and recover explicitly; complete occlusion does not guarantee recoverable identity.
 
 Gameplay runs locally and works without an Internet connection after installation. Download and package model artifacts before the session; avoid runtime CDN or cloud inference dependencies.
 
@@ -17,8 +17,11 @@ Gameplay runs locally and works without an Internet connection after installatio
 | First | Whack-a-mole | Reach a tracked wrist or hand proxy into a visible target | Is interaction aligned, responsive, and attributed to the correct player? |
 | Second | Fruit slicing | Sweep a wrist trail through targets | Can fast motion be recognized without phantom or duplicate hits? |
 | Third | Dodgeball | Avoid virtual obstacles using body regions | Are body collision shapes and avoidance feedback understandable and fair? |
+| Additional | Motion runner (single player) | Move left, center or right to select lanes; jump; squat to duck | Can lane and vertical actions control an on-screen runner reliably and recover fairly from tracking loss? |
 
-These are 2D interactions over the primary camera view initially. The first whack interaction does not require a physically measured punch in depth. Dodgeball initially uses virtual obstacles, not tracked physical balls. Add calibrated 3D only when a game rule demonstrates a need and the installation supports it.
+Whack-a-mole, fruit slicing and dodgeball are 2D interactions over the primary camera view initially. The first whack interaction does not require a physically measured punch in depth. Dodgeball initially uses virtual obstacles, not tracked physical balls. The runner uses a scrolling game world with three lanes; perspective graphics do not imply calibrated 3D body tracking. Add calibrated 3D only when a game rule demonstrates a need and the installation supports it.
+
+The [motion runner brief](games/motion-runner.md) records the one-player requirement and controls. Temple Run / Subway Surfers are gameplay references for this original game module; controlling or embedding those commercial games is outside this scaffold. The existing first three games retain their sequence. Runner implementation is a separate milestone, not a change to the diagnostic-first gate.
 
 ## Player experience
 
@@ -29,8 +32,9 @@ These are 2D interactions over the primary camera view initially. The first whac
 - Pause affected scoring when observations cannot support a fair decision. Explain recovery in the interface.
 - Configure target reach and difficulty for the participant and installation; avoid targets that encourage contact with the display or another player.
 - Maintain a visible play boundary and operator pause/stop control. Free movement remains bounded by the physical installation.
+- For the runner, teach all three lane positions, jumping and squatting in practice; keep the physical travel within the calibrated play area. Pause the runner world and scoring when required input is unusable, so obstacles cannot advance into a tracking-related penalty.
 
-The exact joining gesture, reach calibration, scoring compensation window, and recovery thresholds require playtesting. They are not frozen by this foundation.
+The exact joining gesture, reach calibration, runner recognition thresholds, scoring compensation window, and recovery thresholds require playtesting. They are not frozen by this foundation.
 
 ## Capacity and flexible installations
 

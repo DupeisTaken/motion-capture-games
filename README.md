@@ -1,14 +1,15 @@
 # Motion capture games
 
-A collection of local games played through body movement, with immediate feedback over a mirrored live camera image.
+A collection of local games played through body movement, with immediate on-screen feedback in a mirrored camera view or a rendered game world.
 
 **Status: documentation foundation.** There is no runnable application, selected pose model, installed toolchain, or measured performance result yet. This repository establishes the design and contribution rules before implementation.
 
 ## Agreed scope
 
-- A digital mirror: live camera video with graphics and sound.
+- A digital mirror: live camera video with graphics and sound for camera-overlay games; a rendered world for the motion runner.
 - Two USB cameras advertised as 4K at 60 fps; exact models and formats are unverified.
 - Start gameplay with one player and build toward three simultaneous players.
+- Add a single-player motion runner: move left, center or right to choose a lane, jump to clear low obstacles, and squat to duck overhead obstacles. Its player limit stays at one.
 - Support free movement, crossing, overlap, and explicit recovery when identity is uncertain.
 - Target Windows and macOS. A Windows machine with an RTX 3070 is the proposed reference rig; integrated graphics require separate validation.
 - Run gameplay locally and offline after installation.
@@ -18,6 +19,7 @@ A collection of local games played through body movement, with immediate feedbac
 | Document | Purpose |
 | --- | --- |
 | [Product scope](docs/product-scope.md) | Requirements, game sequence, and exclusions |
+| [Motion runner brief](docs/games/motion-runner.md) | Single-player lanes, jump/duck controls, recovery and validation |
 | [Architecture](docs/architecture.md) | Runtime boundaries, ownership, and provisional stack |
 | [Coordinates and timing](docs/coordinates-and-timing.md) | Observation semantics, transforms, clocks, and replay |
 | [Multiplayer](docs/multiplayer.md) | Joining, identity, uncertainty, and crossing scenarios |
@@ -28,6 +30,7 @@ A collection of local games played through body movement, with immediate feedbac
 | [Contributing](CONTRIBUTING.md) | Tooling direction and review workflow |
 | [Agent instructions](AGENTS.md) | Rules for automated contributors |
 | [Foundation report](reports/foundation.html) | Standalone change report and verification record |
+| [Motion runner report](reports/motion-runner.html) | Runner scaffold change and documentation verification |
 
 ## Repository map
 
@@ -59,4 +62,4 @@ Setup, development, build, and test commands will be introduced with the first r
 
 The repository is hosted at [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games), configured locally as `origin`. The initial remote history and [MIT license](LICENSE) are preserved alongside the foundation.
 
-The local milestone briefs and GitHub templates are ready to use. No hosted issues, pull requests, or branch protection settings have been created. The foundation report records the earlier local-only setup.
+The local milestone briefs and GitHub templates are ready to use. Hosted work is tracked through repository issues and pull requests; local roadmap IDs remain stable planning references. The foundation report records the earlier local-only setup and does not describe current hosting activity. Branch protection has not been verified.

@@ -2,7 +2,7 @@
 
 ## Hosting status
 
-The Git remote is [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games). These remain local planning briefs, not GitHub issue numbers or PRs. Convert each substantive implementation work item into a hosted issue when that work begins. Use the issue and PR templates under `.github/`. No PR is opened for the initial direct push, as requested.
+The Git remote is [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games). Milestone IDs remain local planning references, separate from hosted issue numbers. Reuse or create a hosted issue for each substantive work item when it begins. Use the issue and PR templates under `.github/`. The initial direct push had no PR; subsequent work follows the contribution workflow.
 
 The milestone IDs below are stable local references. Each milestone may become several focused issues/PRs rather than one large change. This sequence has no promised dates; hardware and experiment results determine effort.
 
@@ -73,3 +73,24 @@ The milestone IDs below are stable local references. Each milestone may become s
 **Acceptance criteria:** Clean installation and offline launch work on each declared target; model provenance and pinned versions ship with the package; operator recovery and calibration verification work; each new tier has its own capacity/latency evidence; the packaging decision record and report reflect actual results.
 
 Packaging concerns such as camera permissions may be investigated during M1; final distribution can wait until the runtime path is validated.
+
+## M6: Single-player motion runner
+
+**Problem:** Let one participant control an on-screen runner with left/center/right movement, jumping and squatting, without confusing tracking gaps with player mistakes.
+
+**Owns:** The [runner design](games/motion-runner.md), a future `games/motion-runner/` module, rendered-world presentation, lane/action calibration, obstacles, scoring and replay. Depends on the relevant M1 gates and M2's session/replay foundation. M3/M4 and final M5 packaging are not prerequisites; M6 preserves existing milestone IDs rather than forcing a new release order.
+
+**Acceptance criteria:**
+
+- Admit exactly one joined player even on a higher-capacity profile; spectators and additional join attempts cannot acquire control.
+- Teach and validate left, center and right physical lane positions, jump and squat-to-duck in practice, with an explicit participant-relative mapping and safe play boundary.
+- Validate lane boundary hysteresis, held positions, return to center, direct side-to-side movement and lane input during vertical actions; tune thresholds through measured trials rather than hard-coded assumptions.
+- Validate one jump per takeoff/landing cycle, held squat/release, incidental head/torso motion and conflicting jump/duck evidence. Declare a minimum supported input capability set.
+- Keep world progression, collisions, distance and scoring on the same paused game timeline during missing/stale/ambiguous input. Recovery resets action history and resumes through a readiness/countdown step without catch-up penalties.
+- Use seeded pose/game-input replays for obstacle outcomes, action timing, delayed/out-of-order observations, epoch changes, calibration changes and spectator entry. Report the declared version/tolerance.
+- Measure recognition errors and action-to-visible timing for each control on the supported installation, including different participant heights and movement ranges. Perspective graphics alone do not justify calibrated 3D input.
+- Verify rendered gameplay and setup/recovery UI from a real server at the supported display aspect ratio and relevant desktop/mobile operator sizes; deliver tests, owning docs and the HTML report.
+
+**Current status:** Documentation scaffold only. Runtime controls, gesture thresholds, obstacle tuning, hardware capability and performance remain unimplemented and unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
+
+**Scaffold delivery:** [Issue #5](https://github.com/DupeisTaken/motion-capture-games/issues/5) tracks this documentation update; [the runner report](../reports/motion-runner.html) records its actual checks. M6 implementation needs its own issue when work begins; completing the scaffold does not close the game milestone.

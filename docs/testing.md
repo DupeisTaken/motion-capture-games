@@ -2,7 +2,7 @@
 
 ## Current status
 
-There is no runtime implementation or automated CI workflow in the foundation. The checks described for future behavior are requirements, not results. Actual foundation checks are recorded in [the HTML report](../reports/foundation.html).
+There is no runtime implementation or automated CI workflow in the foundation. The checks described for future behavior are requirements, not results. Actual foundation checks are recorded in [the foundation report](../reports/foundation.html); the runner documentation update has its own [change report](../reports/motion-runner.html).
 
 ## Documentation changes
 
@@ -45,6 +45,22 @@ Run the scenarios in [multiplayer](multiplayer.md#required-diagnostic-scenarios)
 The target is no observed wrong-slot scoring in the agreed repeatable scenario set. A pass is scoped to that set and rig; it is not a guarantee against all complete occlusions. If there is no reliable evidence of identity, verify that affected input is suspended rather than guessed.
 
 Test camera unplug/replug, source restart, clock discontinuity, profile change, calibration invalidation, out-of-order/stale messages, spectator entry and a disappearing/reappearing player. Verify score retention and motion-trail reset.
+
+## Motion runner acceptance scenarios
+
+These are future [M6](roadmap.md#m6-single-player-motion-runner) requirements, not completed tests. Use synthetic canonical pose input and game-input replays before physical trials; identify the rig/profile for recognition and timing measurements.
+
+| Area | Required scenarios and evidence |
+| --- | --- |
+| One-player admission | A second join is rejected; spectator entry/exit and crossing do not change the controlling slot or transfer its score. Ambiguous identity pauses the runner. |
+| Lane selection | Left/center/right holds, return from either side to center, direct side-to-side movement, boundary jitter and different body sizes/depths. A held lane produces no repeated relative shifts. Check the same participant-relative mapping with mirrored practice video and rendered-world gameplay. |
+| Jump | One event per valid takeoff/landing cycle; repeated samples, small bobbing, squatting, missing feet and landing gaps cannot invent a second jump. Lane changes during a jump follow the documented rule. |
+| Squat/duck | Enter, hold and release; distinguish crouching from tracking loss, leaning, head motion and jump preparation/landing. No repeated rewards from a held squat. Conflicting vertical evidence produces no invented action. |
+| Obstacles and timing | Seeded low/overhead/lane obstacle cases, collision windows, any simultaneous inputs, and observation timestamps mapped into the simulation clock; reordered, delayed or duplicate input cannot change an already consumed action. |
+| Loss and recovery | Missing/stale required joints, uncertain identity, camera disconnect, out-of-area motion, pause mid-jump/duck, epoch/clock/transform changes and calibration invalidation. World progression, collisions, distance and score remain frozen; recovery resets history, requires readiness and never fast-forwards hazards. |
+| Physical trials and UI | Per-control false activations, missed actions and action-to-visible timing with sample counts and configuration; varied heights/reach and safe lateral/jump/squat space. Real-server rendered-world, calibration, practice and recovery screenshots at supported display/operator sizes, English initially. |
+
+Recognition thresholds, hysteresis, action timing, supported capabilities and difficulty need measured evidence before acceptance. A docs check or synthetic replay does not establish physical jump/squat accuracy.
 
 ## UI verification
 
