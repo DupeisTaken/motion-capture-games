@@ -1,0 +1,44 @@
+# Local credentials; only intentionally public examples may be tracked.
+.env
+.env.*
+!.env.example
+
+# Repository-local environments and generated build/cache output.
+node_modules/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.cache/
+.pnpm-store/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+playwright-report/
+test-results/
+
+# Device-specific settings, participant data, recordings, and model artifacts.
+/.local/
+/recordings/
+/datasets/
+/models/artifacts/
+/reports/local/
+*.onnx
+*.pt
+*.pth
+*.tflite
+*.task
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+
+# Operating-system files and diagnostic logs.
+.DS_Store
+Thumbs.db
+*.log
