@@ -7,3 +7,5 @@ Explain the problem, final change and rationale. Include relevant before/after s
 [The foundation report](foundation.html) describes the documentation-only initial change. It has no gameplay screenshots or runtime performance results because neither an application nor a tested installation exists. Its embedded previews document desktop/mobile report rendering only.
 
 Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.local/`.
+
+[Vision research](vision-research.html) is the standalone research and planning report for location, pose, motion, identity and training. Its editable analysis is [docs/vision-research.md](../docs/vision-research.md); recommendations remain proposed until measured in M1. Its verification record concerns documentation/report delivery, not inference or hardware results.
