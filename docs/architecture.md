@@ -4,6 +4,8 @@
 
 The accepted boundary is a local modular platform with model-independent game input. Python vision and a TypeScript/PixiJS mirror application are the provisional stack. Local WebRTC video delivery, the pose model, acceleration providers, and final desktop packaging remain proposals until the diagnostic experiment produces evidence. See [the decision index](decisions/README.md).
 
+The first [diagnostic slice](diagnostic-viewer.md) implements Python/OpenCV capture/inference and TypeScript Canvas2D skeleton rendering. Its paired JPEG/observation transport deliberately follows inference cadence for directly inspectable alignment. [ADR 0005](decisions/0005-diagnostic-skeleton-slice.md) scopes this choice; the production WebRTC/PixiJS and full M1 performance gates remain open.
+
 ## Data flow
 
 ```mermaid

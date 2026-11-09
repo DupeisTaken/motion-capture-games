@@ -1,7 +1,10 @@
 # Cross-component verification
 
-Use this area for future contract, integration and replay coverage. Component-specific unit tests stay with their owning component. Add `contracts/` and `integration/` suites when the relevant interfaces are implemented.
+Run `pnpm test` for Vitest contract/motion/viewer tests followed by pytest vision tests. `pnpm check` adds schema drift, types, lint and formatting. The software workflow runs these checks and `pnpm build`.
 
-Use synthetic fixtures for joins, identity ambiguity, missing joints, timing discontinuities, trail resets and scoring. Hardware/USB runs and external latency measurements require explicitly identified rigs; ordinary hosted CI does not certify them.
+- `contracts/`: canonical validation, count/capacity semantics, quality, timing and ownership boundaries.
+- `motion/`: aspect-preserving mirror transforms, missing/uncertain joints, source epoch/sequence order and bounded paired-frame decoding.
+- `viewer/`: simulated DOM and mocked I/O integration for automatic counts, stop/stale recovery, capacity, source errors, late decoding and image/pose geometry.
+- `services/vision/tests/`: model setup/provenance, actual adapter conversion logic with synthetic model outputs, bounded camera/runtime behavior, HTTP/WebSocket controls and two association algorithms.
 
-See [the testing plan](../docs/testing.md). No runtime tests or CI workflow exist in this foundation.
+No test uses private participant images. Synthetic integration is not evidence of real camera accuracy, three-player identity continuity or physical latency. The real local-server browser interactions/screenshots and model smoke checks actually performed are recorded separately in [the delivery report](../reports/skeleton-diagnostics.html). See [the testing plan](../docs/testing.md) for the remaining hardware and gameplay gates.

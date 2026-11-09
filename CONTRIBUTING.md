@@ -8,9 +8,9 @@ Use [the architecture](docs/architecture.md) for boundaries, [the roadmap](docs/
 
 The provisional implementation stack is TypeScript for the mirror and games, and Python for vision. Use a pnpm workspace and uv-managed Python environment when implementation starts. Pin runtime and package-manager versions at that point after checking model/runtime compatibility; commit lockfiles.
 
-Planned checks include strict TypeScript type checking, ESLint and Prettier, Python type checking and Ruff, Vitest for TypeScript behavior, and pytest for vision behavior. Browser integration tests accompany the first runnable interface. These tools are not installed or configured in this foundation.
+The diagnostic slice configures strict TypeScript checks, ESLint/Prettier, Pyright/Ruff, Vitest contract/motion/viewer tests and pytest vision/API tests. The viewer tests simulate DOM and I/O; actual local-server screenshot/interaction verification is separately recorded in the delivery report.
 
-Introduce one documented set of root commands for setup, development, formatting, linting, type checks, tests, and builds with the first runnable slice. Make the commands work on supported Windows and macOS environments; avoid requiring a POSIX shell on Windows. Use `.venv/` and repository-local dependencies. Docker is optional and must not become a prerequisite for USB camera access.
+Use the root commands documented in [the viewer guide](docs/diagnostic-viewer.md#checks-and-developer-commands): `pnpm setup`, `pnpm dev`, `pnpm check` and `pnpm build`. The Node task dispatcher avoids requiring a POSIX shell on Windows. Use `.venv/` and repository-local dependencies. Docker is optional and must not become a prerequisite for USB camera access. Portability remains subject to the hardware/OS evidence recorded per profile.
 
 ## Naming and boundaries
 
@@ -44,4 +44,4 @@ Substantive changes include a standalone HTML report in `reports/`. Use syntheti
 
 ## Foundation checks
 
-No automated CI workflow or runtime test suite exists yet. For documentation changes, check Git whitespace, local links and anchors, and any machine-readable examples. For an HTML report, check document structure and external dependencies and visually inspect desktop/mobile rendering from a local HTTP server. Record the exact checks actually performed in that report.
+The diagnostic software workflow runs the root checks and frontend build; it does not supply cameras or certify performance. For documentation changes, check Git whitespace, local links and anchors, and any machine-readable examples. For an HTML report, check document structure and external dependencies and visually inspect desktop/mobile rendering from a local HTTP server. Record the exact checks actually performed in that report.

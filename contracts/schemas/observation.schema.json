@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motion-capture-games.local/contracts/observation-v1.json",
+  "title": "Observation",
+  "description": "Diagnostic camera observations. Coordinates are upright, unmirrored, normalized image coordinates. Nanoseconds are decimal strings to preserve integer precision in JavaScript. Counts are visible detections, never enrolled player slots.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "epoch", "sequence", "frameId", "source", "cameraId", "image", "capturedAtNs", "processedAtNs", "clock", "algorithm", "tracker", "coordinateSpace", "transformRevision", "calibrationId", "modelId", "people", "detectedCount", "capacity", "capacityReached", "metrics"],
+  "properties": {
+    "version": {"type": "integer", "const": 1},
+    "epoch": {"type": "string", "minLength": 1, "maxLength": 128},
+    "sequence": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "frameId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "source": {"type": "string", "enum": ["camera", "demo"]},
+    "cameraId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "image": {
+      "type": "object", "additionalProperties": false, "required": ["width", "height"],
+      "properties": {"width": {"type": "integer", "minimum": 1, "maximum": 16384}, "height": {"type": "integer", "minimum": 1, "maximum": 16384}}
+    },
+    "capturedAtNs": {"$ref": "#/definitions/Nanoseconds"},
+    "processedAtNs": {"$ref": "#/definitions/Nanoseconds"},
+    "clock": {
+      "type": "object", "additionalProperties": false, "required": ["domain", "quality", "uncertaintyNs"],
+      "properties": {
+        "domain": {"type": "string", "const": "host-monotonic"},
+        "quality": {"type": "string", "enum": ["host-read-completion", "synthetic"]},
+        "uncertaintyNs": {"anyOf": [{"$ref": "#/definitions/Nanoseconds"}, {"type": "null"}]}
+      }
+    },
+    "algorithm": {"type": "string", "enum": ["mediapipe", "rtmpose", "synthetic"]},
+    "tracker": {"type": "string", "enum": ["iou", "pose"]},
+    "coordinateSpace": {"type": "string", "const": "normalized-camera"},
+    "transformRevision": {"type": "string", "minLength": 1, "maxLength": 128},
+    "calibrationId": {"type": ["string", "null"], "minLength": 1, "maxLength": 128},
+    "modelId": {"type": "string", "minLength": 1, "maxLength": 256},
+    "people": {"type": "array", "maxItems": 12, "items": {"$ref": "#/definitions/Person"}},
+    "detectedCount": {"type": "integer", "minimum": 0, "maximum": 12},
+    "capacity": {"type": "integer", "minimum": 1, "maximum": 12},
+    "capacityReached": {"type": "boolean", "description": "The detector returned its configured maximum. More people may be present; this is not proof of the total room population."},
+    "metrics": {
+      "type": "object", "additionalProperties": false, "required": ["inferenceMs", "captureDrops", "processingMs"],
+      "properties": {
+        "inferenceMs": {"type": "number", "minimum": 0},
+        "captureDrops": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+        "processingMs": {"type": "number", "minimum": 0}
+      }
+    }
+  },
+  "definitions": {
+    "Nanoseconds": {"type": "string", "pattern": "^(0|[1-9][0-9]*)$", "maxLength": 30},
+    "Box": {
+      "type": "object", "additionalProperties": false, "required": ["x", "y", "width", "height"],
+      "description": "Normalized full-image person box. Do not clamp off-image estimates to the image edge.",
+      "properties": {
+        "x": {"type": "number"}, "y": {"type": "number"},
+        "width": {"type": "number", "minimum": 0}, "height": {"type": "number", "minimum": 0}
+      }
+    },
+    "Joint": {
+      "type": "object", "additionalProperties": false, "required": ["x", "y", "score", "status", "inFrame"],
+      "description": "A model estimate is not a calibrated probability or metric spatial measurement. Missing coordinates are null; off-image estimates retain coordinates with inFrame false.",
+      "properties": {
+        "x": {"type": ["number", "null"]}, "y": {"type": ["number", "null"]},
+        "score": {"type": "number", "minimum": 0, "maximum": 1},
+        "status": {"type": "string", "enum": ["observed", "estimated", "missing"]},
+        "inFrame": {"type": "boolean"}
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "missing"}}, "required": ["status"]},
+         "then": {"properties": {"x": {"type": "null"}, "y": {"type": "null"}, "inFrame": {"const": false}}},
+         "else": {"properties": {"x": {"type": "number"}, "y": {"type": "number"}}}}
+      ]
+    },
+    "Joints": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "nose": {"$ref": "#/definitions/Joint"},
+        "left_eye": {"$ref": "#/definitions/Joint"}, "right_eye": {"$ref": "#/definitions/Joint"},
+        "left_ear": {"$ref": "#/definitions/Joint"}, "right_ear": {"$ref": "#/definitions/Joint"},
+        "left_shoulder": {"$ref": "#/definitions/Joint"}, "right_shoulder": {"$ref": "#/definitions/Joint"},
+        "left_elbow": {"$ref": "#/definitions/Joint"}, "right_elbow": {"$ref": "#/definitions/Joint"},
+        "left_wrist": {"$ref": "#/definitions/Joint"}, "right_wrist": {"$ref": "#/definitions/Joint"},
+        "left_hip": {"$ref": "#/definitions/Joint"}, "right_hip": {"$ref": "#/definitions/Joint"},
+        "left_knee": {"$ref": "#/definitions/Joint"}, "right_knee": {"$ref": "#/definitions/Joint"},
+        "left_ankle": {"$ref": "#/definitions/Joint"}, "right_ankle": {"$ref": "#/definitions/Joint"}
+      }
+    },
+    "Person": {
+      "type": "object", "additionalProperties": false, "required": ["trackId", "identity", "box", "joints"],
+      "properties": {
+        "trackId": {"type": ["string", "null"], "minLength": 1, "maxLength": 128},
+        "identity": {"type": "string", "enum": ["tentative", "confident", "ambiguous"]},
+        "box": {"$ref": "#/definitions/Box"}, "joints": {"$ref": "#/definitions/Joints"}
+      }
+    }
+  }
+}

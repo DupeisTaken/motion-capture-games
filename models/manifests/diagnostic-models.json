@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "models": {
+    "mediapipe": {
+      "modelId": "mediapipe-pose-landmarker-lite-float16-v1",
+      "url": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+      "download": "pose_landmarker_lite.task",
+      "sha256": "59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a",
+      "artifacts": {
+        "pose": {
+          "file": "pose_landmarker_lite.task",
+          "sha256": "59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a"
+        }
+      },
+      "source": "https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker",
+      "licenseNote": "MediaPipe code is Apache-2.0; review the selected model distribution terms before redistribution. Artifact hash is locally measured, not a publisher signature.",
+      "input": "RGB upright unmirrored image; CPU MediaPipe Tasks VIDEO mode",
+      "output": "33 landmarks adapted to named COCO17 normalized-image joints; world/depth estimates are not exported"
+    },
+    "rtmpose": {
+      "modelId": "openmmlab-rtmdet-nano-rtmpose-m-cpu-sdk-2023",
+      "url": "https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmpose-cpu.zip",
+      "download": "rtmpose-cpu.zip",
+      "sha256": "54e1d48a8946c87d66e96f81438344fec6e471cb3e44b71dfa04be6e879f3528",
+      "artifacts": {
+        "detector": {
+          "file": "rtmdet-nano.onnx",
+          "archiveMember": "rtmpose-ort/rtmdet-nano/end2end.onnx",
+          "sha256": "b8585adb6d1352796f6e86337e09c3459b830645a7e7192d9381670bea2facbd"
+        },
+        "pose": {
+          "file": "rtmpose-m.onnx",
+          "archiveMember": "rtmpose-ort/rtmpose-m/end2end.onnx",
+          "sha256": "8ed9cd4724582d00e7978c297472365946277185ecc448d4ad47f4f376ae3208"
+        }
+      },
+      "source": "https://github.com/open-mmlab/mmpose/tree/main/projects/rtmpose",
+      "licenseNote": "MMPose/MMDetection code is Apache-2.0 with separately listed exceptions; verify code, checkpoint and training-data terms for distribution. Hashes are locally measured.",
+      "input": "RTMDet: 320x320 keep-ratio BGR pad114 normalize. RTMPose: 192x256 padded person crop, RGB normalize, SimCC split ratio2.0. Semantics from archive pipeline.json.",
+      "output": "Person boxes and17 named normalized-image body joints; CPU ONNX Runtime with bounded threads"
+    }
+  }
+}
