@@ -8,6 +8,6 @@
     "Desktop report verified in Chrome at 1440 × 1000 from the local HTTP server. Mobile screenshot verification was blocked by Work settings disabling local browser access.",
     "Hardware capture, pose inference, synchronized exposure, physical XYZ ground truth and externally measured visible-feedback latency: NOT RUN."
   ],
-  "pr_url": null,
+  "pr_url": "https://github.com/DupeisTaken/motion-capture-games/pull/7",
   "screenshots": ["evidence/xyz-desktop.jpg"]
 }

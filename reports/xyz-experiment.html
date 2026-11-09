@@ -325,7 +325,7 @@ python3 tools/project.py dev</pre>
 repository-local environment. No global configuration change. Build produces this report;
 dev serves it on loopback port 8765.</p></div><div><h3>Actual verification</h3>
 <ul><li>python3 tools/project.py check: Ruff lint and formatting passed; strict mypy passed for seven source files; 33 pytest behavior cases passed.</li><li>Documentation check: 75 local Markdown links/anchors, JSON parsing and offline HTML structure passed.</li><li>Full synthetic experiment: 17 scenarios × three methods, 9,180 requested joint pairs each; 18,000 measured timing batches across six workloads, with per-trial warm-up excluded.</li><li>python3 tools/project.py build and git diff --check passed.</li><li>Desktop report verified in Chrome at 1440 × 1000 from the local HTTP server. Mobile screenshot verification was blocked by Work settings disabling local browser access.</li><li>Hardware capture, pose inference, synchronized exposure, physical XYZ ground truth and externally measured visible-feedback latency: NOT RUN.</li></ul>
-<p><a href="https://github.com/DupeisTaken/motion-capture-games/issues/4">Issue #4</a> · PR link pending.</p>
+<p><a href="https://github.com/DupeisTaken/motion-capture-games/issues/4">Issue #4</a> · <a href="https://github.com/DupeisTaken/motion-capture-games/pull/7">Pull request</a></p>
 <p>Branch: <code>codex/player-xyz-experiments</code>. Independent of the camera/skeleton
 viewer work. All committed observations are synthetic; no participant footage or credentials.</p></div></div>
 <details><summary>Full configuration and measured results</summary>
