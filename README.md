@@ -25,6 +25,8 @@ A collection of local games played through body movement, with immediate feedbac
 | [Testing](docs/testing.md) | Acceptance gates, measurements, and verification expectations |
 | [Roadmap](docs/roadmap.md) | Issue-ready milestones and completion criteria |
 | [Decision index](docs/decisions/README.md) | Accepted decisions and proposals awaiting evidence |
+| [Vision research and plan](docs/vision-research.md) | Location, motion, pose algorithms, training decisions and M1 experiment plan |
+| [Vision research report](reports/vision-research.html) | Standalone, source-linked research and delivery verification |
 | [Contributing](CONTRIBUTING.md) | Tooling direction and review workflow |
 | [Agent instructions](AGENTS.md) | Rules for automated contributors |
 | [Foundation report](reports/foundation.html) | Standalone change report and verification record |
@@ -59,4 +61,4 @@ Setup, development, build, and test commands will be introduced with the first r
 
 The repository is hosted at [DupeisTaken/motion-capture-games](https://github.com/DupeisTaken/motion-capture-games), configured locally as `origin`. The initial remote history and [MIT license](LICENSE) are preserved alongside the foundation.
 
-The local milestone briefs and GitHub templates are ready to use. No hosted issues, pull requests, or branch protection settings have been created. The foundation report records the earlier local-only setup.
+The local milestone briefs and GitHub templates are ready to use. [Issue #1](https://github.com/DupeisTaken/motion-capture-games/issues/1) tracks the vision research and plan. No branch protection configuration is claimed here. The foundation report records the earlier local-only setup.

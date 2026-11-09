@@ -64,6 +64,8 @@ Sources: [PixiJS](https://pixijs.com/8.x/guides/getting-started/intro), [aiortc]
 
 ## Video and transport gate
 
+The [vision research and plan](vision-research.md) and [proposed ADR 0004](decisions/0004-proposed-vision-experiment.md) expand the pose, tracking, filtering and training experiments. They recommend pretrained baselines and explicit ambiguity handling; they do not finalize the model or close M1.
+
 Do not send base64 full-resolution frames through the observation WebSocket. Video and metadata have different throughput and timing requirements.
 
 The first experiment must establish a mapping between source observation time, media presentation time and the renderer clock. Compare poses with the frame actually being presented, not whichever metadata message arrived most recently. Define a bounded matching wait and report residual skew. Extra video buffering consumes the feedback latency budget.
