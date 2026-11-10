@@ -17,13 +17,13 @@
       "Passed for both games at 1440×1000, 390×844 and 320×740 (English). Initial setup, no automatic capture, camera selection, Escape/focus, retained choices, Start/replay confirmation, locked active settings, pause/resume and no overflow/page errors. Separate live game windows and return verified at desktop."
     ],
     [
-      "Report rendering",
-      "Pending final report inspection."
+      "Self-contained report rendering",
+      "Passed at 1440×1000, 390×844 and 320×740: all 7 embedded screenshots decoded; no overflow, page errors or external asset requests."
     ]
   ],
   "environment": "Windows; Node v24.16.0; pnpm 11.25.0; CPython 3.12.14; Chromium; English only",
-  "hosted": "Hosted checks have not run yet.",
-  "pr": null,
+  "hosted": "Hosted check status is live on PR #36. This report records local checks; require software-checks on the latest PR commit before merge.",
+  "pr": "https://github.com/DupeisTaken/motion-capture-games/pull/36",
   "browser": [
     {
       "game": "mole",
@@ -80,5 +80,37 @@
       "pageErrors": 0
     }
   ],
-  "baseline": "15a56dc"
+  "baseline": "15a56dc",
+  "reportQA": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "images": 7,
+      "overflow": false,
+      "pageErrors": 0,
+      "externalRequests": 0
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "images": 7,
+      "overflow": false,
+      "pageErrors": 0,
+      "externalRequests": 0
+    },
+    {
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "images": 7,
+      "overflow": false,
+      "pageErrors": 0,
+      "externalRequests": 0
+    }
+  ]
 }
