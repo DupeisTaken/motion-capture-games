@@ -39,3 +39,5 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Wrist flicks](wrist-flick.html) records the additional 2D wrist-flap interaction, source-timed gesture/rearm rules, synthetic camera scoring, real-server desktop/mobile evidence and remaining physical sensitivity trials.
 
 [Camera selection](camera-selection.html) documents the shared native selector, refresh/recovery behavior, actual checks and remaining hardware limits.
+
+[Pre-game settings](pre-game-settings.html) records the shared video/game setup menu, confirmation and camera-release behavior, synthetic before/after browser evidence and actual checks.

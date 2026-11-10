@@ -153,6 +153,7 @@ function startDemo(): void {
   app.tick();
   app.tick();
   element<HTMLButtonElement>("start-round").click();
+  element<HTMLButtonElement>("confirm-start").click();
   advance(3500);
 }
 
@@ -315,6 +316,69 @@ describe("Dodgeball operator integration", () => {
     },
   );
 
+  it("opens unified setup on load without starting input or a round", () => {
+    const setup = element<HTMLDialogElement>("pre-game-settings");
+    expect(setup.open).toBe(true);
+    expect(setup.contains(element("source-select"))).toBe(true);
+    expect(setup.contains(element("mode-select"))).toBe(true);
+    expect(setup.contains(element("difficulty-select"))).toBe(true);
+    expect(setup.contains(element("show-tracking"))).toBe(true);
+    expect(document.activeElement).toBe(element("close-settings"));
+    advance(5000);
+    expect(element("game-overlay").hidden).toBe(false);
+    expect(element("time-value").textContent).toBe("1:00");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(FakeWebSocket.instances).toHaveLength(0);
+  });
+
+  it("retains choices and requires confirmation after closing and reopening setup", () => {
+    choose("source-select", "demo");
+    choose("mode-select", "practice");
+    choose("difficulty-select", "hard");
+    element<HTMLButtonElement>("close-settings").click();
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(false);
+    element<HTMLButtonElement>("start-round").click();
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(true);
+    advance(4000);
+    expect(element("game-overlay").hidden).toBe(false);
+    expect(element<HTMLSelectElement>("mode-select").value).toBe("practice");
+    expect(element<HTMLSelectElement>("difficulty-select").value).toBe("hard");
+    element<HTMLButtonElement>("confirm-start").click();
+    advance(3500);
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(false);
+    expect(element("game-overlay").hidden).toBe(true);
+    expect(element<HTMLButtonElement>("open-settings").disabled).toBe(true);
+  });
+
+  it("reviews every replay without discarding results until confirmation", () => {
+    startDemo();
+    element<HTMLButtonElement>("end-round").click();
+    const result = element("overlay-copy").textContent;
+    const score = element("score-value").textContent;
+    element<HTMLButtonElement>("restart-round").click();
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(true);
+    advance(4000);
+    expect(element("overlay-copy").textContent).toBe(result);
+    expect(element("score-value").textContent).toBe(score);
+    element<HTMLButtonElement>("close-settings").click();
+    expect(document.activeElement).toBe(element("restart-round"));
+    expect(element("overlay-copy").textContent).toBe(result);
+    element<HTMLButtonElement>("restart-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
+    advance(3500);
+    expect(element("game-overlay").hidden).toBe(true);
+  });
+
+  it("keeps manual pause and resume outside setup", () => {
+    startDemo();
+    element<HTMLButtonElement>("pause-round").click();
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(false);
+    element<HTMLButtonElement>("resume-round").click();
+    advance(2500);
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(false);
+    expect(element("game-overlay").hidden).toBe(true);
+  });
+
   it("keeps a connected camera stable until Stop, including a forged Start click", async () => {
     await startCamera();
     const connect = element<HTMLButtonElement>("source-connect");
@@ -328,7 +392,7 @@ describe("Dodgeball operator integration", () => {
     await flushPromises();
     expect(connect.disabled).toBe(false);
   });
-  it("starts rehearsal with one action and leaves camera access explicit", () => {
+  it("starts rehearsal after setup confirmation and leaves camera access explicit", () => {
     choose("source-select", "demo");
     app.tick();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -346,6 +410,7 @@ describe("Dodgeball operator integration", () => {
     framing.dispatchEvent(new Event("change"));
     expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     advance(1000);
     expect(element("overlay-title").textContent).toBe("Finding your player");
     expect(drawnBall()).toBeNull();
@@ -361,6 +426,7 @@ describe("Dodgeball operator integration", () => {
     async (joint) => {
       const socket = await startCamera();
       element<HTMLButtonElement>("start-round").click();
+      element<HTMLButtonElement>("confirm-start").click();
       const incomplete = observation();
       delete incomplete.people[0].joints[joint];
       await socket.receive(packet(incomplete));
@@ -377,6 +443,7 @@ describe("Dodgeball operator integration", () => {
     await socket.receive(packet(observation()));
     advance(400);
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     now += 50;
     const missing = observation(10);
     missing.people = [];
@@ -393,6 +460,7 @@ describe("Dodgeball operator integration", () => {
   it("cancels a pending Start with End and stays ready without a camera", async () => {
     await selectCamera();
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     expect(element("overlay-title").textContent).toBe("Finding your player");
     element<HTMLButtonElement>("end-round").click();
     expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
@@ -403,6 +471,7 @@ describe("Dodgeball operator integration", () => {
   it("keeps pending Start safe across camera stop and restart before admission", async () => {
     await startCamera();
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     element<HTMLButtonElement>("source-stop").click();
     await flushPromises();
     element<HTMLButtonElement>("source-connect").click();
@@ -417,6 +486,7 @@ describe("Dodgeball operator integration", () => {
   it("waits for one unique player instead of selecting by detection order", async () => {
     const socket = await startCamera();
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     const two = observation();
     two.people.push({
       ...structuredClone(two.people[0]),
@@ -507,6 +577,7 @@ describe("Dodgeball operator integration", () => {
       const socket = await startCamera();
       await socket.receive(packet(observation()));
       element<HTMLButtonElement>("start-round").click();
+      element<HTMLButtonElement>("confirm-start").click();
       const changed = observation(2);
       if (change === "calibration") changed.calibrationId = "new-space";
       else changed.people[0].trackId = "different-player";
@@ -517,6 +588,7 @@ describe("Dodgeball operator integration", () => {
       expect(element("restart-round").hidden).toBe(false);
       expect(element("player-binding").textContent).toContain("camera-track-1");
       element<HTMLButtonElement>("restart-round").click();
+      element<HTMLButtonElement>("confirm-start").click();
       expect(element("score-value").textContent).toBe("000");
     },
   );
@@ -524,6 +596,7 @@ describe("Dodgeball operator integration", () => {
     const socket = await startCamera();
     await socket.receive(packet(observation()));
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     now += 50;
     const uncertain = observation(2);
     uncertain.people[0].identity = "ambiguous";
@@ -536,12 +609,14 @@ describe("Dodgeball operator integration", () => {
     expect(element("restart-round").hidden).toBe(false);
     expect(element("overlay-copy").textContent).toMatch(/score ownership/);
     element<HTMLButtonElement>("restart-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     expect(element("overlay-title").textContent).toBe("3");
   });
   it("automatically recovers a short transport gap with the same confident owner", async () => {
     const socket = await startCamera();
     await socket.receive(packet(observation()));
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     advance(500);
     expect(element("overlay-title").textContent).toBe("Finding you again");
     now += 50;
@@ -792,12 +867,17 @@ describe("Dodgeball operator integration", () => {
     await flushPromises();
     expect(FakeWebSocket.instances).toHaveLength(0);
     expect(element("camera-release").hidden).toBe(false);
+    expect(element("setup-camera-release").hidden).toBe(false);
+    expect(
+      element("pre-game-settings").contains(element("setup-retry-camera-stop")),
+    ).toBe(true);
     expect(element("camera-release-message").textContent).toMatch(
       /unconfirmed.*driver/i,
     );
-    element<HTMLButtonElement>("retry-camera-stop").click();
+    element<HTMLButtonElement>("setup-retry-camera-stop").click();
     await flushPromises();
     expect(element("camera-release").hidden).toBe(true);
+    expect(element("setup-camera-release").hidden).toBe(true);
     const stops = fetchMock.mock.calls.filter(([path]) => path === "/api/stop");
     expect(
       stops.map(([, init]) => JSON.parse(String(init.body)).epoch),

@@ -212,6 +212,13 @@ try {
       await page.waitForFunction(
         () => document.querySelector("#camera-choice").value === "a".repeat(64),
       );
+    if (!baseline)
+      assert(
+        await page
+          .locator("#pre-game-settings")
+          .evaluate((dialog) => dialog.open),
+        "Camera defaults must preserve initial setup review",
+      );
     for (const [size, width, height] of [
       ["desktop", 1440, 1000],
       ["mobile", 390, 844],
@@ -223,6 +230,13 @@ try {
         ),
         `${game} ${size} overflow`,
       );
+      if (!baseline)
+        assert(
+          await page
+            .locator("#pre-game-settings")
+            .evaluate((dialog) => dialog.scrollWidth <= dialog.clientWidth + 1),
+          `${game} ${size} setup overflow`,
+        );
       await capture(page, `${game}-${size}`);
     }
     checks.push(
@@ -235,6 +249,7 @@ try {
         () => !document.querySelector("#source-stop").disabled,
       );
       await page.waitForTimeout(300);
+      await page.locator("#close-settings").click();
       const before = await centroid(page, "camera");
       await capture(page, `${game}-camera-right`);
       assert(
@@ -252,6 +267,7 @@ try {
       const after = await centroid(page, "camera");
       assert(after > 0.3 && after < 0.4 && after < before);
       await capture(page, `${game}-camera-left`);
+      await page.locator("#open-settings").click();
       const popupPromise = page.waitForEvent("popup");
       await page
         .locator(game === "mole" ? "#open-game-display" : "#open-game-window")
@@ -265,8 +281,11 @@ try {
         JSON.stringify({ detached, after }),
       );
       await popup.close();
+      await page.locator("#close-settings").click();
       await page.locator("#source-stop").click();
+      await page.locator("#open-settings").click();
       await page.locator("#source-select").selectOption("demo");
+      await page.locator("#close-settings").click();
       const canvas = page.locator("#game-canvas");
       await canvas.scrollIntoViewIfNeeded();
       await canvas.click({
