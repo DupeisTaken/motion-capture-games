@@ -240,6 +240,91 @@ afterEach(() => {
 });
 
 describe("Mole Motion operator integration", () => {
+  it("offers camera flicks with wrist guidance and locks the interaction during play", () => {
+    choose("source-select", "camera");
+    element<HTMLButtonElement>("interaction-flick").click();
+    expect(element("interaction-flick").getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    expect(element("interaction-touch").getAttribute("aria-pressed")).toBe(
+      "false",
+    );
+    expect(element("interaction-note").textContent).toMatch(
+      /quick flap.*visibly move/,
+    );
+    expect(element("stage-mode").textContent).toBe("FLICK TO WHACK");
+    expect(element<HTMLButtonElement>("interaction-push").disabled).toBe(true);
+    element<HTMLButtonElement>("start-round").click();
+    expect(element<HTMLButtonElement>("interaction-flick").disabled).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rehearses a settled wrist flick with arrow keys and excludes hip/foot input", () => {
+    choose("source-select", "demo");
+    element<HTMLButtonElement>("interaction-flick").click();
+    expect(
+      [...element<HTMLSelectElement>("demo-contact").options]
+        .filter((option) => !option.disabled)
+        .map((option) => option.value),
+    ).toEqual(["left_wrist", "right_wrist"]);
+    startDemo();
+    const target = targetPosition();
+    const radius = Number.parseFloat(element("mole-target").style.width) / 2;
+    // Aim from a distant corner so an unseeded nearby target cannot count the setup move.
+    movePointer(959, 599);
+    movePointer(target.x + radius + 24, target.y);
+    advance(250);
+    expect(element("score-value").textContent).toBe("000");
+    now += 50;
+    element("game-stage").dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+    );
+    expect(element("score-value").textContent).toBe("100");
+    expect(element("game-status").textContent).toMatch(/settle your hand/);
+    advance(500);
+    expect(element("score-value").textContent).toBe("100");
+  });
+
+  it("scores a wrist flap through the camera packet and session pipeline without depth", async () => {
+    const socket = await startCamera();
+    element<HTMLButtonElement>("interaction-flick").click();
+    element<HTMLButtonElement>("start-round").click();
+    let sequence = 0;
+    const send = async (x = 0.01, y = 0.01) => {
+      now += 50;
+      const value = observation(++sequence);
+      value.people[0].joints.left_wrist = {
+        x,
+        y,
+        status: "observed",
+        score: 0.99,
+        inFrame: true,
+      };
+      value.people[0].joints.right_wrist = {
+        x: 0.01,
+        y: 0.01,
+        status: "observed",
+        score: 0.99,
+        inFrame: true,
+      };
+      await socket.receive(packet(value));
+    };
+    for (let i = 0; i < 80; i++) await send();
+    expect(element("mole-target").hidden).toBe(false);
+    const target = targetPosition();
+    const radius =
+      Number.parseFloat(element("mole-target").style.width) / 2 / 960;
+    const x = 1 - target.x / 960 - radius - 0.03;
+    const y = target.y / 600;
+    for (let i = 0; i < 6; i++) await send(x, y);
+    expect(element("score-value").textContent).toBe("000");
+    await send(x + 0.025, y);
+    expect(element("score-value").textContent).toBe("100");
+    expect(element("display-score").textContent).toBe("100");
+    await send(x + 0.025, y);
+    expect(element("score-value").textContent).toBe("100");
+  });
+
   it("keeps a connected camera stable until Stop, including a forged Start click", async () => {
     await startCamera();
     const connect = element<HTMLButtonElement>("source-connect");

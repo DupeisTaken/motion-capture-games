@@ -34,4 +34,6 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 
 [Mole Motion](mole-motion.html) records the experimental game slice, rule/session/UI tests, real-server desktop/mobile synthetic screenshots and the remaining depth/hardware gates.
 
+[Wrist flicks](wrist-flick.html) records the additional 2D wrist-flap interaction, source-timed gesture/rearm rules, synthetic camera scoring, real-server desktop/mobile evidence and remaining physical sensitivity trials.
+
 [Camera selection](camera-selection.html) documents the shared native selector, refresh/recovery behavior, actual checks and remaining hardware limits.

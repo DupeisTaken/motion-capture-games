@@ -24,7 +24,7 @@ Console Stop releases only its acknowledged source. Failed capture release keeps
 
 ## Play Mole Motion
 
-Open **http://127.0.0.1:5173/mole.html** (also linked from the tracking console). Choose Timed, Challenge, Survival or Practice; set difficulty and Touch or Push; then **Start round**. Rehearsal works without a camera or Python service: move the pointer or use arrow keys in the stage; tap or press Space for a simulated push. Select a wrist, hip (push only) or foot (touch only) to rehearse it.
+Open **http://127.0.0.1:5173/mole.html** (also linked from the tracking console). Choose Timed, Challenge, Survival or Practice; set difficulty and Touch, Flick or Push; then **Start round**. Flick whacks a nearby mole with a quick wrist flap; settle briefly between flicks. Your wrist must visibly move; finger-only flapping is not tracked. Rehearsal works without a camera or Python service: move the pointer or use arrow keys in the stage; aim, settle, then move quickly for Flick; tap or press Space for a simulated push. Select a wrist, hip (push only) or foot (touch only) to rehearse it.
 
 For body tracking choose Camera, select a named device and **Start camera**, then **Start round**. Start waits for stable input from one confident participant; no separate Join is needed. Touch uses observed wrist/ankle proxies. Camera Push remains unavailable without calibrated depth. Missing feet/joints pause scoring and recover through a countdown. Explicit identity loss, a changed track/source/calibration or a long input gap needs **New round**, which resets the score in one action. End a round to change settings. See [the game design](docs/games/mole-motion.md).
 
