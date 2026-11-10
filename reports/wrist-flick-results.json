@@ -1,5 +1,5 @@
 {
-  "pullRequest": null,
+  "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/30",
   "environment": "Local Windows; Node 24.16.0, pnpm 11.25.0; repository-local Python 3.12.14. Headless Edge/Chromium 156.0.4314.50. Repository pins unchanged; English only. The local full gate includes preserved pending camera-default edits, which are excluded from the feature commit.",
   "checks": [
     [
