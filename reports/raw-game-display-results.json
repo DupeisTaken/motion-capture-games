@@ -1,7 +1,7 @@
 {
   "date": "2026-11-10",
   "issue": "https://github.com/DupeisTaken/motion-capture-games/issues/25",
-  "pullRequest": null,
+  "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/27",
   "checks": [
     [
       "Frozen dependencies",
@@ -32,6 +32,11 @@
       "Hosted OS checks",
       "Current PR gate required",
       "Windows, macOS and Ubuntu software jobs; hardware untested"
+    ],
+    [
+      "Report render and media",
+      "Passed",
+      "HTTP desktop/mobile verification; 11 embedded images decoded with correct MIME; no external rendering assets or horizontal overflow"
     ]
   ],
   "review": {
