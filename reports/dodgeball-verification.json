@@ -1,5 +1,5 @@
 {
-  "prUrl": "",
+  "prUrl": "https://github.com/DupeisTaken/motion-capture-games/pull/19",
   "vitestTests": 278,
   "pytestTests": 54,
   "newTests": 82,
@@ -18,6 +18,11 @@
       "detail": "All three Vite entry pages build: diagnostics, Mole Motion and Dodgeball. No new runtime dependencies."
     },
     {
+      "name": "GitHub software-checks",
+      "result": "Passed",
+      "detail": "Hosted Diagnostic checks run 42786196994 succeeded for implementation commit c9dc59b42402138bc76de4739e0f096558be6142. Final documentation follow-up is checked separately on PR #19."
+    },
+    {
       "name": "Browser gameplay and recovery",
       "result": "Verified",
       "detail": "Real pointer-controlled rehearsal dodge scored 100 points and one dodge. Feet loss froze score, ball phase/progress and the timed round across separate observations. Explicit resume displayed a 2-second countdown and returned to play. End/results and Play again were observed."
@@ -34,29 +39,87 @@
     }
   ],
   "screenshots": [
-    {"file":"before-mole-desktop.jpg","title":"Existing arcade baseline","caption":"Mole Motion at 1440×1000. Dodgeball is a new page; this is the existing game screen, with the added navigation link, rather than a previous Dodgeball implementation."},
-    {"file":"after-desktop.jpg","title":"Dodgeball setup and restart","caption":"1440×1000, final arcade styling. Three play modes, difficulty, explicit input selection and a new round after Play again. The source is synthetic rehearsal."},
-    {"file":"active-desktop.jpg","title":"Visible full-body collision regions","caption":"Real Vite-server active Timed rehearsal after explicit countdown recovery. Head, torso and limbs use the engine's exported collision geometry; the stationary ring previews the ball footprint."},
-    {"file":"framing-desktop.jpg","title":"Same framing warning as Mole Motion","caption":"Feet loss froze the active Timed round at 0:55 and the pending ball at 1.6 seconds. The warning explains camera adjustment and occlusion as well as stepping back."},
-    {"file":"framing-mobile.jpg","title":"Framing recovery at 390×844","caption":"Full-page English mobile capture. Game appears before settings; recovery and end controls remain available. No horizontal document overflow."},
-    {"file":"framing-narrow.jpg","title":"Framing recovery at 320×740","caption":"Full-page narrow English capture after the scrollbar-width correction. The entire warning, recovery guidance, game controls, navigation and settings remain within the page bounds."},
-    {"file":"results-desktop.jpg","title":"Results and next round","caption":"End round is available during tracking recovery. Results expose clean dodges, score and best streak; Play again returns to configurable setup."}
+    {
+      "file": "before-mole-desktop.jpg",
+      "title": "Existing arcade baseline",
+      "caption": "Mole Motion at 1440×1000. Dodgeball is a new page; this is the existing game screen, with the added navigation link, rather than a previous Dodgeball implementation."
+    },
+    {
+      "file": "after-desktop.jpg",
+      "title": "Dodgeball setup and restart",
+      "caption": "1440×1000, final arcade styling. Three play modes, difficulty, explicit input selection and a new round after Play again. The source is synthetic rehearsal."
+    },
+    {
+      "file": "active-desktop.jpg",
+      "title": "Visible full-body collision regions",
+      "caption": "Real Vite-server active Timed rehearsal after explicit countdown recovery. Head, torso and limbs use the engine's exported collision geometry; the stationary ring previews the ball footprint."
+    },
+    {
+      "file": "framing-desktop.jpg",
+      "title": "Same framing warning as Mole Motion",
+      "caption": "Feet loss froze the active Timed round at 0:55 and the pending ball at 1.6 seconds. The warning explains camera adjustment and occlusion as well as stepping back."
+    },
+    {
+      "file": "framing-mobile.jpg",
+      "title": "Framing recovery at 390×844",
+      "caption": "English viewport capture at the 390×844 preset. The complete framing warning and recovery controls remain readable. Settings continue below; live document bounds have no horizontal overflow."
+    },
+    {
+      "file": "framing-narrow.jpg",
+      "title": "Framing recovery at 320×740",
+      "caption": "English viewport capture at the 320×740 preset. The full warning and recovery controls fit. Viewport captures replace full-page images because the browser full-page screenshot API clipped the scrollbar gutter; live game/settings/nav bounds were checked separately."
+    },
+    {
+      "file": "results-desktop.jpg",
+      "title": "Results and next round",
+      "caption": "End round is available during tracking recovery. Results expose clean dodges, score and best streak; Play again returns to configurable setup."
+    }
   ],
   "review": {
-    "overall": "Pending",
+    "overall": 10,
     "scope": "Independent gpt-6.1-sol review with high-detail source, regression, visual and delivery inspection. Ratings cover the experimental single-player software; physical hardware and participant certification remain excluded and explicitly unverified.",
-    "iterations": "Source review identified and verified timing, coverage, input-boundary, focus, contrast and layout corrections. Final dimensional ratings are recorded after the report and issue-linked PR are inspectable.",
+    "iterations": "Several independent review passes identified and verified source-time boundary, final-danger coverage, input-boundary, keyboard focus, contrast, layout and screenshot corrections. Final gpt-6.1-sol verdict: all ten dimensions 10/10 against the experimental single-player software criteria, with no unresolved actionable findings. The reviewer inspected source, regression tests, documentation, screenshots, report, PR and hosted CI; the root ran the serialized local checks. Physical participant/hardware certification remains unverified.",
     "dimensions": [
-      {"name":"Correctness, modes and replay","score":"Pending"},
-      {"name":"Collision and timing fairness","score":"Pending"},
-      {"name":"Identity, framing and input robustness","score":"Pending"},
-      {"name":"Architecture and contracts","score":"Pending"},
-      {"name":"Gameplay UX and visual quality","score":"Pending"},
-      {"name":"Accessibility and responsiveness","score":"Pending"},
-      {"name":"Meaningful verification","score":"Pending"},
-      {"name":"Documentation and offline report","score":"Pending"},
-      {"name":"Security, privacy and resource safety","score":"Pending"},
-      {"name":"Delivery and reviewability","score":"Pending"}
+      {
+        "name": "Correctness, modes and replay",
+        "score": 10
+      },
+      {
+        "name": "Collision and timing fairness",
+        "score": 10
+      },
+      {
+        "name": "Identity, framing and input robustness",
+        "score": 10
+      },
+      {
+        "name": "Architecture and contracts",
+        "score": 10
+      },
+      {
+        "name": "Gameplay UX and visual quality",
+        "score": 10
+      },
+      {
+        "name": "Accessibility and responsiveness",
+        "score": 10
+      },
+      {
+        "name": "Meaningful verification",
+        "score": 10
+      },
+      {
+        "name": "Documentation and offline report",
+        "score": 10
+      },
+      {
+        "name": "Security, privacy and resource safety",
+        "score": 10
+      },
+      {
+        "name": "Delivery and reviewability",
+        "score": 10
+      }
     ]
   }
 }

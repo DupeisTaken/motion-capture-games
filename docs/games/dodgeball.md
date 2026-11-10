@@ -1,6 +1,6 @@
 # Dodgeball
 
-Dodgeball is an experimental single-player camera-overlay game tracked by [issue #18](https://github.com/DupeisTaken/motion-capture-games/issues/18). It starts an early M4 software slice at the user's request, building on [Mole Motion](mole-motion.md) and its explicit session/recovery conventions. M1 physical-camera, identity, capacity and latency gates remain open; this slice does not certify M4 participant playtests.
+Dodgeball is an experimental single-player camera-overlay game tracked by [issue #18](https://github.com/DupeisTaken/motion-capture-games/issues/18) and [PR #19](https://github.com/DupeisTaken/motion-capture-games/pull/19). It starts an early M4 software slice at the user's request, building on [Mole Motion](mole-motion.md) and its explicit session/recovery conventions. M1 physical-camera, identity, capacity and latency gates remain open; this slice does not certify M4 participant playtests.
 
 ## Rules and experience
 
