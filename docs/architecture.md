@@ -6,6 +6,8 @@ The accepted boundary is a local modular platform with model-independent game in
 
 The first [diagnostic slice](diagnostic-viewer.md) implements Python/OpenCV capture/inference and TypeScript Canvas2D skeleton rendering. Its paired JPEG/observation transport deliberately follows inference cadence for directly inspectable alignment. [ADR 0005](decisions/0005-diagnostic-skeleton-slice.md) scopes this choice; the production WebRTC/PixiJS and full M1 performance gates remain open.
 
+The smooth diagnostic viewer now uses independent preview/pose pull streams and a display-clock render loop under [ADR 0006](decisions/0006-independent-preview.md). RTMPose is the development default following the user’s comparison; production hardware certification and model/provider benchmarking remain open.
+
 ## Data flow
 
 ```mermaid

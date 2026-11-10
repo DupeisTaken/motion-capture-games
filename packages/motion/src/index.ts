@@ -1,6 +1,13 @@
 import type { Observation } from "../../../contracts/generated/observation";
 import schema from "../../../contracts/schemas/observation.schema.json";
 import { parseObservation } from "../../../contracts/src/validate";
+import Ajv from "ajv";
+import previewSchema from "../../../contracts/schemas/preview.schema.json";
+import type { PreviewFrame } from "../../../contracts/generated/preview";
+export type { PreviewFrame } from "../../../contracts/generated/preview";
+const validatePreview = new Ajv({ strict: true }).compile<PreviewFrame>(
+  previewSchema,
+);
 
 export type { Observation } from "../../../contracts/generated/observation";
 export { parseObservation } from "../../../contracts/src/validate";
@@ -131,9 +138,10 @@ export const MAX_PREVIEW_BYTES = 2 * 1024 * 1024;
 export type FramePacket = { observation: Observation; jpeg: Uint8Array };
 
 /** Decode one bounded source-aligned packet: big-endian header length, JSON, then JPEG. */
-export function decodeFramePacket(
-  input: ArrayBuffer | Uint8Array,
-): FramePacket {
+function unpackFramePacket(input: ArrayBuffer | Uint8Array): {
+  metadata: unknown;
+  jpeg: Uint8Array;
+} {
   const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
   if (
     bytes.byteLength < 4 ||
@@ -174,7 +182,45 @@ export function decodeFramePacket(
   } catch {
     throw new Error("Invalid frame packet: metadata is not valid UTF-8 JSON.");
   }
+  return { metadata, jpeg };
+}
+
+export function decodeFramePacket(
+  input: ArrayBuffer | Uint8Array,
+): FramePacket {
+  const { metadata, jpeg } = unpackFramePacket(input);
   return { observation: parseObservation(metadata), jpeg };
+}
+
+export function decodePreviewPacket(input: ArrayBuffer | Uint8Array): {
+  preview: PreviewFrame;
+  jpeg: Uint8Array;
+} {
+  const { metadata, jpeg } = unpackFramePacket(input);
+  if (
+    !validatePreview(metadata) ||
+    (metadata.source === "demo") !== (metadata.clockQuality === "synthetic")
+  )
+    throw new Error("Invalid independent preview metadata.");
+  return { preview: metadata, jpeg };
+}
+
+// Display-only tolerance. Never extrapolate or feed this held overlay into game scoring.
+export const MAX_OVERLAY_SKEW_NS = 150_000_000n;
+export function canOverlay(
+  preview: PreviewFrame,
+  pose: Observation | null,
+): boolean {
+  if (
+    !pose ||
+    preview.epoch !== pose.epoch ||
+    preview.source !== pose.source ||
+    preview.image.width !== pose.image.width ||
+    preview.image.height !== pose.image.height
+  )
+    return false;
+  const skew = BigInt(preview.capturedAtNs) - BigInt(pose.capturedAtNs);
+  return skew >= 0n && skew <= MAX_OVERLAY_SKEW_NS;
 }
 
 /** A new source must be explicitly reset, so a late packet cannot revive an old epoch. */

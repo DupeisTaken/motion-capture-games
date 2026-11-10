@@ -15,6 +15,8 @@ Model setup verifies pinned SHA256 values from [diagnostic-models.json](../../mo
 
 The service listens at `127.0.0.1:8765`. Starting it does not open a camera. The operator chooses a source and starts it explicitly. Stop, service shutdown or the final stream viewer for the current epoch disconnect releases capture. Connect the stream after the start acknowledgement; an old viewer cannot stop a newer source. Browser UI origins are restricted to localhost/127.0.0.1 ports5173,4173,8765. It is a local development service, not a network API.
 
+The smooth viewer also pulls `/api/preview` image packets and `/api/observations` JSON poses independently. One extra bounded preview worker uses the same capture owner, allowing camera delivery during slow inference. The legacy paired endpoint remains compatible. RTMPose is the development default. See [ADR 0006](../../docs/decisions/0006-independent-preview.md) for timing limits and measurements.
+
 ## Algorithms
 
 - **MediaPipe:** Pose Landmarker Lite, CPU Tasks VIDEO mode, up to the configured pose capacity. Map its33 landmarks to named COCO17 joints. Estimated hip-relative depth is not exported as room coordinates.

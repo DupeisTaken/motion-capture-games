@@ -29,25 +29,26 @@ Choose **Synthetic scene** to inspect rendering and the contract without a camer
 
 ## Algorithms
 
-The selectable pose adapters implement **MediaPipe Pose Landmarker Lite** and **RTMDet-nano + RTMPose-m exported ONNX**. The latter uses the official CPU archive's exact normalization, top-down affine crop and SimCC decoding. Both export the same COCO17 anatomical names. The adapter owns all model-specific indices. Models are fixed for this experiment, not a final winner for the product.
+The development default is **RTMDet-nano + RTMPose-m exported ONNX**, selected following the user’s live comparison. **MediaPipe Pose Landmarker Lite** remains an optional comparison baseline. The latter uses the official CPU archive's exact normalization, top-down affine crop and SimCC decoding. Both export the same COCO17 anatomical names. The adapter owns all model-specific indices. Models are fixed for this experiment, not a final winner for the product.
 
 Association options are **box overlap** and **pose assisted**. They are lightweight project implementations, not stock ByteTrack. See [tracking algorithms](tracking-algorithms.md) for matching, abstention, short-gap retention and provisional tuning. Complete occlusion and visually similar people can still defeat association; the viewer shows uncertainty rather than inventing continuity. No game score or slot ownership is implemented.
 
-## Paired-frame transport
+## Independent preview and display timing
 
-The provisional full-product WebRTC path remains unselected. This diagnostic slice deliberately publishes each inference image together with its own observations so alignment can be inspected without matching independent media clocks:
+The viewer uses one camera owner and three independent cadences: camera capture, pose processing, and display rendering. A `requestAnimationFrame` loop draws the latest decoded image at the display’s refresh rate; image delivery and inference do not schedule draws. It never creates new camera exposures or pose measurements. A 60 Hz screen caps this loop at approximately 60 FPS; a faster display can run faster. Hidden tabs stop the source, and Stop cancels animation work.
 
-```text
-uint32 big-endian metadata length | UTF-8 observation JSON | JPEG image
-```
+The loopback service supplies two bounded pull streams:
 
-Metadata is capped at 64 KiB and JPEG at 2 MiB. The JPEG and normalized joints describe exactly the same resized image. The frontend validates the schema, source epoch, sequence, byte bounds and decoded image dimensions before drawing. It closes replaced image bitmaps and rejects late decode results after stop/restart.
+- `/api/preview`: four-byte big-endian metadata length, UTF-8 [preview metadata](../contracts/schemas/preview.schema.json), then a JPEG. One independent encoding worker reads the same capture owner’s latest frame, even during slow inference. Preview metadata retains its own epoch, sequence, geometry and source-monotonic timestamp.
+- `/api/observations`: JSON canonical observations from the inference worker, retaining the actual inference image’s timestamp. The browser never decodes an image on the pose channel.
 
-Capture has one owner, one latest pending frame, one inference worker and one latest published packet. The client requests its next packet only after decoding/rendering the previous one. This avoids a reliable frame backlog and prefers current results. It does not guarantee a camera driver has no internal buffering. The preview follows inference cadence; there is no independent high-rate video path. It is a diagnostic experiment, not a certified low-latency production transport.
+The original `/api/stream` exact paired-image endpoint remains available for diagnostics and existing clients. This does not select the provisional production WebRTC path. Metadata stays bounded to 64 KiB and JPEG to 2 MiB. Capture, inference publication and preview publication each retain only current work; each stream requests its next item after consuming the previous one. Slow readers skip superseded frames. Both viewer connections include the acknowledged source epoch, so a delayed old connection cannot acquire ownership of a replacement source.
 
-Capture time is labeled **host read completion**. Exposure timing is unknown. Source monotonic nanoseconds travel as decimal strings to preserve integer precision in JavaScript. The service discards camera frames older than 500 ms in its own clock. The browser also clears its overlay after 1.5 seconds without a received frame. Both limits apply to this diagnostic viewer. Gameplay freshness thresholds still need measurement.
+The same contain-fit/mirror transform is applied to video and geometry. A pose overlay is held only when epochs, source and geometry match and its source image is **0–150 ms older** than the displayed image. Newer-than-image poses and larger gaps are hidden; the UI reports the gap. No interpolation, prediction or scoring input is invented. Pose results expire locally after 500 ms without updates; camera imagery expires after 1.5 seconds without a received frame. The service rejects source frames older than 500 ms. These are provisional diagnostic guards, not gameplay thresholds or exposure-alignment certification.
 
-See [ADR 0005](decisions/0005-diagnostic-skeleton-slice.md) and [canonical contract](../contracts/README.md).
+The **Render FPS**, **Camera / source FPS**, **Pose FPS**, **Overlay gap** and inference time are separate. Render FPS counts actual animation-loop draws, including redraws of an unchanged camera image. Camera rate is measured from capture sequences and source timestamps, not a requested camera setting. Pose rate counts received unique observations. The person list and telemetry update at 4 Hz to keep DOM work off the frame loop. Synthetic scenes label their generated source rate explicitly; none of their figures establish camera/model performance.
+
+Capture time remains **host read completion**, not verified exposure time. Backend nanoseconds travel as decimal strings; only timestamps in the same backend clock are subtracted. No browser/backend clock subtraction is used to claim external latency. See [ADR 0006](decisions/0006-independent-preview.md), [canonical contract](../contracts/README.md) and [performance report](../reports/preview-performance.html).
 
 ## Checks and developer commands
 
@@ -61,11 +62,15 @@ pnpm format
 pnpm format:check
 pnpm build
 pnpm check
+pnpm benchmark:runtime --samples 200 --models
+pnpm benchmark:preview --duration 30000 --warmup 5000 --scale-factor 2
 ```
 
 `pnpm check` runs schema drift, TypeScript/Python types, ESLint/Ruff, Vitest/pytest and formatting checks. `pnpm build` produces the frontend in `dist/mirror/`. Run `pnpm vision` in one terminal and `pnpm preview` in another to serve that build on port 4173. Start and stop commands use Node across Windows and macOS. `pnpm dev` manages its own two child processes.
 
 Tests use synthetic observations, fake captures and local HTTP/WebSocket clients. They check transforms, absent joints, bounded packets, ordering/restarts, counting, ambiguous association and capture/resource recovery. Model smoke checks and physical camera trials are separate evidence; consult the delivery report rather than assuming these passed from a unit-test result.
+
+The opt-in benchmarks run serially. `benchmark:runtime` compares reference/compiled validation on synthetic observations; `--models` also times fixed detector/pose tensors without accessing a camera. `benchmark:preview` opens an installed Chrome/Chromium, runs a generated three-body scene, records actual draw intervals and saves desktop/mobile screenshots plus JSON under ignored `reports/local/`. Keep the benchmark window foreground and avoid competing GPU workloads. Use `--chrome-executable` or `CHROME_PATH` if automatic executable discovery does not match the installation. No browser is downloaded automatically; `--headless` is a separate measurement mode, not proof of physical display cadence.
 
 ## Remaining M1 work
 

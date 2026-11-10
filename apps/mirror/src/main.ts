@@ -1,6 +1,12 @@
 import "./style.css";
 import type { Observation } from "../../../contracts/generated/observation";
-import { decodeFramePacket } from "../../../packages/motion/src/index";
+import {
+  canOverlay,
+  decodePreviewPacket,
+  parseObservation,
+  type PreviewFrame,
+} from "../../../packages/motion/src/index";
+import { FrameRate } from "./frame-rate";
 import { drawFrame, drawStandby } from "./renderer";
 
 const icon = (name: "body" | "play" | "stop" | "expand" | "camera") => {
@@ -41,7 +47,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div id="camera-settings"><label class="field-label" for="camera-index">Camera index</label><input id="camera-index" type="number" min="0" max="9" value="0"><p class="field-help">0 is usually the built-in or first connected camera.</p></div>
           <div id="demo-settings" hidden><label class="field-label" for="demo-scenario">Test scene</label><select id="demo-scenario"><option value="three">Three moving people</option><option value="cycle">People enter and leave</option><option value="empty">Empty scene</option></select><p class="field-help">Generated bodies for testing. No camera or person inference.</p></div>
         </section>
-        <section class="control-section"><h2>Detection pipeline</h2><label class="field-label" for="algorithm">Pose model</label><select id="algorithm"><option value="mediapipe">MediaPipe · body landmarks</option><option value="rtmpose">RTMPose · detector + pose</option></select><label class="field-label" for="tracker">Person association</label><select id="tracker"><option value="pose">Pose assisted</option><option value="iou">Box overlap</option></select><div class="capacity-row"><label class="field-label" for="capacity">Detection capacity</label><select id="capacity"><option value="3">3 people</option><option value="6" selected>6 people</option></select></div><p class="field-help">Count is automatic. Capacity limits the people examined per frame.</p>
+        <section class="control-section"><h2>Detection pipeline</h2><label class="field-label" for="algorithm">Pose model</label><select id="algorithm"><option value="rtmpose">RTMPose · detector + pose</option><option value="mediapipe">MediaPipe · comparison baseline</option></select><label class="field-label" for="tracker">Person association</label><select id="tracker"><option value="pose">Pose assisted</option><option value="iou">Box overlap</option></select><div class="capacity-row"><label class="field-label" for="capacity">Detection capacity</label><select id="capacity"><option value="3">3 people</option><option value="6" selected>6 people</option></select></div><p class="field-help">Count is automatic. Capacity limits the people examined per frame.</p>
           <div class="range-label"><label for="confidence">Joint visibility threshold</label><output id="confidence-value" for="confidence">0.50</output></div><input id="confidence" type="range" min="0.1" max="0.9" step="0.05" value="0.5"><p class="field-help">Hides uncertain joints and their bones. A model score is not a probability.</p>
         </section>
         <div class="run-controls"><button id="start" class="primary-button">${icon("play")}<span>Start camera</span></button><button id="stop" class="secondary-button" disabled>${icon("stop")}<span>Stop</span></button></div>
@@ -52,7 +58,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         <div id="person-list" class="person-list"><p class="empty-people">Detected bodies will appear here automatically.</p></div>
         <p id="capacity-warning" class="capacity-warning" hidden>Detection capacity reached. There may be additional people outside the returned detections.</p>
       </section>
-      <section class="telemetry" aria-label="Preview diagnostics"><h2>At a glance</h2><dl><div><dt>Preview updates</dt><dd id="update-rate">— <span>/s</span></dd></div><div><dt>Inference time</dt><dd id="inference-time">— <span>ms</span></dd></div><div><dt>Source image</dt><dd id="source-size">—</dd></div><div><dt>Skipped captures</dt><dd id="capture-drops">—</dd></div></dl><p id="timing-note">Timing will appear when the source is running.</p></section>
+      <section class="telemetry" aria-label="Preview diagnostics"><h2>At a glance</h2><dl><div><dt>Render FPS</dt><dd id="update-rate">— <span>/s</span></dd></div><div><dt>Camera / source FPS</dt><dd id="camera-rate">—</dd></div><div><dt>Pose FPS</dt><dd id="pose-rate">—</dd></div><div><dt>Overlay gap</dt><dd id="overlay-gap">—</dd></div><div><dt>Inference time</dt><dd id="inference-time">— <span>ms</span></dd></div><div><dt>Source image</dt><dd id="source-size">—</dd></div><div><dt>Skipped captures</dt><dd id="capture-drops">—</dd></div></dl><p id="timing-note">Timing will appear when the source is running.</p></section>
     </div>
     <footer><span><span class="footer-marker"></span> Observation → motion → future game input</span><span>Single-view diagnostics. Identity through occlusion is not guaranteed.</span></footer>
   </main>`;
@@ -77,13 +83,15 @@ const stopButton = get<HTMLButtonElement>("stop");
 let source: "camera" | "demo" = "camera";
 let running = false;
 let generation = 0;
-let socket: WebSocket | null = null;
+let sockets: WebSocket[] = [];
+let lastPreview: PreviewFrame | null = null;
+let animation: number | null = null;
+let poseReceivedAt = 0;
+const renderRate = new FrameRate();
+const poseRate = new FrameRate();
 let lastFrame: Observation | null = null;
 let lastImage: ImageBitmap | null = null;
 let lastUpdate = 0;
-let rateStart = 0;
-let frameCount = 0;
-let lastSequence = -1;
 let epoch = "";
 let hiddenStop = false;
 
@@ -117,6 +125,9 @@ function clearObservations(message: string) {
 function clearTelemetry() {
   for (const id of [
     "update-rate",
+    "camera-rate",
+    "pose-rate",
+    "overlay-gap",
     "inference-time",
     "source-size",
     "capture-drops",
@@ -126,9 +137,30 @@ function clearTelemetry() {
     "No current observation. Start or recover the source to see diagnostics.";
 }
 function redraw() {
-  if (lastFrame && lastImage)
-    drawFrame(canvas, lastImage, lastFrame, renderOptions());
-  else drawStandby(canvas);
+  if (lastPreview && lastImage) {
+    const pose =
+      performance.now() - poseReceivedAt <= 500 &&
+      canOverlay(lastPreview, lastFrame)
+        ? lastFrame
+        : null;
+    drawFrame(
+      canvas,
+      lastImage,
+      pose ?? { image: lastPreview.image, people: [] },
+      renderOptions(),
+    );
+  } else drawStandby(canvas);
+}
+function animate(now: number) {
+  if (!running) {
+    animation = null;
+    return;
+  }
+  if (lastPreview && lastImage && performance.now() - lastUpdate <= 1500) {
+    redraw();
+    renderRate.record(now);
+  }
+  animation = requestAnimationFrame(animate);
 }
 function updatePeople(frame: Observation) {
   get("person-count").textContent = String(frame.detectedCount);
@@ -199,8 +231,13 @@ async function stop(
   message = "The source is stopped. Start a preview to continue.",
 ) {
   generation++;
-  socket?.close();
-  socket = null;
+  sockets.forEach((socket) => socket.close());
+  sockets = [];
+  if (animation !== null) cancelAnimationFrame(animation);
+  animation = null;
+  renderRate.reset();
+  poseRate.reset();
+  lastPreview = null;
   setControls(true);
   stopButton.disabled = true;
   lastFrame = null;
@@ -234,16 +271,11 @@ async function start() {
   clearObservations("Waiting for the first detection.");
   setStatus(
     "Starting preview",
-    source === "camera"
-      ? "Opening the selected camera and loading the local model…"
-      : "Preparing the generated test scene…",
+    "Opening the source and loading the local model…",
     "starting",
   );
-  lastSequence = -1;
   epoch = "";
-  frameCount = 0;
-  rateStart = performance.now();
-  let rendering = false;
+  const sequences = { preview: -1, observations: -1 };
   try {
     const result = await request("/api/start", {
       source,
@@ -255,152 +287,106 @@ async function start() {
     });
     if (ownGeneration !== generation) return;
     if (result.state === "error") throw new Error(result.message);
-    if (typeof result.epoch === "string") epoch = result.epoch;
-    const ws = new WebSocket(
-      `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/stream`,
-    );
-    ws.binaryType = "arraybuffer";
-    socket = ws;
-    ws.onopen = () => ws.send(JSON.stringify({ type: "next" }));
-    ws.onmessage = async (event: MessageEvent<ArrayBuffer | string>) => {
-      if (ownGeneration !== generation || rendering) return;
-      rendering = true;
-      try {
-        if (typeof event.data === "string") {
-          const status = JSON.parse(event.data);
-          if (status.state === "error")
-            throw new Error(status.message || "Vision source failed.");
-          if (status.state === "idle") {
-            await stop("The source stopped. Start it again to reconnect.");
-            return;
-          }
-          if (status.state === "stale") {
-            lastFrame = null;
+    if (typeof result.epoch !== "string")
+      throw new Error("Missing source epoch.");
+    epoch = result.epoch;
+    animation = requestAnimationFrame(animate);
+    for (const kind of ["preview", "observations"] as const) {
+      const ws = new WebSocket(
+        `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/${kind}?epoch=${encodeURIComponent(epoch)}`,
+      );
+      ws.binaryType = "arraybuffer";
+      sockets.push(ws);
+      let decoding = false;
+      ws.onopen = () => ws.send(JSON.stringify({ type: "next" }));
+      ws.onmessage = async (event: MessageEvent<ArrayBuffer | string>) => {
+        if (ownGeneration !== generation || decoding) return;
+        decoding = true;
+        try {
+          if (typeof event.data === "string") {
+            const message = JSON.parse(event.data);
+            if (message.type === "status") {
+              if (message.state === "error")
+                throw new Error(message.message || "Vision source failed.");
+              if (message.state === "idle") {
+                await stop("The source stopped. Start again to reconnect.");
+                return;
+              }
+              if (message.state === "stale" && kind === "observations") {
+                lastFrame = null;
+                clearObservations(
+                  "Pose input is too old. Camera preview continues independently.",
+                );
+              }
+            } else if (kind === "observations") {
+              const observation = parseObservation(message);
+              if (observation.epoch !== epoch)
+                throw new Error(
+                  "The source restarted. Start the preview again.",
+                );
+              if (observation.sequence <= sequences.observations)
+                throw new Error("Outdated pose observation.");
+              sequences.observations = observation.sequence;
+              lastFrame = observation;
+              poseReceivedAt = performance.now();
+              poseRate.record(poseReceivedAt);
+            } else throw new Error("Unexpected preview control message.");
+          } else {
+            if (kind !== "preview")
+              throw new Error("Unexpected binary observation.");
+            const { preview, jpeg } = decodePreviewPacket(event.data);
+            if (preview.epoch !== epoch)
+              throw new Error("The source restarted. Start the preview again.");
+            if (preview.sequence <= sequences.preview)
+              throw new Error("The source returned an outdated frame.");
+            const image = await createImageBitmap(
+              new Blob([new Uint8Array(jpeg)], { type: "image/jpeg" }),
+            );
+            if (
+              image.width !== preview.image.width ||
+              image.height !== preview.image.height
+            ) {
+              image.close();
+              throw new Error(
+                "Frame image dimensions do not match its observations.",
+              );
+            }
+            if (ownGeneration !== generation) {
+              image.close();
+              return;
+            }
+            sequences.preview = preview.sequence;
             lastImage?.close();
-            lastImage = null;
-            lastUpdate = 0;
-            get("source-badge").textContent = "Stale";
-            get("frame-state").textContent = "No recent frame";
-            clearObservations(
-              "The source observation is too old. Waiting for fresh input.",
-            );
-            clearTelemetry();
-            redraw();
+            lastImage = image;
+            lastPreview = preview;
+            lastUpdate = performance.now();
+            get("standby").hidden = true;
+            get("source-badge").textContent =
+              preview.source === "demo" ? "Synthetic" : "Live";
           }
+        } catch (error) {
+          if (ownGeneration !== generation) return;
+          await stop();
           setStatus(
-            status.state === "stale"
-              ? "Waiting for fresh input"
-              : "Waiting for a frame",
-            status.message || "The source is preparing its next observation.",
-            status.state === "stale" ? "uncertain" : "starting",
+            "Preview could not continue",
+            error instanceof Error ? error.message : String(error),
+            "error",
           );
-        } else {
-          const { observation, jpeg } = decodeFramePacket(event.data);
-          if (!epoch) epoch = observation.epoch;
-          if (observation.epoch !== epoch)
-            throw new Error(
-              "The source restarted. Start the preview again to establish a new stream.",
-            );
-          if (observation.sequence <= lastSequence)
-            throw new Error(
-              "The source returned an outdated frame. Restart the preview.",
-            );
-          const image = await createImageBitmap(
-            new Blob([new Uint8Array(jpeg)], { type: "image/jpeg" }),
-          );
-          if (
-            image.width !== observation.image.width ||
-            image.height !== observation.image.height
-          ) {
-            image.close();
-            throw new Error(
-              "Frame image dimensions do not match its observations.",
-            );
-          }
-          if (ownGeneration !== generation) {
-            image.close();
-            return;
-          }
-          lastSequence = observation.sequence;
-          lastImage?.close();
-          lastImage = image;
-          lastFrame = observation;
-          lastUpdate = performance.now();
-          frameCount++;
-          get("standby").hidden = true;
-          get("source-badge").textContent =
-            observation.source === "demo" ? "Synthetic" : "Live";
-          get("viewport-title").textContent =
-            observation.source === "demo"
-              ? "Synthetic test scene"
-              : "Camera preview";
-          get("stage-source").textContent =
-            observation.source === "demo"
-              ? "Generated input · no camera"
-              : `${observation.algorithm === "mediapipe" ? "MediaPipe" : "RTMPose"} · camera ${get<HTMLInputElement>("camera-index").value}`;
-          get("frame-state").textContent = `Frame ${observation.sequence}`;
-          get("source-size").textContent =
-            `${observation.image.width} × ${observation.image.height}`;
-          get("inference-time").innerHTML =
-            `${observation.metrics.inferenceMs.toFixed(0)} <span>ms</span>`;
-          get("capture-drops").textContent = String(
-            observation.metrics.captureDrops,
-          );
-          if (performance.now() - rateStart >= 1000) {
-            get("update-rate").innerHTML =
-              `${((frameCount * 1000) / (performance.now() - rateStart)).toFixed(1)} <span>/s</span>`;
-            rateStart = performance.now();
-            frameCount = 0;
-          }
-          get("timing-note").textContent =
-            observation.source === "demo"
-              ? "Synthetic observations. These are not inference or camera performance results."
-              : "Capture time is host read completion, not verified exposure. Preview rate is not motion-to-display latency.";
-          updatePeople(observation);
-          redraw();
-          const ambiguous = observation.people.some(
-            (person) => person.identity === "ambiguous",
-          );
-          setStatus(
-            observation.source === "demo"
-              ? "Synthetic scene running"
-              : observation.detectedCount === 0
-                ? "Looking for people"
-                : ambiguous
-                  ? "Identity needs recovery"
-                  : "Skeletons detected",
-            ambiguous
-              ? "Overlapping people have uncertain association. Their skeletons are shown without claiming identity."
-              : observation.source === "demo"
-                ? "Generated observations exercise the same renderer and contract as camera input."
-                : "Count updates automatically. Step into view with your shoulders, hips and hands visible.",
-            ambiguous ? "uncertain" : "running",
-          );
+        } finally {
+          decoding = false;
+          if (ownGeneration === generation && ws.readyState === WebSocket.OPEN)
+            ws.send(JSON.stringify({ type: "next" }));
         }
-      } catch (error) {
-        if (ownGeneration !== generation) return;
-        await stop();
-        setStatus(
-          "Preview could not continue",
-          error instanceof Error ? error.message : String(error),
-          "error",
-        );
-      } finally {
-        rendering = false;
-        if (ownGeneration === generation && ws.readyState === WebSocket.OPEN)
-          ws.send(JSON.stringify({ type: "next" }));
-      }
-    };
-    ws.onerror = () => {
-      if (ownGeneration === generation)
-        void stop(
-          "The connection failed. Check that the vision service is running.",
-        );
-    };
-    ws.onclose = () => {
-      if (ownGeneration === generation && running)
-        void stop("The connection closed. Start the preview to reconnect.");
-    };
+      };
+      ws.onerror = () => {
+        if (ownGeneration === generation)
+          void stop("The connection failed. Check the vision service.");
+      };
+      ws.onclose = () => {
+        if (ownGeneration === generation && running)
+          void stop("The connection closed. Start the preview to reconnect.");
+      };
+    }
   } catch (error) {
     if (ownGeneration !== generation) return;
     await stop();
@@ -411,6 +397,70 @@ async function start() {
     );
   }
 }
+// Operator DOM updates run at 4 Hz, independently of camera, pose and display work.
+window.setInterval(() => {
+  if (!running || !lastPreview || !lastImage) return;
+  const now = performance.now();
+  const freshPose = lastFrame && now - poseReceivedAt <= 500 ? lastFrame : null;
+  const fps = (value: number | null) =>
+    value === null ? "—" : value.toFixed(1);
+  get("update-rate").textContent = fps(renderRate.value(now));
+  get("camera-rate").textContent = fps(lastPreview.captureFps || null);
+  get("pose-rate").textContent = fps(poseRate.value(now));
+  const gap = freshPose
+    ? Number(
+        BigInt(lastPreview.capturedAtNs) - BigInt(freshPose.capturedAtNs),
+      ) / 1e6
+    : null;
+  get("overlay-gap").textContent =
+    gap === null
+      ? "—"
+      : `${gap.toFixed(0)} ms${canOverlay(lastPreview, freshPose) ? "" : " · hidden"}`;
+  get("viewport-title").textContent =
+    source === "demo" ? "Synthetic test scene" : "Camera preview";
+  get("stage-source").textContent =
+    source === "demo"
+      ? "Generated input · no camera"
+      : `${get<HTMLSelectElement>("algorithm").value === "rtmpose" ? "RTMPose" : "MediaPipe"} · camera ${get<HTMLInputElement>("camera-index").value}`;
+  get("frame-state").textContent = `Frame ${lastPreview.sequence}`;
+  get("source-size").textContent =
+    `${lastPreview.image.width} × ${lastPreview.image.height}`;
+  get("inference-time").textContent = freshPose
+    ? `${freshPose.metrics.inferenceMs.toFixed(0)} ms`
+    : "—";
+  get("capture-drops").textContent = freshPose
+    ? String(freshPose.metrics.captureDrops)
+    : "—";
+  get("timing-note").textContent =
+    source === "demo"
+      ? "Synthetic observations. These are not inference or camera performance results. Render FPS counts redraws, not new source frames."
+      : "Render, camera and pose rates are separate. Overlays are held up to 150 ms behind video, then hidden. Capture time is host read completion, not verified exposure or motion-to-display latency.";
+  if (freshPose) updatePeople(freshPose);
+  else
+    clearObservations(
+      "Waiting for fresh pose input; camera preview remains independent.",
+    );
+  const ambiguous = freshPose?.people.some(
+    (person) => person.identity === "ambiguous",
+  );
+  setStatus(
+    source === "demo"
+      ? "Synthetic scene running"
+      : !freshPose
+        ? "Waiting for pose input"
+        : freshPose.detectedCount === 0
+          ? "Looking for people"
+          : ambiguous
+            ? "Identity needs recovery"
+            : "Skeletons detected",
+    ambiguous
+      ? "Overlapping people have uncertain association. No identity is asserted."
+      : source === "demo"
+        ? "Generated observations exercise the same renderer and contract as camera input."
+        : "Camera preview runs independently. Pose updates and display draws are measured separately.",
+    ambiguous ? "uncertain" : "running",
+  );
+}, 250);
 sourceButtons.forEach((button, index) =>
   button.addEventListener("click", () => {
     source = index === 0 ? "camera" : "demo";
@@ -435,7 +485,8 @@ stopButton.addEventListener("click", () => void stop());
       ? "Mirrored view"
       : "Camera view";
     redraw();
-    if (lastFrame) updatePeople(lastFrame);
+    if (lastFrame && performance.now() - poseReceivedAt <= 500)
+      updatePeople(lastFrame);
   }),
 );
 get("fullscreen").addEventListener("click", () => {
@@ -465,7 +516,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("pagehide", () => {
-  socket?.close();
+  sockets.forEach((socket) => socket.close());
   if (running && epoch)
     void fetch("/api/stop", {
       method: "POST",
@@ -478,6 +529,7 @@ window.setInterval(() => {
   if (running && lastUpdate > 0 && performance.now() - lastUpdate > 1500) {
     lastUpdate = 0;
     lastFrame = null;
+    lastPreview = null;
     lastImage?.close();
     lastImage = null;
     clearObservations("No fresh detections. Waiting for the source.");

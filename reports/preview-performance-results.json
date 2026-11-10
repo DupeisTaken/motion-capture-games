@@ -1,0 +1,111 @@
+{
+  "date": "2026-11-10",
+  "rig": {
+    "cpu": "Apple M5, 10 GPU cores",
+    "os": "macOS 26.6.2",
+    "browser": "157.0.8103.40",
+    "display": "Built-in 2560 \u00d7 1664 Liquid Retina, 60 Hz",
+    "viewportCssPixels": [
+      1440,
+      1050
+    ],
+    "deviceScaleFactor": 2
+  },
+  "legacyRenderLoop": {
+    "twoSecondWindows": [
+      18.590162287537783,
+      18.668326072505522,
+      18.56435643518708,
+      18.61138396364962,
+      18.72848754673055,
+      18.73146365482784,
+      18.493784034605827,
+      18.565313806286692,
+      18.723748799041363,
+      18.66155201999881
+    ],
+    "hidden": false,
+    "visibility": [],
+    "rafFps": 59.897318881916725,
+    "rafP95Ms": 17.30000000000291,
+    "durationSeconds": 19.979299999952318,
+    "draws": 373,
+    "fps": 18.619270945472955,
+    "p50Ms": 54.200000047683716,
+    "p95Ms": 57.09999990463257,
+    "p99Ms": 59.200000047683716,
+    "over25ms": 372,
+    "telemetry": "At a glancePreview updates18.7 /sInference time0 msSource image960 \u00d7 540Skipped captures0Synthetic observations. These are not inference or camera performance results.",
+    "mobileOverflow": false
+  },
+  "independentRenderLoop": {
+    "draws": 1800,
+    "fps": 59.9992662679102,
+    "rafFps": 60.00246813932313,
+    "p50Ms": 16.600000143051147,
+    "p95Ms": 18.100000143051147,
+    "p99Ms": 18.700000047683716,
+    "intervalsOver25Ms": 0,
+    "twoSecondWindowFps": [
+      59.96774843493299,
+      59.96774843493299,
+      59.97681568757615,
+      60.018005398757744,
+      59.99798326539416,
+      60.001008414539264,
+      60.00403389040181,
+      59.99495840685657,
+      59.99798326539416,
+      59.99193386051687,
+      60.02824858468284,
+      59.96170513237851,
+      60.00403388318817,
+      59.99798325818198
+    ],
+    "hidden": false,
+    "visibilityChanges": [],
+    "telemetry": "At a glanceRender FPS60.0Camera / source FPS17.8Pose FPS17.8Overlay gap0 msInference time0 msSource image960 \u00d7 540Skipped captures0Synthetic observations. These are not inference or camera performance results. Render FPS counts redraws, not new source frames.",
+    "mobileOverflow": false,
+    "browser": "157.0.8103.40",
+    "headless": false,
+    "warmupMs": 5000,
+    "measurementMs": 30000,
+    "deviceScaleFactor": 2
+  },
+  "syntheticRuntimeStages": {
+    "platform": "Darwin",
+    "architecture": "arm64",
+    "workload": "synthetic three-person observation; model inputs are constant gray tensors",
+    "referenceSchema": {
+      "samples": 200,
+      "p50Ms": 1.571375,
+      "p95Ms": 1.639792
+    },
+    "compiledSchema": {
+      "samples": 200,
+      "p50Ms": 0.087792,
+      "p95Ms": 0.091375
+    },
+    "compiledPacket": {
+      "samples": 200,
+      "p50Ms": 0.13368750000000001,
+      "p95Ms": 0.150666
+    },
+    "detector": {
+      "samples": 200,
+      "p50Ms": 6.581875500000001,
+      "p95Ms": 6.646375
+    },
+    "poseCrop": {
+      "samples": 200,
+      "p50Ms": 21.975291499999997,
+      "p95Ms": 22.061
+    }
+  },
+  "limits": [
+    "Synthetic bodies do not measure model accuracy or physical camera capture.",
+    "Display redraws are distinct from new camera exposures and pose observations.",
+    "The 60 Hz screen caps the displayed cadence at approximately 60 FPS.",
+    "External latency, Windows, physical three-person crossings and hardware certification remain unverified."
+  ]
+}

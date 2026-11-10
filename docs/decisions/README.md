@@ -13,3 +13,5 @@ Use short decision records for consequential choices. State context, decision, s
 Performance numbers in [testing](../testing.md) are targets, not decision evidence. No camera model, model artifact, deployment package or hardware tier has been certified.
 
 For future records, use a four-digit sequence and descriptive kebab-case filename. Link the experiment/issue/PR and shareable report where available. When no remote exists, use stable local milestone references.
+
+[ADR 0006: Independent preview and RTMPose development default](0006-independent-preview.md) supersedes the paired transport choice for the smooth viewer while preserving the legacy diagnostic endpoint.

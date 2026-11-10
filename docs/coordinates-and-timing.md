@@ -50,6 +50,8 @@ Backend monotonic time, camera/device time, media time and browser time are diff
 
 The video path must retain enough timing information to associate a presented frame with observations. API support for frame metadata is useful but does not itself prove alignment; verify on the supported browser and hardware. [Video frame callback metadata](https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestVideoFrameCallback)
 
+The independent diagnostic preview retains a timestamp for each camera image and each pose observation. Its 150 ms display-only hold limit is explicit and reported; a held overlay is not a same-exposure pose or game input. See [ADR 0006](decisions/0006-independent-preview.md).
+
 ## Freshness, simulation and collisions
 
 - Use bounded frame and observation buffers. Report observation age, queue age, dropped work, and time-mapping uncertainty.

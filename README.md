@@ -14,7 +14,7 @@ pnpm setup
 pnpm dev
 ```
 
-Open **http://127.0.0.1:5173**. Choose **Camera** and **Start camera**, or choose **Synthetic scene** to inspect generated bodies without camera access. Setup downloads pinned Python tools and verified model artifacts locally; preview inference works offline afterward. Nothing opens a camera until explicitly started. See [the viewer guide](docs/diagnostic-viewer.md) for controls, commands and limitations.
+Open **http://127.0.0.1:5173**. Choose **Camera** and **Start camera**, or choose **Synthetic scene** to inspect generated bodies without camera access. Setup downloads pinned Python tools and verified model artifacts locally; preview inference works offline afterward. RTMDet + RTMPose is the development default; MediaPipe remains available for comparison. The display loop is independent of capture and inference, with separate render, camera and pose rates. Nothing opens a camera until explicitly started. See [the viewer guide](docs/diagnostic-viewer.md) for controls, commands and limitations.
 
 ## Agreed scope
 
