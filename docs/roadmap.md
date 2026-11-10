@@ -119,7 +119,7 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 
 ## M6: Single-player motion runner
 
-**Experimental software slice:** [Issue #39](https://github.com/DupeisTaken/motion-capture-games/issues/39) implements Neon Rails / Gold Rush with single-player pause rules, calibrated image-space jump/duck controls, original 3D worlds/skins, camera-free rehearsal and deterministic simulation tests. [The report](../reports/motion-runner-game.html) records actual checks, reference-footage comparisons and independent review. This early implementation does not close M1 hardware or M6 physical accuracy/latency gates. Next issue-ready scope: participant trials for lane reach/hysteresis, jump/duck confusion, varied heights, spectator occlusion and external visible-latency measurement.
+**Experimental software slice:** [Issue #39](https://github.com/DupeisTaken/motion-capture-games/issues/39) / [PR #44](https://github.com/DupeisTaken/motion-capture-games/pull/44) implements Neon Rails / Gold Rush with single-player pause rules, calibrated image-space jump/duck controls, original 3D worlds/skins, camera-free rehearsal and deterministic simulation tests. [The report](../reports/motion-runner-game.html) records actual checks, reference-footage comparisons and independent review. This early implementation does not close M1 hardware or M6 physical accuracy/latency gates. Next issue-ready scope: participant trials for lane reach/hysteresis, jump/duck confusion, varied heights, spectator occlusion and external visible-latency measurement.
 
 **Problem:** Let one participant control an on-screen runner with left/center/right movement, jumping and squatting, without confusing tracking gaps with player mistakes.
 

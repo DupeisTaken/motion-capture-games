@@ -1,7 +1,7 @@
 {
   "version": 1,
   "date": "2026-11-11",
-  "prUrl": null,
+  "prUrl": "https://github.com/DupeisTaken/motion-capture-games/pull/44",
   "checks": [
     {
       "command": "pnpm check",
@@ -9,7 +9,7 @@
     },
     {
       "command": "pnpm build",
-      "result": "PASS: all five Vite application entries built, all emitted local asset references verified. Vite advisory: runner chunk545.06kB (144.41kB gzip)."
+      "result": "PASS: all five Vite application entries built; all emitted local asset references verified. Vite advisory: runner chunk 545.06 kB (144.41 kB gzip)."
     },
     {
       "command": "pnpm benchmark:runner",
@@ -17,11 +17,11 @@
     },
     {
       "command": "Real Vite-server browser verification",
-      "result": "English desktop1440×1000, mobile390×844 and narrow320×740 checked; three skins, jump/roll, extra-player pause, touch dock and in-stage Pause. No console errors in accepted session."
+      "result": "English desktop 1440 × 1000, mobile 390 × 844 and narrow 320 × 740 checked; three skins, jump/roll, extra-player pause, touch dock and in-stage Pause. No console errors in the accepted session."
     },
     {
       "command": "Self-contained HTML visual and asset verification",
-      "result": "PASS: desktop1440×1000 and mobile390×844; all10embeddedimages loaded; no document overflow; static report rendering-assets check passed."
+      "result": "PASS: desktop 1440 × 1000 and mobile 390 × 844; all 10 embedded images loaded; no document overflow; static report rendering-assets check passed."
     }
   ],
   "review": {
