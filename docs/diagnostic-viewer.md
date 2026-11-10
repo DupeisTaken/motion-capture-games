@@ -33,6 +33,8 @@ The selectable pose adapters implement **MediaPipe Pose Landmarker Lite** and **
 
 Association options are **box overlap** and **pose assisted**. They are lightweight project implementations, not stock ByteTrack. See [tracking algorithms](tracking-algorithms.md) for matching, abstention, short-gap retention and provisional tuning. Complete occlusion and visually similar people can still defeat association; the viewer shows uncertainty rather than inventing continuity. No game score or slot ownership is implemented.
 
+Both modes compare assignments from last-observed positions with assignments from bounded motion predictions. Competing feasible associations produce **Identity needs recovery** and remove the affected asserted track IDs while continuing to show and count current skeletons. Elapsed-time-aware velocity updates reduce the effect of short box disturbances. A sudden approach or reversal may therefore interrupt an ID instead of carrying it onto a neighboring person. The viewer does not lock an enrolled participant, and detector ranking changes at capacity or indistinguishable replacements remain limitations; this is not coordinate smoothing or guaranteed reidentification. [Issue #11](https://github.com/DupeisTaken/motion-capture-games/issues/11) and the [tracking stability report](../reports/tracking-stability.html) track this follow-up.
+
 ## Paired-frame transport
 
 The provisional full-product WebRTC path remains unselected. This diagnostic slice deliberately publishes each inference image together with its own observations so alignment can be inspected without matching independent media clocks:

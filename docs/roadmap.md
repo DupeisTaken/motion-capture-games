@@ -20,6 +20,8 @@ The milestone IDs below are stable local references. Each milestone may become s
 
 **Current slice:** [Issue #3](https://github.com/DupeisTaken/motion-capture-games/issues/3) implements a one-view skeleton/count diagnostic, two pretrained model adapters, two association modes, a canonical contract and synthetic verification. See [the viewer guide](diagnostic-viewer.md) and [delivery report](../reports/skeleton-diagnostics.html). This is partial M1 progress; no real three-player crossing, production media selection or hardware/latency certification gate is closed by software tests.
 
+**Identity stability follow-up:** [Issue #11](https://github.com/DupeisTaken/motion-capture-games/issues/11) and [PR #13](https://github.com/DupeisTaken/motion-capture-games/pull/13) cover elapsed-time-aware velocity updates and independent last-observed/predicted assignment comparison in [camera-local tracking](tracking-algorithms.md). Competing feasible associations suspend affected local IDs instead of letting prediction transfer them to a neighboring person; abrupt approaches/reversals may require new tentative IDs. The [tracking stability report](../reports/tracking-stability.html) owns executed verification. Real disturbance/crossing trials, provider truncation/ranking churn at capacity, indistinguishable replacements and explicit player enrollment/recovery remain M1/M2 work; this focused fix does not close those gates.
+
 **Owns:** Vision capture/inference adapters, the first mirror slice, draft protocol schemas, diagnostic presentation, and an initial installation/performance profile. Depends on M0.
 
 **Acceptance criteria:**

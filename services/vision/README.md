@@ -19,10 +19,12 @@ The service listens at `127.0.0.1:8765`. Starting it does not open a camera. The
 
 - **MediaPipe:** Pose Landmarker Lite, CPU Tasks VIDEO mode, up to the configured pose capacity. Map its33 landmarks to named COCO17 joints. Estimated hip-relative depth is not exported as room coordinates.
 - **RTMDet + RTMPose:** person-specific RTMDet-nano320×320 detection followed by RTMPose-m192×256 crops, CPU ONNX Runtime with two intra-op and one inter-op threads. Preprocessing and SimCC decoding follow the selected official CPU SDK archive's pipelines. No PyTorch, rtmlib or training stack is required.
-- **Association:** choose conservative IoU/motion or pose-assisted matching from [tracking.py](motion_vision/tracking.py). These local IDs are diagnostic evidence, not score ownership or guaranteed reidentification.
+- **Association:** choose conservative IoU/motion or pose-assisted matching from [tracking.py](motion_vision/tracking.py). Elapsed-time-aware velocity updates use a provisional 0.15 s time constant. Independent assignments from last-observed and predicted boxes expose competing feasible associations; conflict makes affected observations ambiguous and retires implicated IDs. An isolated predicted match remains usable without a feasible competitor from observed geometry. Abrupt approaches/reversals can interrupt continuity rather than silently transfer it. These local IDs are diagnostic evidence, not score ownership or guaranteed reidentification. See [tracking algorithms](../../docs/tracking-algorithms.md) for the failure rationale, tuning and recovery policy.
 - **Synthetic scene:** explicitly labeled generated silhouettes/joints; three fixed bodies, an empty scene, or a0→1→2→3 count cycle. This exercises rendering/contracts/count changes without accessing a camera. It does not test ML person detection.
 
 The count is the current number of accepted observations, including tentative/ambiguous ones. No retained lost track adds a ghost person. `capacityReached` means the configured limit was reached; it is not proof that no additional person exists. Model scores are not calibrated probabilities. Model/threshold differences can change count and require real installation validation.
+
+Association does not reserve provider capacity or enroll a selected person. Ranking changes can replace a returned detection at capacity, and indistinguishable box/pose evidence cannot establish physical identity. These remain separate limits even when observed-position and predicted-position assignments agree.
 
 ## API and transport
 

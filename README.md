@@ -44,6 +44,7 @@ Start and Resume remain disabled while required input is unavailable. The joined
 | [Architecture](docs/architecture.md) | Runtime boundaries, ownership, and provisional stack |
 | [Diagnostic viewer](docs/diagnostic-viewer.md) | Setup, skeleton rendering, automatic counts, algorithms and recovery |
 | [Tracking algorithms](docs/tracking-algorithms.md) | Box/motion and pose-assisted matching, uncertainty and counting |
+| [Tracking stability report](reports/tracking-stability.html) | Identity-switch correction, synthetic before/after evidence and verification |
 | [Coordinates and timing](docs/coordinates-and-timing.md) | Observation semantics, transforms, clocks, and replay |
 | [Multiplayer](docs/multiplayer.md) | Joining, identity, uncertainty, and crossing scenarios |
 | [Installation](docs/installation.md) | Camera placement, calibration, USB constraints, and hardware profiles |
