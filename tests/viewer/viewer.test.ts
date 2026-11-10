@@ -20,11 +20,13 @@ const fetchMock = vi.fn(
     void _options;
     const ok = !(path === "/api/start" && startFailure);
     const body =
-      path === "/api/start"
-        ? ok
-          ? { state: "running", epoch: acknowledgedEpoch }
-          : { detail: startFailure }
-        : { state: "idle" };
+      path === "/api/cameras"
+        ? { cameras: [{ id: "a".repeat(64), name: "Built-in camera" }] }
+        : path === "/api/start"
+          ? ok
+            ? { state: "running", epoch: acknowledgedEpoch }
+            : { detail: startFailure }
+          : { state: "idle" };
     return { ok, json: async () => body } as Response;
   },
 );
@@ -340,13 +342,15 @@ describe("independent diagnostic viewer", () => {
     expect(el("status-title").textContent).toBe("Identity needs recovery");
   });
   it("retains native-index validation and clears detailed console statistics on stale input", async () => {
+    el<HTMLSelectElement>("camera-choice").value = "manual";
+    el<HTMLSelectElement>("camera-choice").dispatchEvent(new Event("change"));
     el<HTMLInputElement>("camera-index").value = "1.5";
     el<HTMLButtonElement>("start").click();
     await flush();
     expect(fetchMock.mock.calls.some(([path]) => path === "/api/start")).toBe(
       false,
     );
-    expect(el("status-title").textContent).toBe("Invalid camera index");
+    expect(el("status-title").textContent).toBe("Choose a camera");
     el<HTMLInputElement>("camera-index").value = "0";
     const streams = await start();
     await frame(streams, pose(1));

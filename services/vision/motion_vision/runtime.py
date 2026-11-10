@@ -16,6 +16,7 @@ import fastjsonschema
 from jsonschema import Draft7Validator
 from pydantic import BaseModel, ConfigDict, Field
 
+from .cameras import resolve_camera
 from .models import ROOT, availability
 from .providers import Image, PoseProvider, create_provider
 from .sources import CameraSource, demo_frame
@@ -40,6 +41,7 @@ class StartRequest(BaseModel):
     algorithm: Literal["mediapipe", "rtmpose"] = "rtmpose"
     tracker: Literal["iou", "pose"] = "pose"
     cameraIndex: int = Field(default=0, ge=0, le=9)
+    cameraId: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     maxPeople: int = Field(default=6, ge=1, le=6)
     demoScenario: Literal["cycle", "three", "empty"] = "cycle"
 
@@ -124,6 +126,10 @@ class VisionRuntime:
 
     def start(self, settings: StartRequest) -> dict[str, Any]:
         with self.control_lock:
+            if settings.source == "camera" and settings.cameraId:
+                resolve_camera(
+                    settings.cameraId
+                )  # Reject vanished choices before stopping a source.
             self._stop()
             with self.condition:
                 self.settings = settings
@@ -349,7 +355,11 @@ class VisionRuntime:
                 provider = create_provider(settings.algorithm, settings.maxPeople)
                 if stop.is_set():
                     return
-                camera = CameraSource(settings.cameraIndex)
+                # Re-resolve after model loading: hot-plugging can reorder native indices.
+                index = (
+                    resolve_camera(settings.cameraId) if settings.cameraId else settings.cameraIndex
+                )
+                camera = CameraSource(index)
                 with self.condition:
                     if stop.is_set():
                         return
@@ -410,7 +420,7 @@ class VisionRuntime:
                     "sequence": previous_capture,
                     "frameId": f"{epoch}:{previous_capture}",
                     "source": settings.source,
-                    "cameraId": f"camera:{settings.cameraIndex}"
+                    "cameraId": (settings.cameraId or f"camera:{settings.cameraIndex}")
                     if camera is not None
                     else "synthetic-scene",
                     "image": {"width": image.shape[1], "height": image.shape[0]},

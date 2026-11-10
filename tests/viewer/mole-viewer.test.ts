@@ -93,8 +93,13 @@ function packet(value: Observation): ArrayBuffer {
   return encoded.buffer;
 }
 
-async function startCamera(): Promise<FakeWebSocket> {
+async function selectCamera() {
   choose("source-select", "camera");
+  await flushPromises();
+}
+
+async function startCamera(): Promise<FakeWebSocket> {
+  await selectCamera();
   element<HTMLButtonElement>("source-connect").click();
   await flushPromises();
   const socket = FakeWebSocket.instances.at(-1);
@@ -174,7 +179,16 @@ beforeEach(() => {
     configurable: true,
     value: false,
   });
-  vi.stubGlobal("fetch", fetchMock);
+  vi.stubGlobal("fetch", (path: string, options?: RequestInit) =>
+    path === "/api/cameras"
+      ? Promise.resolve({
+          ok: true,
+          json: async () => ({
+            cameras: [{ id: "a".repeat(64), name: "USB camera" }],
+          }),
+        })
+      : fetchMock(path, options),
+  );
   vi.stubGlobal("WebSocket", FakeWebSocket);
   vi.stubGlobal("createImageBitmap", createBitmap);
   vi.stubGlobal("Option", function Option(text = "", value = text) {
@@ -255,8 +269,8 @@ describe("Mole Motion operator integration", () => {
     expect(element<HTMLSelectElement>("difficulty-select").disabled).toBe(true);
   });
 
-  it("gates camera push mode and explains the missing depth capability", () => {
-    choose("source-select", "camera");
+  it("gates camera push mode and explains the missing depth capability", async () => {
+    await selectCamera();
     app.tick();
     expect(element<HTMLButtonElement>("interaction-push").disabled).toBe(true);
     expect(document.body.textContent).toMatch(/depth/i);
@@ -468,7 +482,7 @@ describe("Mole Motion operator integration", () => {
   });
 
   it("keeps a failed late-start release available after switching to rehearsal", async () => {
-    choose("source-select", "camera");
+    await selectCamera();
     let finishStart!: (value: object) => void;
     fetchMock.mockImplementationOnce(
       () =>
@@ -559,6 +573,9 @@ describe("Mole Motion operator integration", () => {
     expect(JSON.parse(startRequest?.[1].body as string).algorithm).toBe(
       "rtmpose",
     );
+    expect(JSON.parse(startRequest?.[1].body as string).cameraId).toBe(
+      "a".repeat(64),
+    );
     const cameraFrame = observation();
     await socket.receive(packet(cameraFrame));
     expect(renderer.drawMoleScene.mock.calls.at(-1)?.[1]).toEqual(cameraFrame);
@@ -603,7 +620,7 @@ describe("Mole Motion operator integration", () => {
   });
 
   it("shows an actionable backend failure and permits another connection attempt", async () => {
-    choose("source-select", "camera");
+    await selectCamera();
     fetchMock.mockRejectedValueOnce(new Error("Service offline"));
     element<HTMLButtonElement>("source-connect").click();
     await flushPromises();
@@ -633,7 +650,7 @@ describe("Mole Motion operator integration", () => {
   );
 
   it("releases a late camera-start acknowledgement after an operator stop", async () => {
-    choose("source-select", "camera");
+    await selectCamera();
     let finishStart!: (value: object) => void;
     fetchMock.mockImplementationOnce(
       () =>

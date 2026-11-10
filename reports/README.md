@@ -25,3 +25,5 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Tracking stability](tracking-stability.html) records the prediction-driven identity-switch fix, baseline/fixed synthetic replays, tracker-only timing measurements and verification. Its generated [replay evidence](tracking-stability-results.json) comes from [the reproduction tool](../services/vision/tools/tracking_stability.py). The report distinguishes correct continuity and conservative ambiguity from physical recognition accuracy, and records provider-capacity and enrollment limitations.
 
 [Mole Motion](mole-motion.html) records the experimental game slice, rule/session/UI tests, real-server desktop/mobile synthetic screenshots and the remaining depth/hardware gates.
+
+[Camera selection](camera-selection.html) documents the shared native selector, refresh/recovery behavior, actual checks and remaining hardware limits.

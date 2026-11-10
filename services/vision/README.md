@@ -48,3 +48,5 @@ Camera models/formats, physical camera permissions, exposure timing, three-playe
 ## Diagnostic timing and setup ownership
 
 Capture timestamps, freshness and stage durations share the high-resolution monotonic `perf_counter_ns` host clock. This avoids coarse Python 3.12 Windows `monotonic_ns` measurements. Synthetic pacing uses fixed 20 Hz deadlines and skips missed ticks; sleep overshoot does not accumulate. These are diagnostic measurements, not verified exposure or physical latency. The browser may open a temporary camera only for explicit setup identification, releasing it before this service starts capture; its device IDs are not native indices. See [the console report](../../reports/diagnostic-console.html).
+
+`GET /api/cameras` lists bounded native camera metadata without opening capture. `POST /api/start` accepts the selected opaque `cameraId` and re-resolves it before capture; the explicit `cameraIndex` fallback remains available. See [camera choice and permission](../../docs/diagnostic-viewer.md#camera-choice-and-permission).
