@@ -8,6 +8,8 @@ Explain the problem, final change and rationale. Include relevant before/after s
 
 Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.local/`.
 
+[Diagnostic capture lifecycle](diagnostic-capture-lifecycle.html) records epoch-scoped console cleanup, cancelled-start recovery, retryable release failures, synthetic before/after browser evidence and actual software checks.
+
 [Camera gameplay](raw-game-display.html) records raw mirrored views, the separate game display, resilient single-action Start/recovery, portable camera choice and actual review/check evidence.
 
 [Continuous integration](continuous-integration.html) records repository conventions, component/build coverage, actual local and hosted checks, and remaining packaging/hardware limits.

@@ -1,0 +1,126 @@
+{
+  "date": "2026-11-10",
+  "timezone": "Asia/Shanghai",
+  "issue": "https://github.com/DupeisTaken/motion-capture-games/issues/26",
+  "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/28",
+  "before": {
+    "baselineRef": "0cc88f7032ca8c30753a8f40f60f80a6ef73180e",
+    "browser": "156.0.4314.50",
+    "headless": true,
+    "language": "en",
+    "checks": [
+      {
+        "scenario": "HTTP 409 release",
+        "startLocked": false,
+        "retryVisible": false,
+        "sourceLocked": false
+      },
+      {
+        "scenario": "rejected named camera preserves other tab",
+        "passed": false
+      },
+      {
+        "scenario": "late start after stop",
+        "released": false,
+        "socketsCreated": 0
+      },
+      {
+        "scenario": "late start after pagehide",
+        "released": false,
+        "socketsCreated": 2
+      }
+    ],
+    "unscopedStops": 2,
+    "stopRequests": [
+      "synthetic-epoch-1",
+      null,
+      null
+    ],
+    "errors": []
+  },
+  "after": {
+    "baselineRef": null,
+    "browser": "156.0.4314.50",
+    "headless": true,
+    "language": "en",
+    "checks": [
+      {
+        "scenario": "HTTP 409 release",
+        "startLocked": true,
+        "retryVisible": true,
+        "sourceLocked": true
+      },
+      {
+        "scenario": "retry releases retained epoch",
+        "passed": true
+      },
+      {
+        "scenario": "rejected named camera preserves other tab",
+        "passed": true
+      },
+      {
+        "scenario": "late start after stop",
+        "released": true,
+        "socketsCreated": 0
+      },
+      {
+        "scenario": "late start after pagehide",
+        "released": true,
+        "socketsCreated": 0
+      },
+      {
+        "scenario": "renderer failure releases source and clears retained pixels",
+        "passed": true
+      }
+    ],
+    "unscopedStops": 0,
+    "stopRequests": [
+      "synthetic-epoch-1",
+      "synthetic-epoch-1",
+      "synthetic-epoch-2",
+      "synthetic-epoch-3",
+      "synthetic-epoch-4"
+    ],
+    "errors": []
+  },
+  "checks": [
+    [
+      "pnpm check",
+      "Passed",
+      "403 TypeScript tests, 120 Python tests; schema, types, lint, format and 56 tracked Markdown/report checks."
+    ],
+    [
+      "pnpm build",
+      "Passed",
+      "All three frontend entries and emitted asset references."
+    ],
+    [
+      "Targeted Python API/camera tests",
+      "23 passed",
+      "Synthetic API source preservation and native camera identity guards."
+    ],
+    [
+      "Real-server browser verification",
+      "Passed",
+      "Headless Edge synthetic boundaries; baseline at 1440×1050/390×844, fixed at 1440×1050/390×844/320×740. Zero page errors or horizontal overflow. Renderer-failure pixel clearing and scoped release also passed."
+    ],
+    [
+      "Offline report desktop/mobile verification",
+      "Passed",
+      "Self-contained HTML with four embedded screenshots; rendered at 1440×1050, 390×844 and 320×740; no overflow or page errors."
+    ]
+  ],
+  "environment": {
+    "node": "24.21.0",
+    "pnpm": "11.25.0",
+    "python": "3.12.16",
+    "os": "Windows",
+    "browser": "Edge 156.0.4314.50 (headless)"
+  },
+  "hosted": {
+    "head": "8985184a9afce99ecf54507a2af7b51ef1ac1fac",
+    "url": "https://github.com/DupeisTaken/motion-capture-games/actions/runs/42816411831",
+    "result": "All eight jobs passed, including TypeScript/build and Python lanes on Windows, macOS and Ubuntu"
+  },
+  "review": "Independent Sol correctness review found no remaining actionable findings after verifying rendering-failure cleanup and native pixel clearing. Lead independently ran the tests and browser checks. The reviewer performed read-only review and git diff --check, without running builds/tests/browser."
+}
