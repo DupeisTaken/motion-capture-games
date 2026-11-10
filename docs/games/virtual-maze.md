@@ -10,6 +10,8 @@ This early M7 software slice is tracked by [issue #40](https://github.com/Dupeis
 
 ## Operator and participant experience
 
+[PR #45](https://github.com/DupeisTaken/motion-capture-games/pull/45) delivers the software rehearsal. The report records three scoped subagent reviews at 10/10 after concrete fixes, local software/build results and real browser screenshots. Follow the PR's latest-commit `software-checks` result for hosted validation; this is separate from physical M7 acceptance.
+
 The operator chooses dimensions, difficulty, seed, internal loops and **Torso** or **Head** facing input. Torso is the default; changing the selected source must never silently substitute the other source. Default dimensions are 8 × 8 m, difficulty Medium and loops enabled. A new generation resets the rehearsal position and round. Start, Pause and Reset remain explicit operator controls.
 
 The operator's metric map shows walls, start, goal, position and selected heading. Rehearsal controls move position through X/Z sliders, the pointer/map and arrow keys; independent sliders let the operator turn the head while the torso stays still, and vice versa. These are synthetic controls, not recognition from a person's video. Invalid-input fixtures explain why a round cannot advance.

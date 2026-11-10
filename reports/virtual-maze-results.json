@@ -14,17 +14,17 @@
   "checkedAt": "2026-11-11 01:24 Asia/Shanghai",
   "reportVerified": true,
   "ciState": "See the pull request for the latest-head software-checks result",
-  "prUrl": null,
+  "prUrl": "https://github.com/DupeisTaken/motion-capture-games/pull/45",
   "reviews": [
     {
-      "name": "Maze engine reviewer",
-      "dimensions": "Correctness, robustness, testing, maintainability",
-      "score": "10/10 in all four dimensions"
+      "name": "Maze engine and final integration reviewer",
+      "dimensions": "Requirements, correctness, robustness, lifecycle, accessibility, maintainability, verification",
+      "score": "10/10 in all seven dimensions"
     },
     {
       "name": "Design and documentation reviewer",
-      "dimensions": "UX/accessibility, requirements/docs/architecture, generation/pose integration, browser verification",
-      "score": "10/10 in all four dimensions"
+      "dimensions": "UX/accessibility, requirements/docs/architecture, generation/pose integration, browser verification; report accuracy, evidence integrity, standalone visual delivery",
+      "score": "10/10 in all seven dimensions"
     },
     {
       "name": "Input, lifecycle and audio reviewer",
