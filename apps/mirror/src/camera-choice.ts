@@ -6,13 +6,25 @@ const choice = (name: string, value: string) =>
 type Camera = { id: string; name: string };
 export type CameraSelection = { cameraId: string } | { cameraIndex: number };
 
-export const cameraChoiceMarkup = `
+function scopedId(prefix: string, id: string) {
+  if (prefix && !/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(prefix))
+    throw new Error("Camera choice prefix must be a simple HTML ID prefix.");
+  return prefix ? `${prefix}-${id}` : id;
+}
+
+/** Separate camera roles share behavior, but every label/status keeps its own ID. */
+export function cameraChoiceMarkupFor(prefix = "") {
+  const id = (name: string) => scopedId(prefix, name);
+  return `
   <div class="camera-choice">
-    <label class="field-label" for="camera-choice">Choose camera</label>
-    <div class="camera-choice-row"><select id="camera-choice" aria-describedby="camera-choice-status"><option value="">Choose a camera</option><option value="manual">Manual camera index</option></select><button id="refresh-cameras" type="button">Refresh</button></div>
-    <p id="camera-choice-status" class="field-note field-help" role="status">Refresh to find built-in and USB cameras. Nothing is recorded.</p>
-    <div id="manual-camera" hidden><label class="field-label" for="camera-index">Native camera index</label><input id="camera-index" type="number" min="0" max="9" step="1" value="0" required><p class="field-note field-help">Advanced fallback. Indices can change after reconnecting a camera.</p></div>
+    <label class="field-label" for="${id("camera-choice")}">Choose camera</label>
+    <div class="camera-choice-row"><select id="${id("camera-choice")}" aria-describedby="${id("camera-choice-status")}"><option value="">Choose a camera</option><option value="manual">Manual camera index</option></select><button id="${id("refresh-cameras")}" type="button">Refresh</button></div>
+    <p id="${id("camera-choice-status")}" class="field-note field-help" role="status">Refresh to find built-in and USB cameras. Nothing is recorded.</p>
+    <div id="${id("manual-camera")}" class="camera-choice-manual" hidden><label class="field-label" for="${id("camera-index")}">Native camera index</label><input id="${id("camera-index")}" type="number" min="0" max="9" step="1" value="0" required><p class="field-note field-help">Advanced fallback. Indices can change after reconnecting a camera.</p></div>
   </div>`;
+}
+
+export const cameraChoiceMarkup = cameraChoiceMarkupFor();
 
 /** Shared operator control; it lists metadata and never acquires a camera. */
 export class CameraChoice {
@@ -27,9 +39,16 @@ export class CameraChoice {
   private locked = false;
   private disposed = false;
   private pendingRequest: AbortController | null = null;
-  constructor(root: ParentNode = document) {
-    const get = <T extends HTMLElement>(id: string) =>
-      root.querySelector<T>(`#${id}`)!;
+  private readonly subscribers = new Set<() => void>();
+  constructor(root: ParentNode = document, prefix = "") {
+    const get = <T extends HTMLElement>(id: string) => {
+      const element = root.querySelector<T>(`#${scopedId(prefix, id)}`);
+      if (!element)
+        throw new Error(
+          `Camera choice markup missing: ${scopedId(prefix, id)}`,
+        );
+      return element;
+    };
     this.select = get("camera-choice");
     this.refreshButton = get("refresh-cameras");
     this.status = get("camera-choice-status");
@@ -38,9 +57,30 @@ export class CameraChoice {
     this.refreshButton.addEventListener("click", () => void this.refresh(), {
       signal: this.listeners.signal,
     });
-    this.select.addEventListener("change", () => this.update(), {
+    this.select.addEventListener(
+      "change",
+      () => {
+        this.update();
+        this.notify();
+      },
+      {
+        signal: this.listeners.signal,
+      },
+    );
+    this.index.addEventListener("input", () => this.notify(), {
       signal: this.listeners.signal,
     });
+    this.update();
+  }
+  private notify() {
+    for (const listener of this.subscribers) listener();
+  }
+  onChange(listener: () => void): () => void {
+    if (this.disposed) return () => {};
+    this.subscribers.add(listener);
+    return () => {
+      this.subscribers.delete(listener);
+    };
   }
   private update() {
     this.select.disabled = this.locked || this.loading;
@@ -56,6 +96,20 @@ export class CameraChoice {
   }
   get label(): string {
     return this.select.selectedOptions[0]?.textContent || "Camera";
+  }
+  /** Read-only role validation must not focus controls or announce selection errors. */
+  currentSelection(): CameraSelection | null {
+    if (this.loading || this.disposed || !this.select.value) return null;
+    if (this.select.value === "manual") {
+      const value = Number(this.index.value);
+      return this.index.value.trim() !== "" &&
+        Number.isInteger(value) &&
+        value >= 0 &&
+        value <= 9
+        ? { cameraIndex: value }
+        : null;
+    }
+    return { cameraId: this.select.value };
   }
   selection(): CameraSelection {
     if (this.loading)
@@ -83,6 +137,7 @@ export class CameraChoice {
     this.loading = true;
     this.status.textContent = "Finding connected cameras…";
     this.update();
+    this.notify();
     const abort = new AbortController();
     this.pendingRequest = abort;
     const timeout = window.setTimeout(() => abort.abort(), 12000);
@@ -146,6 +201,7 @@ export class CameraChoice {
       if (own === this.revision && !this.disposed) {
         this.loading = false;
         this.update();
+        this.notify();
       }
     }
   }
@@ -154,5 +210,6 @@ export class CameraChoice {
     this.revision++;
     this.listeners.abort();
     this.pendingRequest?.abort();
+    this.subscribers.clear();
   }
 }

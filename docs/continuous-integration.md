@@ -9,7 +9,7 @@ CI is part of the repository's definition of done. [The workflow](../.github/wor
 | Repository conventions | Whitespace across the full PR/push diff; tracked Markdown local inline/reference link targets and heading anchors; static HTML report metadata and embedded rendering assets | `pnpm check:repo` |
 | TypeScript, on Ubuntu/Windows/macOS | Canonical schema/generated binding drift, strict types, ESLint, Vitest contracts/motion/session/game replay/viewer/tooling tests, Prettier | `pnpm check:typescript` |
 | Build, in each TypeScript job | Independent workspace build scripts in dependency order, then all configured Vite entries; emitted HTML must reference existing local JS/CSS assets | `pnpm build` |
-| Python vision, on Ubuntu/Windows/macOS | Locked environment install, Pyright, Ruff lint/format, pytest synthetic vision/API/tracking tests, Python byte compilation | `uv sync --locked`, then `pnpm check:python` |
+| Python vision, on Ubuntu/Windows/macOS | Locked environment install, Pyright, Ruff lint/format, pytest synthetic vision/API/tracking tests and rig rehearsal data drift, Python byte compilation | `uv sync --locked`, then `pnpm check:python` |
 | `software-checks` | Every repository, TypeScript and Python job must succeed; failure, cancellation or skipping fails the gate | `pnpm check` and `pnpm build` cover its local checks |
 
 The Python jobs call `node scripts/tasks.mjs python-check`, the same implementation as `pnpm check:python`, without installing frontend dependencies. Tests use synthetic input and mocked camera/model failures. Hosted OS results verify software compatibility on those runner images; they do not certify USB cameras, GPU providers, model accuracy, physical latency or the installation's player capacity. Browser DOM tests do not replace the real-server screenshots required for UI changes.
@@ -22,7 +22,7 @@ The root manifest currently owns dependencies. Directory boundaries are not inde
 
 | Component | Current form | Required validation/build |
 | --- | --- | --- |
-| `apps/mirror` | One Vite application with diagnostic and game HTML entries | Strict types, viewer tests, production build of every entry; artifact reference verification |
+| `apps/mirror` | One Vite application with diagnostic, two-camera operator workspace and game HTML entries | Strict types, viewer/state/selector tests, production build of all four entries; artifact reference verification |
 | `contracts` | Canonical schema, generated TypeScript and validators | `contracts:check`, validation fixtures, both language consumers and the mirror build |
 | `packages/motion`, `packages/session`, implemented `games/*` | Source-only TypeScript modules bundled into the app | Types, lint, behavior/replay tests and consuming application build; no invented npm archives |
 | `packages/diagnostics`, unimplemented games | Ownership/documentation scaffold | Repository documentation checks until runtime code is introduced |

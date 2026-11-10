@@ -36,10 +36,10 @@
   cursor: default;
   opacity: 0.55;
 }
-#manual-camera {
+.camera-choice-manual {
   margin-top: 12px;
 }
-#manual-camera input {
+.camera-choice-manual input {
   width: 100%;
 }
 .camera-advanced {

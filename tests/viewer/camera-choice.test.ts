@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   CameraChoice,
   cameraChoiceMarkup,
+  cameraChoiceMarkupFor,
 } from "../../apps/mirror/src/camera-choice";
 const a = { id: "a".repeat(64), name: "USB Camera" };
 const b = { id: "b".repeat(64), name: "USB Camera" };
@@ -114,4 +115,102 @@ it("renders device names as text", async () => {
   await chooser.refresh();
   expect(document.querySelector("img")).toBeNull();
   expect(chooser.label).toBe("<img src=x onerror=alert(1)>");
+});
+it("keeps the default IDs and binds two prefixed selectors to independent labels and status messages", () => {
+  expect(cameraChoiceMarkupFor()).toBe(cameraChoiceMarkup);
+  document.body.innerHTML =
+    cameraChoiceMarkup +
+    cameraChoiceMarkupFor("reference") +
+    cameraChoiceMarkupFor("support");
+  const ids = [...document.querySelectorAll("[id]")].map(
+    (element) => element.id,
+  );
+  expect(new Set(ids).size).toBe(ids.length);
+  expect(document.querySelector("#camera-choice")).not.toBeNull();
+  for (const prefix of ["reference", "support"]) {
+    const control = document.querySelector<HTMLSelectElement>(
+      `#${prefix}-camera-choice`,
+    )!;
+    expect(
+      document.querySelector(`label[for="${control.id}"]`)?.textContent,
+    ).toBe("Choose camera");
+    expect(control.getAttribute("aria-describedby")).toBe(
+      `${prefix}-camera-choice-status`,
+    );
+    expect(
+      document.getElementById(control.getAttribute("aria-describedby")!),
+    ).not.toBeNull();
+    expect(
+      document.querySelector(`label[for="${prefix}-camera-index"]`),
+    ).not.toBeNull();
+  }
+  expect(() => cameraChoiceMarkupFor('bad" id')).toThrow(/prefix/);
+});
+it("refreshes, locks, reorders and disconnects two independent native camera roles", async () => {
+  document.body.innerHTML =
+    cameraChoiceMarkupFor("reference") + cameraChoiceMarkupFor("support");
+  const reference = new CameraChoice(document, "reference");
+  const support = new CameraChoice(document, "support");
+  const refSelect = document.querySelector<HTMLSelectElement>(
+    "#reference-camera-choice",
+  )!;
+  const supportSelect = document.querySelector<HTMLSelectElement>(
+    "#support-camera-choice",
+  )!;
+  try {
+    fetchMock.mockResolvedValue(response([a, b]));
+    await reference.refresh();
+    await support.refresh();
+    refSelect.value = a.id;
+    refSelect.dispatchEvent(new Event("change"));
+    supportSelect.value = b.id;
+    supportSelect.dispatchEvent(new Event("change"));
+    reference.setLocked(true);
+    expect(refSelect.disabled).toBe(true);
+    expect(supportSelect.disabled).toBe(false);
+    fetchMock.mockResolvedValue(response([b, a]));
+    await support.refresh();
+    expect(support.currentSelection()).toEqual({ cameraId: b.id });
+    expect(reference.currentSelection()).toEqual({ cameraId: a.id });
+    fetchMock.mockResolvedValue(response([a]));
+    await support.refresh();
+    expect(support.currentSelection()).toBeNull();
+    expect(
+      document.querySelector("#support-camera-choice-status")?.textContent,
+    ).toMatch(/disconnected/);
+    expect(reference.currentSelection()).toEqual({ cameraId: a.id });
+    expect(fetchMock.mock.calls.every(([url]) => url === "/api/cameras")).toBe(
+      true,
+    );
+  } finally {
+    reference.dispose();
+    support.dispose();
+  }
+});
+it("publishes local selection and discovery changes without focusing or announcing validation errors", async () => {
+  const change = vi.fn();
+  const unsubscribe = chooser.onChange(change);
+  const initialStatus = status();
+  expect(chooser.currentSelection()).toBeNull();
+  expect(status()).toBe(initialStatus);
+  fetchMock.mockResolvedValue(response([a]));
+  await chooser.refresh();
+  expect(change).toHaveBeenCalledTimes(2);
+  expect(chooser.currentSelection()).toEqual({ cameraId: a.id });
+  select().value = "manual";
+  select().dispatchEvent(new Event("change"));
+  const index = document.querySelector<HTMLInputElement>("#camera-index")!;
+  index.value = "3";
+  index.dispatchEvent(new Event("input"));
+  expect(chooser.currentSelection()).toEqual({ cameraIndex: 3 });
+  index.value = "1.5";
+  index.dispatchEvent(new Event("input"));
+  chooser.setLocked(true);
+  expect(chooser.currentSelection()).toBeNull();
+  expect(change).toHaveBeenCalledTimes(5);
+  unsubscribe();
+  index.dispatchEvent(new Event("input"));
+  expect(change).toHaveBeenCalledTimes(5);
+  chooser.dispose();
+  expect(chooser.currentSelection()).toBeNull();
 });

@@ -5,3 +5,6 @@
 *.webp binary
 *.gif binary
 *.woff2 binary
+
+# Reviewed through its generator and semantic drift tests; expand in GitHub to inspect samples.
+apps/mirror/src/rig-rehearsal.json linguist-generated=true
