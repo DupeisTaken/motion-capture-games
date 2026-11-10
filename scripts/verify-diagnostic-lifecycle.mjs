@@ -102,6 +102,7 @@ try {
       ["narrow", 320, 740],
     ]) {
       await page.setViewportSize({ width, height });
+      await page.evaluate(() => window.scrollTo(0, 0));
       assert(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -112,6 +113,17 @@ try {
         path: resolve(output, `report-${name}.png`),
         fullPage: true,
       });
+      await page.screenshot({
+        path: resolve(output, `report-${name}-top.png`),
+      });
+      if (name === "mobile") {
+        await page
+          .getByRole("heading", { name: "Verification and independent review" })
+          .scrollIntoViewIfNeeded();
+        await page.screenshot({
+          path: resolve(output, "report-mobile-checks.png"),
+        });
+      }
     }
     assert.deepEqual(errors, []);
     console.log("Offline report verified at 1440x1050, 390x844 and 320x740.");
