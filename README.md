@@ -14,7 +14,7 @@ pnpm setup
 pnpm dev
 ```
 
-Open **http://127.0.0.1:5173**. Choose **Camera** and **Start camera**, or choose **Synthetic scene** to inspect generated bodies without camera access. Setup downloads pinned Python tools and verified model artifacts locally; preview inference works offline afterward. Nothing opens a camera until explicitly started. See [the viewer guide](docs/diagnostic-viewer.md) for controls, commands and limitations.
+Open **http://127.0.0.1:5173**. The compact test console keeps controls, skeletons, detections, performance stages and stream context on one page. Choose **Camera** and optionally **Allow & discover cameras** to reveal names and identify a device, then verify its **Native camera index** and choose **Start camera**. Browser IDs do not automatically map to native indices. Choose **Synthetic scene** for generated bodies without camera access. Setup downloads pinned Python tools and verified model artifacts locally; preview inference works offline afterward. Camera access requires an explicit action. See [the viewer guide](docs/diagnostic-viewer.md) for controls, commands and limitations.
 
 ## Play Mole Motion
 

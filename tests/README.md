@@ -14,4 +14,6 @@ Identity-stability regression scenarios exercise short box disturbances, elapsed
 
 No test uses private participant images. Synthetic integration is not evidence of real camera accuracy, three-player identity continuity or physical latency. The real local-server browser interactions/screenshots and model smoke checks actually performed are recorded separately in [the delivery report](../reports/skeleton-diagnostics.html). See [the testing plan](../docs/testing.md) for the remaining hardware and gameplay gates.
 
+Console regression coverage also includes explicit permission requests, labeled device enumeration, exact browser-device identification, capture release and late results, denied/missing/busy camera recovery, hotplug invalidation, stable person rows, bounded rolling diagnostics, high-precision source-time arithmetic and fixed-deadline synthetic pacing. Browser interactions and screenshots use the real dev server with generated bodies; permission/device behavior uses mocks. See [the console report](../reports/diagnostic-console.html).
+
 The final-viewer release test closes its socket and waits for actual asynchronous cleanup before leaving Starlette's cancelling WebSocket context. Its bounded completion event keeps the idle/resource-release assertion meaningful without depending on thread scheduling.
