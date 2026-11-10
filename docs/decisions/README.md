@@ -9,6 +9,7 @@ Use short decision records for consequential choices. State context, decision, s
 | [0003: Player identity and multi-view](0003-player-identity-and-multi-view.md) | Accepted principles; fusion approach deferred | Three-player identity semantics and explicit uncertainty are required; algorithms need evidence |
 | [0004: Pretrained pose and motion experiment](0004-proposed-vision-experiment.md) | Proposed | Candidate models, tracking/filtering experiments and training escalation await M1 evidence |
 | [0005: Skeleton diagnostic slice](0005-diagnostic-skeleton-slice.md) | Accepted for limited diagnostics | Single-view paired frames, canonical observations and Canvas2D viewer; production choices remain open |
+| [0007: Camera-free XYZ comparison](0007-camera-free-xyz-experiment.md) | Accepted for isolated software experiment | Three reconstruction methods and conservative input gates; no live 3D or hardware certification |
 
 Performance numbers in [testing](../testing.md) are targets, not decision evidence. No camera model, model artifact, deployment package or hardware tier has been certified.
 

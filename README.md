@@ -18,6 +18,10 @@ Open **http://127.0.0.1:5173**. The compact test console keeps controls, skeleto
 
 Console Stop releases only its acknowledged source. Failed capture release keeps **Retry camera stop** available and blocks replacement until confirmed. A cancelled pending start is cleaned up when its acknowledgment arrives. If startup ownership cannot be identified after a lost response, the console explains service restart/reload recovery. See [capture ownership](docs/diagnostic-viewer.md#capture-ownership-and-retry) and [the lifecycle report](reports/diagnostic-capture-lifecycle.html).
 
+## Evaluate camera-free XYZ
+
+`pnpm benchmark:xyz` compares three calibrated two-view reconstruction methods using seeded synthetic joints, including timing, calibration and identity failures. It uses the existing Python environment and opens no cameras. `pnpm verify:vision` checks the diagnostic viewer through real local HTTP/WebSocket transport and saves desktop/mobile screenshots. See [the XYZ design](docs/player-xyz-experiment.md) and [the issues #3/#4 delivery report](reports/vision-issues.html). Live multi-camera input, calibrated pushes and physical certification remain open.
+
 ## Play Mole Motion
 
 Open **http://127.0.0.1:5173/mole.html** (also linked from the tracking console). Choose Timed, Challenge, Survival or Practice; set difficulty and Touch or Push; then **Start round**. Rehearsal works without a camera or Python service: move the pointer or use arrow keys in the stage; tap or press Space for a simulated push. Select a wrist, hip (push only) or foot (touch only) to rehearse it.

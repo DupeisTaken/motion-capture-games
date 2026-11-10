@@ -1,0 +1,390 @@
+{
+  "date": "2026-11-10",
+  "timezone": "Asia/Shanghai",
+  "environment": "Windows x64, Node 24.21.0, pnpm 11.25.0, Python 3.12.16, NumPy 2.3.5; installed headless Edge 156.0.4314.50; synthetic data only",
+  "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/31",
+  "hosted": {
+    "url": "https://github.com/DupeisTaken/motion-capture-games/actions/runs/42837435563",
+    "head": "f4ef937e68a969c7721d1ffdeb322b931508a1c1",
+    "result": "All eight jobs passed: repository conventions, TypeScript/build and Python on Ubuntu, Windows and macOS, plus software-checks. This records the implementation commit."
+  },
+  "checks": [
+    {
+      "name": "Frozen/locked environment",
+      "result": "Passed",
+      "detail": "pnpm install --frozen-lockfile; uv sync --locked with pinned Python 3.12.16. Existing manifest/lockfiles; no new dependencies."
+    },
+    {
+      "name": "TypeScript gate",
+      "result": "Passed",
+      "detail": "pnpm check:typescript: schema drift, strict types, ESLint, 408 Vitest tests across 20 files, Prettier."
+    },
+    {
+      "name": "Targeted XYZ verification",
+      "result": "Passed",
+      "detail": "76 pytest cases with -W error; source/tool Pyright 0 errors/0 warnings; Ruff lint/format. Author ran in isolated pinned environment."
+    },
+    {
+      "name": "Full integration gate",
+      "result": "Passed",
+      "detail": "pnpm check passed: 59 tracked documentation/report files, schema drift, TypeScript/Python types and lint, 408 Vitest tests in 20 files, 196 pytest tests, formatting and Python byte compilation. Final source/tool configuration included."
+    },
+    {
+      "name": "Real-service browser acceptance",
+      "result": "Passed",
+      "detail": "Actual synthetic Python/Vite HTTP/WebSockets, 0→1→2→3→0 count cycle, caps1/3/6, both trackers, controls, epochs, bounded slow consumer, source end, service outage and release retry."
+    },
+    {
+      "name": "Decode-delay regression",
+      "result": "Passed",
+      "detail": "Actual synthetic JPEG delayed 2000ms in browser: baseline15a56dc accepts/draws; final corrected viewer discards at 1440/390/320 widths, shows consistent stale/active-source feedback. Final screenshots refreshed and inspected."
+    },
+    {
+      "name": "Physical calibration and latency",
+      "result": "Not run",
+      "detail": "No physical cameras were used or calibrated. Independent ground truth and physical latency measurements were unavailable; separate M1 gates remain open."
+    },
+    {
+      "name": "XYZ serial benchmark",
+      "result": "Completed",
+      "detail": "22 scenarios × 3 methods, 180 frames × 3 people × 17 joints per scenario/method; 18,000 measured stage batches, three trials and 30 warmups per workload/trial. Midpoint selected: nominal root/wrist p95 1.93/2.54 cm at 100% coverage; three-person p95 4.842 ms. Three-person DLT 5.238 ms and refinement 15.941 ms miss the provisional 5 ms gate. Full failures retained."
+    },
+    {
+      "name": "Report browser verification",
+      "result": "Passed",
+      "detail": "English report rendered at 1440/390/320; all embedded images loaded, no external rendering requests/overflow/unexpected errors. Initial missing favicon404 was identified and corrected with inline data favicon, then rerun passed."
+    },
+    {
+      "name": "Production build",
+      "result": "Passed",
+      "detail": "pnpm build passed: source-only workspace phase, TypeScript, 101 Vite modules, all three application entries and emitted asset references verified. No new distributable package."
+    },
+    {
+      "name": "Hosted implementation gate",
+      "result": "Passed",
+      "detail": "Run 42837435563 passed all eight jobs on implementation commit f4ef937. Six OS/language lanes, repository conventions and software-checks succeeded. Final documentation follow-up must independently pass its latest-head gate."
+    }
+  ],
+  "reviews": [
+    {
+      "name": "Independent correctness review",
+      "score": 10,
+      "scope": "Issue #3 software acceptance: 10/10. Issue #4 camera-free software acceptance: 10/10. Physical M1 certification excluded.",
+      "evidence": "Sol reviewer inspected final source, benchmark data, full check/build logs, report metadata and desktop/mobile stale-state screenshots. All prior deductions resolved: receipt-age freshness/recovery, clear labels, owning docs, geometry-amplified timing regression, integrated checks, measured comparison and report. No outstanding scoped correctness findings; hosted CI remains a separate latest-head gate."
+    },
+    {
+      "name": "Independent acceptance and report review",
+      "score": 10,
+      "scope": "Declared camera-free software acceptance and report delivery. Physical camera/calibration/latency certification excluded.",
+      "evidence": "A second Sol reviewer personally exercised the real Python/Vite streams, lifecycle/outage controls and before/after JPEG-delay regression; inspected freshness, XYZ provenance/rejection code and benchmark framing; reviewed the full 408 TypeScript / 196 Python test gate and three-entry production build. Report passed offline browser checks at desktop/mobile/narrow widths. No outstanding scoped findings; latest-head hosted CI remains required before merge."
+    }
+  ],
+  "regression": "Baseline viewer: 3 new controlled-clock regressions failed and 39 existing cases passed. The correction covers expired first/replacement bitmaps, fresh recovery, residual decode budget, control redraw and stale/Stop labels. Real browser delay also reproduced accepted old imagery before the fix and zero expired-image draws after it.",
+  "browserSummary": "English at 1440×1050, 390×844 and 320×740, no horizontal overflow. Actual synthetic service transports, no source or HTTP/WebSocket mocks. A 650ms slow-consumer pause skipped 12 superseded observations with zero unsolicited messages. Six independent synthetic epochs. Deliberate service outage has separately recorded expected network errors.",
+  "browser": {
+    "mode": "real-server-synthetic",
+    "language": "en",
+    "headless": true,
+    "startedAt": "2026-11-10T14:29:20.076Z",
+    "checks": [
+      "Live synthetic entering/leaving sequence 0 → 1 → 2 → 3 → 0 through both real streams.",
+      "Caps 1/3/6 bound current detections and expose saturation; both real association modes run; restarts issue new epochs.",
+      "Mirror/image/bounds/overlay/visibility controls work; hiding image and overlay clears pixels without changing detections.",
+      "Real pull stream sends no unsolicited frames and skips superseded observations after a 650 ms consumer pause.",
+      "Real server-side source end clears current count and context, permits explicit restart.",
+      "Actual service process outage locks replacement until release retry succeeds; service restart and a new synthetic epoch recover."
+    ],
+    "screenshots": [
+      "diagnostics-desktop.png",
+      "diagnostics-mobile.png",
+      "diagnostics-narrow.png",
+      "diagnostics-controls-desktop.png",
+      "diagnostics-ended-desktop.png"
+    ],
+    "errors": [],
+    "expectedOutageErrors": [
+      "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+    ],
+    "limitations": [
+      "Generated bodies bypass cameras and pose inference; no hardware accuracy or latency claim.",
+      "Stale source status cannot be induced by the healthy synthetic producer without fault injection; unit tests cover source-clock expiry."
+    ],
+    "browser": "156.0.4314.50",
+    "epochs": [
+      "abc8b4db-b321-4007-8072-e0ba964adea9",
+      "698f7ffe-5117-4032-a5c2-24bc10d4598b",
+      "efbd0ca4-bbe8-4f73-b7c2-a3a5b5edd10a",
+      "05057b9d-a3b3-4164-a82d-4b851fcc8600",
+      "7f629e7a-46eb-4524-b3c0-4b0e0f16333e",
+      "68225fb5-3087-4159-8145-d90b459dca34"
+    ],
+    "countTransitions": [
+      {
+        "count": 0,
+        "elapsedMs": 4
+      },
+      {
+        "count": 1,
+        "elapsedMs": 5997
+      },
+      {
+        "count": 2,
+        "elapsedMs": 11992
+      },
+      {
+        "count": 3,
+        "elapsedMs": 17993
+      },
+      {
+        "count": 0,
+        "elapsedMs": 23992
+      }
+    ],
+    "capacities": [
+      {
+        "capacity": 1,
+        "tracker": "pose",
+        "count": 1,
+        "capacityWarning": true
+      },
+      {
+        "capacity": 3,
+        "tracker": "iou",
+        "count": 3,
+        "capacityWarning": true
+      },
+      {
+        "capacity": 6,
+        "tracker": "pose",
+        "count": 3,
+        "capacityWarning": false
+      }
+    ],
+    "controls": {
+      "mirror": "Camera view",
+      "imageDisabled": true,
+      "boundsDisabled": true,
+      "jointThreshold": 0.9,
+      "overlayDisabledClearsCanvas": true,
+      "countUnaffected": true
+    },
+    "transport": {
+      "firstSequence": 13,
+      "secondSequence": 26,
+      "skippedSequences": 12,
+      "unsolicited": 0,
+      "epoch": "05057b9d-a3b3-4164-a82d-4b851fcc8600",
+      "source": "demo",
+      "clockQuality": "synthetic",
+      "capacity": 6,
+      "count": 3
+    },
+    "finalStatus": {
+      "state": "idle",
+      "message": "Capture stopped. No camera is open.",
+      "source": "demo",
+      "algorithm": "synthetic",
+      "tracker": "pose",
+      "epoch": "68225fb5-3087-4159-8145-d90b459dca34",
+      "cameraIndex": 0,
+      "maxPeople": 6,
+      "detectedCount": 0,
+      "models": {
+        "mediapipe": false,
+        "rtmpose": false
+      }
+    },
+    "passed": true,
+    "completedAt": "2026-11-10T14:29:54.5Z"
+  },
+  "images": [
+    {
+      "file": "decode-before-desktop.png",
+      "title": "Before: expired image presented as current",
+      "caption": "Baseline15a56dc, desktop1440×1050. Artificial 2000ms native-decoder Promise delay on an actual synthetic-service JPEG. Old frame accepted and drawn; this is a scheduling fixture, not measured hardware decoder speed."
+    },
+    {
+      "file": "decode-after-desktop.png",
+      "title": "After: expired decode discarded",
+      "caption": "Corrected desktop1440×1050. Same real JPEG and artificial delay: zero image draws, explicit stale/waiting state and live transport retained."
+    },
+    {
+      "file": "decode-before-mobile.png",
+      "title": "Before: expired mobile preview",
+      "caption": "390×844 viewport, full-page capture. Same artificial decoder-delay regression."
+    },
+    {
+      "file": "decode-after-mobile.png",
+      "title": "After: clear mobile recovery state",
+      "caption": "390×844 viewport. Expired image is absent; Stop remains available while the source waits for fresh input."
+    },
+    {
+      "file": "diagnostics-desktop.png",
+      "title": "Desktop: real synthetic transport",
+      "caption": "1440×1050. Three current detections, bounded telemetry and stream context. An independent preview may temporarily hide its overlay when the allowed source-alignment window does not match."
+    },
+    {
+      "file": "diagnostics-mobile.png",
+      "title": "Mobile: named skeletons and counts",
+      "caption": "390×844 viewport, full-page capture. Three generated bodies through the actual service and viewer; anatomical names and mirrored geometry retained."
+    },
+    {
+      "file": "diagnostics-narrow.png",
+      "title": "Narrow: same diagnostic controls",
+      "caption": "320×740 viewport, full-page capture. No horizontal page overflow."
+    },
+    {
+      "file": "diagnostics-controls-desktop.png",
+      "title": "Overlay controls",
+      "caption": "Actual synthetic service. Operator display controls change presentation while the current detection count remains independent."
+    }
+  ],
+  "decodeBefore": {
+    "mode": "real-server-artificial-decode-delay",
+    "baselineRef": "15a56dcef21e11d208ac16b54d2067498c23e1ff",
+    "language": "en",
+    "headless": true,
+    "startedAt": "2026-11-10T14:31:54.522Z",
+    "checks": [
+      "Before: actual JPEG delayed 2000 ms is incorrectly accepted and drawn at all three viewport widths."
+    ],
+    "screenshots": [
+      "decode-before-desktop.png",
+      "decode-before-mobile.png",
+      "decode-before-narrow.png"
+    ],
+    "errors": [],
+    "expectedOutageErrors": [],
+    "limitations": [
+      "Generated bodies bypass cameras and pose inference; no hardware accuracy or latency claim.",
+      "Stale source status cannot be induced by the healthy synthetic producer without fault injection; unit tests cover source-clock expiry.",
+      "Browser-only instrumentation delays resolution of each actual decoded synthetic JPEG by 2000 ms; this is an artificial scheduling regression, not observed hardware decoder performance."
+    ],
+    "browser": "156.0.4314.50",
+    "decodeDelayMs": 2000,
+    "decode": [
+      {
+        "viewport": "desktop",
+        "completed": 1,
+        "imageDraws": 60,
+        "acceptedImage": true,
+        "status": "Synthetic scene running",
+        "message": "Generated observations exercise the same renderer and contract as camera input.",
+        "frameState": "Frame 1"
+      },
+      {
+        "viewport": "mobile",
+        "completed": 1,
+        "imageDraws": 61,
+        "acceptedImage": true,
+        "status": "Synthetic scene running",
+        "message": "Generated observations exercise the same renderer and contract as camera input.",
+        "frameState": "Frame 1"
+      },
+      {
+        "viewport": "narrow",
+        "completed": 1,
+        "imageDraws": 63,
+        "acceptedImage": true,
+        "status": "Synthetic scene running",
+        "message": "Generated observations exercise the same renderer and contract as camera input.",
+        "frameState": "Frame 1"
+      }
+    ],
+    "passed": true,
+    "completedAt": "2026-11-10T14:32:08.565Z"
+  },
+  "decodeAfter": {
+    "mode": "real-server-artificial-decode-delay",
+    "baselineRef": null,
+    "language": "en",
+    "headless": true,
+    "startedAt": "2026-11-10T14:38:57.194Z",
+    "checks": [
+      "After: actual JPEG delayed 2000 ms is discarded without an image draw at all three viewport widths."
+    ],
+    "screenshots": [
+      "decode-after-desktop.png",
+      "decode-after-mobile.png",
+      "decode-after-narrow.png"
+    ],
+    "errors": [],
+    "expectedOutageErrors": [],
+    "limitations": [
+      "Generated bodies bypass cameras and pose inference; no hardware accuracy or latency claim.",
+      "Stale source status cannot be induced by the healthy synthetic producer without fault injection; unit tests cover source-clock expiry.",
+      "Browser-only instrumentation delays resolution of each actual decoded synthetic JPEG by 2000 ms; this is an artificial scheduling regression, not observed hardware decoder performance."
+    ],
+    "browser": "156.0.4314.50",
+    "decodeDelayMs": 2000,
+    "decode": [
+      {
+        "viewport": "desktop",
+        "completed": 1,
+        "imageDraws": 0,
+        "acceptedImage": false,
+        "status": "Waiting for fresh input",
+        "message": "No fresh image is available within the 1.5-second browser budget, including decoding. Old images and skeletons are hidden.",
+        "frameState": "No recent frame"
+      },
+      {
+        "viewport": "mobile",
+        "completed": 1,
+        "imageDraws": 0,
+        "acceptedImage": false,
+        "status": "Waiting for fresh input",
+        "message": "No fresh image is available within the 1.5-second browser budget, including decoding. Old images and skeletons are hidden.",
+        "frameState": "No recent frame"
+      },
+      {
+        "viewport": "narrow",
+        "completed": 1,
+        "imageDraws": 0,
+        "acceptedImage": false,
+        "status": "Waiting for fresh input",
+        "message": "No fresh image is available within the 1.5-second browser budget, including decoding. Old images and skeletons are hidden.",
+        "frameState": "No recent frame"
+      }
+    ],
+    "passed": true,
+    "completedAt": "2026-11-10T14:39:11.924Z"
+  },
+  "reportBrowser": {
+    "mode": "offline-report",
+    "baselineRef": null,
+    "language": "en",
+    "headless": true,
+    "startedAt": "2026-11-10T14:44:04.576Z",
+    "checks": [
+      "Self-contained report and embedded screenshots rendered at all three widths."
+    ],
+    "screenshots": [
+      "report-desktop.png",
+      "report-mobile.png",
+      "report-narrow.png",
+      "report-desktop-top.png",
+      "report-desktop-xyz.png",
+      "report-desktop-checks.png",
+      "report-desktop-limits.png",
+      "report-mobile-top.png",
+      "report-mobile-xyz.png",
+      "report-mobile-checks.png",
+      "report-mobile-limits.png",
+      "report-narrow-top.png",
+      "report-narrow-xyz.png",
+      "report-narrow-checks.png",
+      "report-narrow-limits.png"
+    ],
+    "errors": [],
+    "httpErrors": [],
+    "consoleDiagnostics": [],
+    "expectedOutageErrors": [],
+    "limitations": [
+      "Generated bodies bypass cameras and pose inference; no hardware accuracy or latency claim.",
+      "Stale source status cannot be induced by the healthy synthetic producer without fault injection; unit tests cover source-clock expiry."
+    ],
+    "browser": "156.0.4314.50",
+    "passed": true,
+    "completedAt": "2026-11-10T14:44:08.079Z"
+  }
+}

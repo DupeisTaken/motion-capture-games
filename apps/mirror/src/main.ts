@@ -67,7 +67,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         <div class="stage" id="stage">
           <canvas id="skeleton-canvas" width="1280" height="800" aria-label="Mirrored camera image and detected body skeletons"></canvas>
           <div class="stage-corner stage-top"><span class="view-label" id="view-label">Mirrored view</span><span class="people-overlay" id="people-overlay">0 people</span></div>
-          <div class="standby" id="standby"><span class="standby-icon">${icon("camera")}</span><h2>Ready to observe</h2><p>Choose a camera, then press Start camera.<br>Synthetic scenes work without a camera.</p></div>
+          <div class="standby" id="standby"><span class="standby-icon">${icon("camera")}</span><h2 id="standby-title">Ready to observe</h2><p id="standby-message">Choose an input source, then start the preview.</p></div>
           <div class="stage-corner stage-bottom"><span id="stage-source">No source connected</span><span id="frame-state">Waiting for frames</span></div>
         </div>
         <div class="view-options"><label><input id="mirror" type="checkbox" checked>Mirror</label><label><input id="show-video" type="checkbox" checked>Image</label><label><input id="show-tracking" type="checkbox" checked>Tracking overlay</label><label><input id="show-boxes" type="checkbox" checked>Bounds</label><span class="view-hint">Untinted camera · anatomical L/R preserved</span></div>
@@ -153,6 +153,7 @@ const renderRate = new FrameRate();
 const poseRate = new FrameRate();
 let lastFrame: Observation | null = null;
 let lastImage: ImageBitmap | null = null;
+const MAX_PREVIEW_ARRIVAL_AGE_MS = 1500;
 let lastUpdate = 0;
 let hiddenStop = false;
 let peopleSignature = "";
@@ -257,8 +258,35 @@ function clearTelemetry() {
   get("timing-note").textContent =
     "No current observation. Start or recover the source to see diagnostics.";
 }
+function clearStalePreview() {
+  lastUpdate = 0;
+  lastFrame = null;
+  lastPreview = null;
+  lastImage?.close();
+  lastImage = null;
+  clearObservations("No fresh detections. Waiting for the source.");
+  clearTelemetry();
+  drawStandby(canvas);
+  get("viewport-title").textContent = "Waiting for fresh input";
+  get("stage-source").textContent = "Source active · waiting for a fresh image";
+  get("standby-title").textContent = "Waiting for fresh input";
+  get("standby-message").textContent =
+    "The source is still running. Waiting for a fresh image; Stop remains available.";
+  get("standby").hidden = false;
+  get("source-badge").textContent = "Stale";
+  get("frame-state").textContent = "No recent frame";
+  setStatus(
+    "Waiting for fresh input",
+    "No fresh image is available within the 1.5-second browser budget, including decoding. Old images and skeletons are hidden.",
+    "uncertain",
+  );
+}
 function redraw() {
-  if (lastPreview && lastImage) {
+  if (
+    lastPreview &&
+    lastImage &&
+    performance.now() - lastUpdate <= MAX_PREVIEW_ARRIVAL_AGE_MS
+  ) {
     const drawStarted = performance.now();
     const pose =
       performance.now() - poseReceivedAt <= 500 &&
@@ -280,7 +308,11 @@ function isCurrent(own: CaptureGeneration) {
 function animate(own: CaptureGeneration, now: number) {
   if (!isCurrent(own) || !running) return;
   try {
-    if (lastPreview && lastImage && performance.now() - lastUpdate <= 1500) {
+    if (
+      lastPreview &&
+      lastImage &&
+      performance.now() - lastUpdate <= MAX_PREVIEW_ARRIVAL_AGE_MS
+    ) {
       redraw();
       renderRate.record(now);
     }
@@ -416,6 +448,11 @@ function teardown(own: CaptureGeneration) {
   clearTelemetry();
   clearObservations("No active detections.");
   get("standby").hidden = false;
+  get("standby-title").textContent = "Ready to observe";
+  get("standby-message").textContent =
+    "Choose an input source, then start the preview.";
+  get("viewport-title").textContent =
+    source === "demo" ? "Synthetic test scene" : "Camera preview";
   get("source-badge").textContent = "Stopped";
   get("frame-state").textContent = "Source stopped";
   get("stage-source").textContent = "No source connected";
@@ -586,6 +623,15 @@ async function start() {
               image.close();
               return;
             }
+            // Decoding spends the browser arrival-age budget; it cannot renew an old image.
+            if (
+              performance.now() - decodeStarted >
+              MAX_PREVIEW_ARRIVAL_AGE_MS
+            ) {
+              image.close();
+              clearStalePreview();
+              return;
+            }
             if (
               image.width !== preview.image.width ||
               image.height !== preview.image.height
@@ -599,8 +645,8 @@ async function start() {
             lastImage?.close();
             lastImage = image;
             lastPreview = preview;
-            lastUpdate = performance.now();
-            lastDecodeMs = lastUpdate - decodeStarted;
+            lastUpdate = decodeStarted;
+            lastDecodeMs = performance.now() - decodeStarted;
             lastPreviewBytes = event.data.byteLength;
             get("standby").hidden = true;
             get("source-badge").textContent =
@@ -811,22 +857,12 @@ window.addEventListener("pagehide", () => {
   void stop("The page was hidden. Start the preview again when ready.");
 });
 window.setInterval(() => {
-  if (running && lastUpdate > 0 && performance.now() - lastUpdate > 1500) {
-    lastUpdate = 0;
-    lastFrame = null;
-    lastPreview = null;
-    lastImage?.close();
-    lastImage = null;
-    clearObservations("No fresh detections. Waiting for the source.");
-    clearTelemetry();
-    drawStandby(canvas);
-    get("source-badge").textContent = "Stale";
-    get("frame-state").textContent = "No recent frame";
-    setStatus(
-      "Waiting for fresh input",
-      "No frame has arrived for 1.5 seconds. Old skeletons are hidden.",
-      "uncertain",
-    );
+  if (
+    running &&
+    lastUpdate > 0 &&
+    performance.now() - lastUpdate > MAX_PREVIEW_ARRIVAL_AGE_MS
+  ) {
+    clearStalePreview();
   }
 }, 300);
 new ResizeObserver(redraw).observe(canvas);

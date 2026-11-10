@@ -33,7 +33,9 @@
     "check:repo": "node scripts/check-repository.mjs",
     "check:typescript": "pnpm contracts:check && pnpm typecheck:typescript && pnpm lint:typescript && pnpm test:typescript && pnpm format:check:typescript",
     "check:python": "node scripts/tasks.mjs python-check",
-    "benchmark:preview": "node scripts/benchmark-preview.mjs"
+    "benchmark:preview": "node scripts/benchmark-preview.mjs",
+    "benchmark:xyz": "node scripts/tasks.mjs xyz",
+    "verify:vision": "node scripts/verify-vision-issues.mjs"
   },
   "dependencies": {
     "ajv": "8.20.0"
