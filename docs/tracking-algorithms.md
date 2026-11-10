@@ -8,21 +8,25 @@ The implementation is [tracking.py](../services/vision/motion_vision/tracking.py
 
 | Mode | Evidence used | Purpose and limit |
 | --- | --- | --- |
-| `iou` | Predicted person-box overlap and elapsed-time-aware center distance | A small motion/geometry baseline; cannot distinguish similar people through an unobserved crossing |
+| `iou` | Last-observed and predicted person-box overlap, with elapsed-time-aware center distance | A small motion/geometry baseline; cannot distinguish similar people through an unobserved crossing |
 | `pose` | The same box/motion gates plus visible joint-shape distance after centering/scaling | Evaluates whether reliable pose geometry helps association; falls back to box/motion when too few joints are reliable |
 
 These are repository-specific diagnostic algorithms. They are **not implementations of SORT or ByteTrack**. SORT describes Kalman prediction and assignment; ByteTrack introduces a distinct association strategy using low-score detections. Those papers motivate comparison, but this implementation has neither their full tracker nor their reported benchmark results. [SORT paper](https://arxiv.org/abs/1602.00763), [ByteTrack paper](https://arxiv.org/abs/2110.06864)
 
 Both modes use bounded, exact one-to-one minimum-cost assignment with an explicit unmatched choice. Each chosen match is also tested against the best alternative assignment with that match forbidden. This catches globally tied or nearly tied assignments even if individual rows and columns have clear local minima. Affected observations become ambiguous rather than taking whichever optimum appeared first. The solver uses memoized bitmask states, with at most six current detections and twelve retained tracks, rather than another numerical dependency. A minimum-cost assignment only optimizes its supplied costs; it does not prove identity.
 
+Assignment is evaluated independently against the last observed boxes and against their bounded motion predictions. When those two views support competing feasible associations for a person, the affected observations become ambiguous and implicated IDs are retired. Prediction may help compare motion, but cannot overrule contradictory observed-position evidence. An isolated predicted match remains usable when the last-observed geometry has no competing feasible match. Both evaluations use the same capacity bounds and explicit unmatched choice.
+
 The baseline cost combines box-overlap distance (weight 0.70) and gated center distance (0.30). When at least four reliable common joints exist, pose mode uses box distance (0.50), center distance (0.30) and normalized joint-shape distance (0.20). These weights are provisional diagnostic tuning, not learned or installation-certified values. Pose comparison only uses observed, in-frame, finite body joints above its score threshold. Facial landmarks are excluded, and each common body-point set must span at least 0.15 of its person-box diagonal; collapsed keypoints do not count as pose evidence. Estimated, missing, out-of-frame and low-score joints cannot provide pose-association evidence. Source scores are not calibrated correctness probabilities.
 
-The short, bounded velocity estimate predicts a **box for association only**. It never inserts a hidden person, joint, trail or collision into published output. The returned detection order matches the accepted input order, but identity is determined by association, not that order or horizontal position.
+The short, bounded velocity estimate predicts a **box for association only**. Its update weight is `1 - exp(-elapsed_seconds / 0.15)`, using a provisional 0.15 s time constant. A short noisy interval therefore has less influence than it did with the former fixed 50% update per processed observation. This avoids giving the same displacement a disproportionate effect on the predictor when sample intervals change. It never inserts a hidden person, joint, trail or collision into published output. The returned detection order matches the accepted input order, but identity is determined by association, not that order or horizontal position.
+
+The identity-switch failure addressed here was a prediction-driven reassignment: a small box disturbance could change estimated velocity enough that an extrapolated box favored a neighboring person, even while the last observation supported a different association. Global assignment margins alone could still call that prediction-based answer clear. The independent observed-position comparison makes this conflict explicit. Abrupt approaches or direction reversals can now produce a conservative loss of identity continuity; after recovery, a new ID is preferable to silently moving an established ID to another person. This change stabilizes association decisions, not the coordinates of the drawn skeleton.
 
 ## Identity and uncertainty
 
 - A new track is `tentative`. Three consecutive clear matches produce the local diagnostic label `confident`.
-- Close overlapping boxes or near-tied matching candidates produce `ambiguous`, with `trackId: null`. The observed skeleton is still displayed and counted; its former identity is not asserted.
+- Close overlapping boxes, near-tied matching candidates or competing feasible observed-position and predicted-position assignments produce `ambiguous`, with `trackId: null`. The observed skeleton is still displayed and counted; its former identity is not asserted.
 - Ambiguity retires implicated old IDs. Unseen retained tracks are also retired while ambiguity is present because they may be hidden in the uncertain group. Clearly associated, unaffected detections can keep their IDs.
 - After separation, retired identities are not reconstructed by screen position. New tentative IDs are issued.
 - A short clear absence may retain an internal candidate, but reacquisition restarts confirmation and is tentative. A long absence expires it.
@@ -34,6 +38,8 @@ These are camera-local association states, not rig identity verification or sess
 ## Capacity and tuning
 
 The provider's person cap bounds computation; it is not a selected number of participants. `detectedCount` is the number of returned current observations. The service can report `capacityReached` when that count reaches the configured cap, warning that additional people may be missed. No claim is made that a detector returning fewer people has seen everyone.
+
+Provider ranking changes at capacity can change which people reach the tracker. This fix does not reserve detection capacity for an incumbent person or add an enrolled-player lock. A different person producing indistinguishable box/pose evidence can still receive the same association; geometry alone cannot prove that a physical person remained the same. Those cases require separate evidence or an explicit session recovery policy, not a claim that local labels are personal identity.
 
 `TrackingConfig` keeps tuning together with its units and rationale:
 
@@ -49,6 +55,7 @@ The provider's person cap bounds computation; it is not a selected number of par
 | Center gate | 0.08 + 1.2 × elapsed seconds, capped at 0.30 | Normalized-image distance allowed for association |
 | Prediction horizon | 0.15 s | Bounds extrapolation used only for box matching |
 | Velocity bound | 1.5 normalized image units/s per axis | Limits the association predictor after abrupt changes |
+| Velocity time constant | 0.15 s | Makes velocity updates depend on elapsed source time rather than processed-frame count |
 | Maximum matching cost | 0.78 | Higher-cost pairs remain unmatched |
 | Near-tie margin | 0.08 cost units | Abstain when competing candidates have similar support |
 | Overlap ambiguity | Box IoU ≥ 0.40 | Conservative abstention for strongly overlapping current person boxes |
@@ -74,3 +81,15 @@ The service owns detector filtering, camera frame freshness and the schema valid
 The [synthetic behavior tests](../services/vision/tests/test_tracking.py) cover current counts of zero, one and three; detection-array reordering; confirmation; ambiguous overlap and merged observations; absence/reacquisition; epoch changes; local and global assignment ties; unusable, collapsed or face-only joints; immutable provider data; invalid boxes; capacity and timestamp rejection. They exercise both association modes where relevant. The implementation report owns the actual executed checks and results.
 
 Synthetic tests do not establish field accuracy, comparative pose-mode improvement, identity preservation through every crossing or camera capacity. M1 still needs the [real crossing scenarios](multiplayer.md#required-diagnostic-scenarios), detected-count error/coverage, ambiguity/recovery durations and full-pipeline measurements on each supported profile.
+
+The identity-stability regressions target small box disturbances, irregular source intervals, and nearby people whose observed-position and predicted-position assignments conflict. Validation must also check unaffected tracks, detection-order changes, empty frames and recovery after retirement. Actual executed results belong in the change report; these scenarios do not certify physical identity preservation.
+
+Reproduce the before/after synthetic identity cases and serial tracker-only timings from the repository root after installing the local Python environment:
+
+```text
+python services/vision/tools/tracking_stability.py
+```
+
+Use `.venv/Scripts/python.exe` on Windows or `.venv/bin/python` on macOS when the environment is not activated. The tool compares the immutable pre-fix commit recorded in its source with the current tracker, alternates detection order, and writes [the result JSON](../reports/tracking-stability-results.json). Its timing workload uses three or six separated moving boxes, 20 warmup updates and 100 measured updates per mode by default; it excludes camera, model, transport and rendering work. Synthetic subject labels establish the reference identity only for these fixtures.
+
+[Issue #11](https://github.com/DupeisTaken/motion-capture-games/issues/11) tracks this focused fix. The [tracking stability report](../reports/tracking-stability.html) records its implementation, executed verification and remaining limits.

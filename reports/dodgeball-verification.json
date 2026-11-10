@@ -1,7 +1,7 @@
 {
   "prUrl": "https://github.com/DupeisTaken/motion-capture-games/pull/19",
-  "vitestTests": 323,
-  "pytestTests": 54,
+  "vitestTests": 334,
+  "pytestTests": 96,
   "newTests": 108,
   "collisionPolicy": "Only new source-timed poses inside the half-open 300 ms danger interval can hit. Danger steps, pose age and pose gaps must remain at most 150 ms through final outcome settlement. A clean dodge waits for the first post-danger source sample. Motion between observations is not inferred; sufficiently fast unsampled motion can be missed.",
   "environment": "Windows local verification used Node 24.16.0, pnpm 11.25.0 and the existing repository-local Python 3.12.14 environment. Repository pins remain Node 24.21.0 and Python 3.12.16; no global environment was changed. Browser: Microsoft Edge, local Vite server at 127.0.0.1:5182, English only.",
@@ -10,7 +10,7 @@
     {
       "name": "pnpm check",
       "result": "Passed",
-      "detail": "Canonical schema drift; TypeScript and Python types; ESLint and Ruff; 323 Vitest tests across 11 files; 54 pytest tests; Prettier and Python formatting. Includes 108 Dodgeball cases above the latest 215-test Mole Motion baseline, with 26 additional integration regressions beyond the original 82."
+      "detail": "Final current-main integration passed canonical schema drift, TypeScript/Python types, ESLint/Ruff, 334 Vitest tests across 13 files, 96 pytest tests and all formatting checks. The 108 Dodgeball cases include 26 merge-readiness regressions beyond the original 82."
     },
     {
       "name": "pnpm build",
@@ -18,8 +18,8 @@
       "detail": "All three Vite entry pages build: diagnostics, Mole Motion and Dodgeball. No new runtime dependencies."
     },
     {
-      "name": "GitHub software-checks",
-      "result": "Passed",
+      "name": "Earlier hosted software-checks",
+      "result": "Historical pass",
       "detail": "Hosted Diagnostic checks run 42786196994 succeeded for implementation commit c9dc59b42402138bc76de4739e0f096558be6142. Final documentation follow-up is checked separately on PR #19."
     },
     {
@@ -83,7 +83,7 @@
   "review": {
     "overall": 10,
     "scope": "Independent gpt-6.1-sol review with high-detail source, regression, visual and delivery inspection. Ratings cover the experimental single-player software; physical hardware and participant certification remain excluded and explicitly unverified.",
-    "iterations": "Several independent review passes identified and verified source-time boundary, final-danger coverage, input-boundary, keyboard focus, contrast, layout and screenshot corrections. Final gpt-6.1-sol verdict: all ten dimensions 10/10 against the experimental single-player software criteria, with no unresolved actionable findings. The reviewer inspected source, regression tests, documentation, screenshots, report, PR and hosted CI; the root ran the serialized local checks. Physical participant/hardware certification remains unverified. The later combined-tree merge review independently re-examined readiness, camera release, stable ownership, regressions, refreshed screenshots and the updated report, and again rated all ten dimensions 10/10. The combined result is 323 Vitest tests, 54 pytest tests and 108 Dodgeball cases. Final merge is gated on the integration head’s hosted checks, not an earlier commit’s CI.",
+    "iterations": "Several independent review passes identified and verified source-time boundary, final-danger coverage, input-boundary, keyboard focus, contrast, layout and screenshot corrections. Final gpt-6.1-sol verdict: all ten dimensions 10/10 against the experimental single-player software criteria, with no unresolved actionable findings. The reviewer inspected source, regression tests, documentation, screenshots, report, PR and hosted CI; the root ran the serialized local checks. Physical participant/hardware certification remains unverified. The later combined-tree merge review independently re-examined readiness, camera release, stable ownership, regressions, refreshed screenshots and the updated report, and again rated all ten dimensions 10/10. The combined result is 323 Vitest tests, 54 pytest tests and 108 Dodgeball cases. Final merge is gated on the integration head’s hosted checks, not an earlier commit’s CI. A subsequent compatibility review of current main af0ac95 found no new blocker: canonical observations, session and game code stayed compatible with the shared monotonic timing and conservative identity updates. Final combined verification passed 334 Vitest tests and 96 pytest tests; all three pages built. The reviewer checked the two merge resolutions and refreshed report metadata before final merge.",
     "dimensions": [
       {
         "name": "Correctness, modes and replay",
@@ -127,5 +127,5 @@
       }
     ]
   },
-  "integration": "Before merge, integrated Mole Motion review revision fbe03f0 (including cfff89a), resolving README and shared arcade-style conflicts while preserving both games. Ported its reviewed camera-release, stable track-owner and authoritative Start/Resume readiness behavior to Dodgeball. The combined tree passed pnpm check (323 TypeScript tests across 11 files and 54 Python tests) and the three-page build. Refreshed desktop/390/320 screenshots and a clearly labeled simulated HTTP 409 stop/retry exercise verified the integrated UI. No physical camera was opened. The dependency is merged first; Dodgeball then targets main and its fresh hosted checks gate the final merge."
+  "integration": "Mole Motion #17, tracking stability #13 and compact diagnostics #16 merged into main while Dodgeball was being prepared. Integrated current main af0ac95, resolving the console-header conflict with both arcade links and keeping both console telemetry and Dodgeball documentation. The latest Mole Motion review fixes also apply to Dodgeball: current nonmutating readiness, stable locked track enrollment, retained epoch-scoped camera-stop failures and explicit retry across source switches. Final combined pnpm check passed 334 TypeScript tests across 13 files and 96 Python tests; all three pages built. Refreshed desktop/390/320 game screenshots and a labeled simulated HTTP 409 stop/retry exercise verified the UI. No physical camera was opened. PR #19 targets main after the dependency merge; current-head hosted checks gate the final merge."
 }

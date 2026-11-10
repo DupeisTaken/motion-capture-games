@@ -1,5 +1,6 @@
 import json
 import struct
+from threading import Event
 
 import pytest
 from fastapi.testclient import TestClient
@@ -21,8 +22,16 @@ def test_control_validation_origin_and_host_protection():
         assert client.get("/api/status", headers={"Host": "evil.example"}).status_code == 400
 
 
-def test_pull_stream_auto_count_and_final_viewer_release():
+def test_pull_stream_auto_count_and_final_viewer_release(monkeypatch):
     vision = VisionRuntime()
+    released = Event()
+    original_stop = vision.stop_if_epoch
+
+    def stop_and_signal(epoch):
+        original_stop(epoch)
+        released.set()
+
+    monkeypatch.setattr(vision, "stop_if_epoch", stop_and_signal)
     with TestClient(create_app(vision), base_url="http://127.0.0.1:8765") as client:
         started = client.post("/api/start", json={"source": "demo", "demoScenario": "three"})
         assert started.status_code == 200
@@ -39,6 +48,10 @@ def test_pull_stream_auto_count_and_final_viewer_release():
             next_length = struct.unpack(">I", next_packet[:4])[0]
             next_observation = json.loads(next_packet[4 : 4 + next_length])
             assert next_observation["sequence"] > observation["sequence"]
+            # Starlette cancels the handler on context exit. Wait for actual
+            # asynchronous cleanup before that cancellation can interrupt it.
+            socket.close()
+            assert released.wait(timeout=5), "Final-viewer cleanup did not complete"
         assert client.get("/api/status").json()["state"] == "idle"
 
 

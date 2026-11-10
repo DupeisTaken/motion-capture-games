@@ -166,6 +166,51 @@ afterEach(() => {
 });
 
 describe("diagnostic viewer integration", () => {
+  it("keeps stable person rows across 120 frames while still redrawing every paired frame", async () => {
+    const socket = await startViewer();
+    await socket.receive(packet(observation(3)));
+    const rows = [...document.querySelectorAll(".person-row")];
+    const replace = vi.spyOn(element("person-list"), "replaceChildren");
+    for (let sequence = 2; sequence <= 121; sequence++) {
+      vi.advanceTimersByTime(50);
+      await socket.receive(packet(observation(3, sequence)));
+    }
+    expect(replace).not.toHaveBeenCalled();
+    rows.forEach((row, index) =>
+      expect(document.querySelectorAll(".person-row")[index]).toBe(row),
+    );
+    expect(renderer.drawFrame).toHaveBeenCalledTimes(121);
+    expect(element("update-rate").textContent).toBe("20.0");
+    const changed = observation(3, 122);
+    changed.people[0]!.identity = "ambiguous";
+    changed.people[0]!.trackId = null;
+    await socket.receive(packet(changed));
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(element("person-list").textContent).toContain("Uncertain");
+    expect(element("status-title").textContent).toBe("Identity needs recovery");
+  });
+  it("clears stage diagnostics on stale input and rejects invalid camera indices locally", async () => {
+    element<HTMLInputElement>("camera-index").value = "1.5";
+    element<HTMLButtonElement>("start").click();
+    await flushPromises();
+    expect(fetchMock.mock.calls.some(([path]) => path === "/api/start")).toBe(
+      false,
+    );
+    expect(element("status-title").textContent).toBe("Invalid camera index");
+    element<HTMLInputElement>("camera-index").value = "0";
+    const socket = await startViewer();
+    await socket.receive(packet(observation(1)));
+    expect(element("processing-time").textContent).not.toBe("—");
+    expect(element("stream-camera").textContent).toContain("pose");
+    vi.advanceTimersByTime(1800);
+    for (const id of [
+      "processing-time",
+      "packet-size",
+      "stream-clock",
+      "arrival-age",
+    ])
+      expect(element(id).textContent).toBe("—");
+  });
   it("automatically updates three detections to an empty scene from source packets", async () => {
     const socket = await startViewer();
     await socket.receive(packet(observation(3)));
