@@ -26,6 +26,10 @@ Planning mode starts no camera, invokes no capture endpoint and contains no live
 
 Placement dimensions, intended volume and operator notes are planning information. Recording notes or checking role assignments is not evidence of exposure synchronization, metric scale, confirmed association or physical accuracy. The UI keeps these missing gates visible. Camera discovery failure, an absent service, duplicates and disconnection provide useful recovery without enabling XYZ.
 
+The [Virtual Maze pre-game setup](games/virtual-maze.md) now offers an illustrated two-camera guide and a link to this physical planning route. Start with separated oblique views sharing the complete measured floor rectangle, then verify floor-to-head and movement coverage in both actual images. Avoid tiny baselines and near-parallel useful rays; balance geometric separation against overlap and self-occlusion. Its drawing is illustrative, not a lens model, universal mounting angle or accuracy guarantee. [Installation](installation.md#virtual-maze-a-practical-two-camera-setup) owns the step-by-step placement, exact-mode calibration and held-out validation procedure.
+
+The maze guide does not start cameras, change this workspace's readiness or certify the selected head/torso orientation. Correct physical input needs orientation error/coverage evidence alongside XYZ, plus verified exposure pairing, association and feedback timing. Moving a camera or changing image/focus geometry requires revalidation; checking planning items does not bypass that gate.
+
 ## Evidence and future maze input
 
 | Question | Required evidence |

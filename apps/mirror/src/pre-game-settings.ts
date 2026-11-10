@@ -13,7 +13,11 @@ export function preGameSettingsMarkup(
 }
 
 /** Every new-round entry point shares one confirmation; opening never resets play. */
-export function createPreGameSettings(root: HTMLElement, onStart: () => void) {
+export function createPreGameSettings(
+  root: HTMLElement,
+  onStart: () => void,
+  options: { canStart?: () => boolean } = {},
+) {
   const dialog = root.querySelector<HTMLDialogElement>("#pre-game-settings")!;
   const confirm = root.querySelector<HTMLButtonElement>("#confirm-start")!;
   const close = root.querySelector<HTMLButtonElement>("#close-settings")!;
@@ -38,6 +42,8 @@ export function createPreGameSettings(root: HTMLElement, onStart: () => void) {
     "click",
     () => {
       if (!dialog.open || confirm.disabled) return;
+      // Validation may keep setup open and focus the field that needs attention.
+      if (options.canStart && !options.canStart()) return;
       hide();
       onStart();
     },

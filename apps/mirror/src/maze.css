@@ -56,9 +56,16 @@
 }
 .maze-grid {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 270px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 18px;
   align-items: start;
+}
+.maze-round-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 .maze-panel {
   background: white;
@@ -304,7 +311,7 @@
 }
 @media (max-width: 1150px) {
   .maze-grid {
-    grid-template-columns: 230px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
   .maze-feedback {
     grid-column: 1 / -1;
