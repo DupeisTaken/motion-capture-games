@@ -16,7 +16,7 @@ A player slot owns score and session settings. A rig track can become uncertain 
 
 ## Joining and leaving
 
-Require an explicit join action supported by clear UI. The exact gesture or operator flow is a playtest decision. Registration should establish a confident initial association and a distinguishable on-screen label. Spectators and people entering the image are not automatically enrolled.
+Require an explicit participation action supported by clear UI. In the experimental single-player Mole Motion and Dodgeball flows, **Start round** is that action: it waits for a unique confident participant and usable input, then associates player 1 without a second Join button. Multiple people require a clear selection or stepping out before admission; position/order never chooses ownership. Future multiplayer registration still needs its own measured flow. People entering an already-owned round are not automatically enrolled or given its score.
 
 The session has at most three active slots under a profile certified for three. A one-player profile admits one. Leaving, timing out, rejoining and starting a new session have explicit rules; scores must not transfer just because a new track appears nearby.
 

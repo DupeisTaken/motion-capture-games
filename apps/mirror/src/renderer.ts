@@ -11,6 +11,7 @@ export interface RenderOptions {
   mirror: boolean;
   showImage: boolean;
   showBoxes: boolean;
+  showTracking?: boolean;
   confidence: number;
 }
 const COLORS = [
@@ -83,9 +84,8 @@ export function drawFrame(
     } else ctx.translate(rect.x, rect.y);
     ctx.drawImage(image, 0, 0, rect.width, rect.height);
     ctx.restore();
-    ctx.fillStyle = "#0c162224";
-    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
   }
+  if (options.showTracking === false) return;
   for (const [index, person] of frame.people.entries()) {
     // Color is a display cue; only the vision track is an association claim.
     const hash = [...(person.trackId || String(index))].reduce(

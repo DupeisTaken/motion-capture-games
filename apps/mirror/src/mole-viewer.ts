@@ -12,12 +12,18 @@ import { SinglePlayerSession } from "../../../packages/session/src/index";
 import {
   containRect,
   decodeFramePacket,
+  observationSpaceRevision,
   type ContactName,
   type GameMotionFrame,
   type Observation,
 } from "../../../packages/motion/src/index";
 import { drawMoleScene } from "./mole-renderer";
 import { CameraReleases } from "./camera-release";
+import { createGameDisplay } from "./game-display";
+
+// Proposed continuity window: fresh input must remain ready before play/recovery.
+const READY_HOLD_MS = 600;
+const MAX_RECOVERY_GAP_MS = 2000;
 
 const moleArt = `<svg viewBox="0 0 120 110" aria-hidden="true"><ellipse cx="60" cy="96" rx="52" ry="11" fill="#071d1a"/><path d="M19 88V55a41 41 0 0 1 82 0v33" fill="#ce9364"/><circle cx="25" cy="37" r="14" fill="#ce9364"/><circle cx="95" cy="37" r="14" fill="#ce9364"/><circle cx="25" cy="37" r="8" fill="#a7654c"/><circle cx="95" cy="37" r="8" fill="#a7654c"/><path d="M19 88V57a41 41 0 0 1 82 0v31" fill="#ce9364"/><ellipse cx="60" cy="72" rx="23" ry="18" fill="#f4cc9c"/><ellipse cx="60" cy="62" rx="10" ry="7" fill="#492e2b"/><circle cx="43" cy="50" r="4" fill="#272d29"/><circle cx="78" cy="50" r="4" fill="#272d29"/><path d="m51 80 9 5 9-5" fill="none" stroke="#734a3b" stroke-width="3" stroke-linecap="round"/><path d="M13 94h94" stroke="#74aa81" stroke-width="5" stroke-linecap="round"/></svg>`;
 
@@ -45,20 +51,27 @@ export function mountMoleGame(
     <hr><label for="source-select">Input source</label><select id="source-select"><option value="demo">Rehearsal · no camera</option><option value="camera">Camera · body tracking</option></select>
     <div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
     <div id="demo-controls"><label for="demo-contact">Rehearsal contact</label><select id="demo-contact"><option value="left_wrist">Left wrist / hand</option><option value="right_wrist">Right wrist / hand</option><option value="left_hip">Left hip</option><option value="right_hip">Right hip</option><option value="left_foot">Left foot</option><option value="right_foot">Right foot</option></select><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
-    <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Start only when ready. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="source-stop" class="mm-text" disabled>Stop camera</button><label for="player-track">Player track</label><select id="player-track"><option value="">Start camera to see tracks</option></select></div>
-    <p id="player-binding" class="field-note" hidden></p><button id="join-player" class="mm-secondary join">Join player 1</button><p id="player-status" class="field-note" role="status">Join explicitly, then start your round.</p>
+    <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Start only when ready. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="source-stop" class="mm-text" disabled>Stop camera</button><details class="advanced-controls"><summary>Participant & tracking options</summary><label for="player-track">Participant override</label><select id="player-track"><option value="">Automatic · one participant</option></select><p class="field-note">Only needed with more than one participant. Selection is locked during a round.</p></details></div>
+    <p id="player-binding" class="field-note" hidden></p><p id="player-status" class="player-readiness" role="status">Press Start round. We’ll wait until your input is ready.</p><div class="display-controls"><button id="open-game-display" class="mm-secondary">Open game window ↗</button><p id="display-status" class="field-note" role="status">Move the game window to your display; keep controls here.</p><label class="check-row"><input id="show-tracking" type="checkbox"> Show tracking diagnostics</label></div>
   </aside>
   <section class="mm-game" aria-label="Mole Motion game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>HITS</span><strong id="hits-value">0</strong></div><div class="score-item"><span>BEST STREAK</span><strong id="streak-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
-    <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Game play area. Rehearsal: move pointer or arrow keys to aim; Space to push."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored game view, body contacts and bounded play area"></canvas><div class="stage-label"><i></i><span id="stage-mode">TOUCH TO WHACK</span></div><div class="player-label">P1 <span id="stage-player">NOT JOINED</span></div><div id="mole-target" class="mole-target" hidden>${moleArt}</div><div id="hit-feedback" class="hit-feedback" aria-hidden="true"></div><div class="mm-overlay" id="game-overlay"><div class="overlay-mole">${moleArt}</div><p id="overlay-kicker">READY, SET, REACH</p><h2 id="overlay-title">Small moles.<br>Big moves.</h2><p id="overlay-copy">Join a player and make your first move.<br>Keep your whole body inside the camera view.</p></div><div class="stage-bottom"><span id="stage-help">Rehearsal · move your cursor or use arrow keys</span><span>MIRRORED VIEW</span></div></div>
+    <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Game play area. Rehearsal: move pointer or arrow keys to aim; Space to push."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera and game view"></canvas><div class="display-hud" aria-label="Live round score"><span>SCORE <strong id="display-score">000</strong></span><span>TIME <strong id="display-time">1:00</strong></span></div><div class="stage-label"><i></i><span id="stage-mode">TOUCH TO WHACK</span></div><div class="player-label">P1 <span id="stage-player">NOT JOINED</span></div><div id="mole-target" class="mole-target" hidden>${moleArt}</div><div id="hit-feedback" class="hit-feedback" aria-hidden="true"></div><div class="mm-overlay" id="game-overlay"><div class="overlay-mole">${moleArt}</div><p id="overlay-kicker">READY, SET, REACH</p><h2 id="overlay-title">Small moles.<br>Big moves.</h2><p id="overlay-copy">Press Start round and make your first move.<br>Keep your whole body inside the camera view.</p></div><div class="stage-bottom"><span id="stage-help">Rehearsal · move your cursor or use arrow keys</span><span>MIRRORED VIEW</span></div></div>
     <div class="target-track"><span id="target-life">Waiting for your first mole</span><progress id="target-progress" max="1" value="1" aria-label="Mole time remaining"></progress><span id="misses-value">0 escaped</span></div>
-    <div class="game-actions"><button id="start-round" class="mm-primary" disabled>Start round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="resume-round" class="mm-primary" hidden>Resume · countdown</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Join a player to begin.</span></div>
+    <div class="game-actions"><button id="start-round" class="mm-primary">Start round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="resume-round" class="mm-primary" hidden>Resume · countdown</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start round. Input checks happen automatically.</span></div>
     <p class="source-disclosure" id="source-disclosure">Synthetic controls, including simulated depth. This rehearsal does not measure camera or push accuracy.</p>
   </section></div>
   <section class="how-grid" aria-label="How to play"><article><span class="how-number">01</span><div><h2>Meet your mole</h2><p>Touch with a hand or foot. Push uses hips, hands or wrists with depth input.</p></div></article><article><span class="how-number">02</span><div><h2>Move, reset, repeat</h2><p>Each mole counts once. Move away or bring your push back before the next hit.</p></div></article><article><span class="how-number">03</span><div><h2>Stay in the picture</h2><p>Missing feet? Step back, check framing or clear an occlusion. Play pauses fairly.</p></div></article></section>
-  <footer class="mm-footer"><span>Built for movement. Played in your space.</span><span>One joined player · English · M2 software preview</span></footer></main>`;
+  <footer class="mm-footer"><span>Built for movement. Played in your space.</span><span>One player · English · M2 software preview</span></footer></main>`;
 
+  // Cache references before the stage moves to its separate display document.
+  const controls = new Map(
+    [...root.querySelectorAll<HTMLElement>("[id]")].map((element) => [
+      element.id,
+      element,
+    ]),
+  );
   const get = <T extends HTMLElement = HTMLElement>(id: string): T => {
-    const element = root.querySelector<T>(`#${id}`);
+    const element = controls.get(id) as T | undefined;
     if (!element) throw new Error(`Missing game control: ${id}`);
     return element;
   };
@@ -81,7 +94,14 @@ export function mountMoleGame(
     generation = 0,
     epoch = "",
     connecting = false;
-  let cameraMessage = "Start the camera and choose the participant's track.";
+  let cameraMessage = "Start the camera, then press Start round.";
+  let requested = false,
+    manualPaused = false,
+    needsNewOwner = false;
+  let readySince: number | null = null;
+  let cameraLastReceipt = 0;
+  let roundOwner: { trackId: string; epoch: string; revision: string } | null =
+    null;
   let disposed = false,
     pushUntil = -1,
     pointer = { x: 0.28, y: 0.5 };
@@ -93,7 +113,21 @@ export function mountMoleGame(
   const isDemo = () => select("source-select").value === "demo";
   const isJoined = () => (isDemo() ? demoJoined : !!session.binding);
   const active = () =>
-    ["countdown", "playing", "paused"].includes(game.state.phase);
+    requested || ["countdown", "playing", "paused"].includes(game.state.phase);
+  const display = createGameDisplay(get("game-stage"), {
+    title: "Mole Motion",
+    onStateChange(open) {
+      get("open-game-display").textContent = open
+        ? "Return game here"
+        : "Open game window ↗";
+      get("display-status").textContent = open
+        ? "Game window open. Controls stay here."
+        : "Move the game window to your display; keep controls here.";
+      render();
+    },
+    onVisibilityChange: visibilityChanged,
+  });
+  const viewVisible = () => !document.hidden || display.visible;
   const config = (): Partial<GameOptions> => ({
     mode: select("mode-select").value as GameOptions["mode"],
     difficulty: select("difficulty-select").value as GameOptions["difficulty"],
@@ -117,7 +151,7 @@ export function mountMoleGame(
       message.textContent = release.message;
     get<HTMLButtonElement>("retry-camera-stop").disabled = release.releasing;
     get<HTMLButtonElement>("source-connect").disabled =
-      connecting || release.pendingCount > 0;
+      connecting || !!epoch || release.pendingCount > 0;
     get<HTMLButtonElement>("source-stop").disabled = !epoch && !connecting;
     if (!isDemo() && !epoch) setMessage(release.message || cameraMessage);
   }
@@ -140,16 +174,16 @@ export function mountMoleGame(
     if (JSON.stringify(choices) !== JSON.stringify(["", ...tracks])) {
       const previous = binding?.trackId ?? control.value;
       control.replaceChildren(
-        new Option("Choose the participant's track", ""),
+        new Option("Automatic · one participant", ""),
         ...tracks.map((track) => new Option(track, track)),
       );
       if (tracks.includes(previous)) control.value = previous;
     }
-    control.disabled = !!binding || tracks.length === 0;
-    if (binding) control.value = binding.trackId;
+    control.disabled = game.state.phase !== "ready" || tracks.length === 0;
+
     get("player-binding").hidden = isDemo() || !binding;
     get("player-binding").textContent = binding
-      ? `Player 1 is joined to ${binding.trackId}.`
+      ? `Player 1 · ${binding.trackId}`
       : "";
   }
   function resetGame() {
@@ -158,6 +192,15 @@ export function mountMoleGame(
     lastScore = 0;
     hitUntil = 0;
     pushUntil = -1;
+    requested = false;
+    manualPaused = false;
+    needsNewOwner = false;
+    readySince = null;
+    roundOwner = null;
+    if (!isDemo()) {
+      session.release();
+      frame = null;
+    }
   }
   function updateSettings() {
     const demo = isDemo();
@@ -236,6 +279,8 @@ export function mountMoleGame(
       previewFresh ? image : null,
       fresh ? (frame?.contacts ?? []) : [],
       true,
+      get<HTMLInputElement>("show-tracking").checked && !display.isOpen,
+      isDemo(),
     );
     const target = get("mole-target");
     target.hidden = !state.target || state.phase !== "playing";
@@ -270,7 +315,16 @@ export function mountMoleGame(
       state.options.mode === "practice"
         ? "∞"
         : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-    get("stage-player").textContent = isJoined() ? "JOINED" : "NOT JOINED";
+    get("stage-player").textContent =
+      isJoined() && readiness.ready && !needsNewOwner ? "READY" : "WAITING";
+    if (needsNewOwner)
+      setPlayerStatus(
+        "New round needed. Participant identity or camera space changed.",
+      );
+    else if (!isDemo() && session.binding && !readiness.ready)
+      setPlayerStatus(readiness.reason || "Waiting for ready input.");
+    get("display-score").textContent = get("score-value").textContent;
+    get("display-time").textContent = get("time-value").textContent;
     const locked = active();
     for (const id of [
       "mode-select",
@@ -282,32 +336,29 @@ export function mountMoleGame(
     get<HTMLButtonElement>("interaction-touch").disabled = locked;
     get<HTMLButtonElement>("interaction-push").disabled = locked || !isDemo();
     get<HTMLButtonElement>("start-round").disabled =
-      !isJoined() ||
-      !readiness.ready ||
-      document.hidden ||
-      state.phase !== "ready";
-    get("start-round").hidden = state.phase !== "ready";
+      state.phase !== "ready" || requested;
+    get("start-round").hidden = state.phase !== "ready" || requested;
     get<HTMLButtonElement>("pause-round").disabled = ![
       "playing",
       "countdown",
     ].includes(state.phase);
     get("pause-round").hidden = ["paused", "results"].includes(state.phase);
     const needsNewRound =
-      state.phase === "paused" && readiness.requiresNewRound;
-    get("resume-round").hidden = state.phase !== "paused" || needsNewRound;
-    get<HTMLButtonElement>("resume-round").disabled =
-      !isJoined() || !readiness.ready || document.hidden;
+      state.phase === "paused" && (readiness.requiresNewRound || needsNewOwner);
+    get("resume-round").hidden =
+      state.phase !== "paused" || needsNewRound || !manualPaused;
+    get<HTMLButtonElement>("resume-round").disabled = !viewVisible();
     get<HTMLButtonElement>("end-round").disabled = !locked;
     get("restart-round").hidden = state.phase !== "results" && !needsNewRound;
     get("restart-round").textContent = needsNewRound
-      ? "Set up new round ↗"
+      ? "Start new round ↗"
       : "Play again ↗";
-    get<HTMLButtonElement>("join-player").disabled = isJoined() || connecting;
     updateReleaseControls();
     const overlay = get("game-overlay");
     overlay.hidden =
       state.phase === "playing" ||
-      (!isDemo() && state.phase === "ready" && !!previewFresh);
+      (!isDemo() && state.phase === "ready" && !!previewFresh && !requested);
+    overlay.classList.toggle("camera-notice", !isDemo() && !!previewFresh);
     get("overlay-kicker").textContent =
       state.phase === "paused"
         ? "TAKE A BREATH"
@@ -326,24 +377,27 @@ export function mountMoleGame(
       setMessage("Get ready…");
     } else if (state.phase === "paused") {
       const feet = frame && !frame.feetVisible;
-      title.textContent = feet ? "Step back" : "Play paused";
-      copy.textContent = feet
-        ? "Keep both feet in view. Check camera framing or clear an occlusion. Your time and score are safe."
-        : needsNewRound
-          ? `${readiness.reason} Set up a new round to keep score ownership clear.`
-          : !isJoined()
-            ? "Join the participant explicitly before resuming. Your round stays paused."
-            : !readiness.ready
-              ? readiness.reason
-              : "Ready to resume. Your time and score are safe; choose Resume for a countdown.";
+      title.textContent = needsNewRound
+        ? "New round needed"
+        : manualPaused
+          ? "Take a breath"
+          : feet
+            ? "Keep both feet in view"
+            : "Finding your movement";
+      copy.textContent = needsNewRound
+        ? "The participant or camera space changed. Start a new round to keep score ownership clear. Your previous score stays here until then."
+        : manualPaused
+          ? "Your time and score are safe. Choose Resume when ready."
+          : !readiness.ready
+            ? readiness.reason ||
+              "Waiting for the same participant. Keep your whole body in view."
+            : "Tracking is steady. Restarting with a short countdown…";
       setMessage(
-        feet
-          ? "Both feet must be in view before resuming."
-          : !isJoined()
-            ? "Rejoin the participant before resuming."
-            : !readiness.ready
-              ? readiness.reason || "Check tracking before resuming."
-              : "Ready to resume. Choose Resume when you are ready.",
+        needsNewRound
+          ? "Participant changed. Set up a new round."
+          : manualPaused
+            ? "Paused. Resume when ready."
+            : "Tracking paused · score and time saved · recovery is automatic.",
       );
     } else if (state.phase === "results") {
       title.textContent =
@@ -357,16 +411,22 @@ export function mountMoleGame(
           : "Round in play. Aim, push, then return to reset.",
       );
     } else if (state.phase === "ready") {
-      title.textContent = "Small moles. Big moves.";
-      copy.textContent = isJoined()
-        ? modeCopy[state.options.mode]
-        : "Join a player and make your first move. Keep your whole body inside the camera view.";
-      if (isJoined())
-        setMessage(
-          readiness.ready
-            ? "Player 1 ready. Start your round."
-            : readiness.reason || "Check tracking before starting.",
-        );
+      title.textContent = requested
+        ? "Finding your movement"
+        : "Small moles. Big moves.";
+      copy.textContent = requested
+        ? !isDemo() && !epoch
+          ? "Start the camera to continue. Your round is ready when you are."
+          : readiness.reason ||
+            "Hold steady for a moment. Your countdown is coming."
+        : "Press Start round. Keep your whole body in view; play begins when tracking is ready.";
+      setMessage(
+        !isDemo() && !epoch && !requested
+          ? releases.state.message || cameraMessage
+          : requested
+            ? "Waiting for ready input · no round time is being used."
+            : "Press Start round. We’ll check your input automatically.",
+      );
     }
     if (state.hits > lastHits) {
       hitUntil = t + 550;
@@ -377,20 +437,102 @@ export function mountMoleGame(
     get("hit-feedback").hidden = t > hitUntil || hitUntil === 0;
   }
   let lastScore = 0;
+  function ingestCamera() {
+    if (!observation) return;
+    const revision = observationSpaceRevision(observation);
+    const receiptGap = cameraLastReceipt ? receivedAt - cameraLastReceipt : 0;
+    cameraLastReceipt = receivedAt;
+    const tracks = observation.people.filter(
+      (person) =>
+        person.trackId &&
+        person.identity === "confident" &&
+        observation!.people.filter((other) => other.trackId === person.trackId)
+          .length === 1,
+    );
+    const override = select("player-track").value;
+    // Explicit identity loss cannot prove who returned: restart rather than attach an old score.
+    if (
+      roundOwner &&
+      (receiptGap > MAX_RECOVERY_GAP_MS ||
+        tracks.filter((person) => person.trackId === roundOwner!.trackId)
+          .length !== 1)
+    )
+      needsNewOwner = true;
+    if (!roundOwner && !override && tracks.length !== 1) {
+      session.release();
+      readySince = null;
+    }
+    if (
+      roundOwner &&
+      (roundOwner.epoch !== observation.epoch ||
+        roundOwner.revision !== revision)
+    )
+      needsNewOwner = true;
+    const previousBinding = session.binding;
+    frame = previousBinding ? session.ingest(observation, receivedAt) : null;
+    if (previousBinding && !session.binding) {
+      readySince = null;
+      if (
+        !/missing or uncertain|Tracking was interrupted/.test(
+          session.reason || "",
+        )
+      )
+        needsNewOwner = !!roundOwner;
+    }
+    if (!session.binding && !needsNewOwner) {
+      // Automatic admission is only for a unique confident identity, never array order.
+      const desired =
+        roundOwner?.trackId ||
+        override ||
+        (tracks.length === 1 ? tracks[0].trackId : "");
+      const person = tracks.find((track) => track.trackId === desired);
+      if (person) frame = session.join(observation, desired!, receivedAt);
+      else if (
+        roundOwner &&
+        tracks.length === 1 &&
+        tracks[0].trackId !== roundOwner.trackId
+      )
+        needsNewOwner = true;
+      if (!person)
+        setPlayerStatus(
+          tracks.length > 1
+            ? "More than one participant. Keep one in view or choose a participant in advanced options."
+            : "Waiting for one confidently tracked participant.",
+        );
+    }
+    if (session.binding)
+      setPlayerStatus("Participant found. Keep your whole body in view.");
+  }
   function tick() {
     if (disposed) return;
     const t = now();
-    if (isDemo()) frame = demoFrame(t);
+    if (isDemo()) {
+      demoJoined = true;
+      frame = demoFrame(t);
+    }
     game.update(t, frame);
-    if (!isDemo() && !session.binding)
-      setPlayerStatus(
-        session.reason || "Choose your track and join explicitly.",
-      );
+    const ready =
+      game.readiness(t, frame).ready && viewVisible() && !needsNewOwner;
+    if (!ready) readySince = null;
+    else readySince ??= t;
+    const steady = ready && (isDemo() || t - readySince! >= READY_HOLD_MS);
+    if (requested && game.state.phase === "ready" && steady) {
+      requested = false;
+      const binding = session.binding;
+      if (binding && observation)
+        roundOwner = {
+          trackId: binding.trackId,
+          epoch: binding.epoch,
+          revision: observationSpaceRevision(observation),
+        };
+      game.start(t);
+    } else if (game.state.phase === "paused" && !manualPaused && steady)
+      game.resume(t);
     updateTrackChoices();
     render();
   }
   async function stopCamera(
-    message = "Camera stopped. Start it and join again when ready.",
+    message = "Camera stopped. Start it again when ready.",
   ) {
     generation++;
     connecting = false;
@@ -404,9 +546,12 @@ export function mountMoleGame(
     observation = null;
     image?.close();
     image = null;
+    if (roundOwner) needsNewOwner = true;
+    readySince = null;
+    cameraLastReceipt = 0;
     if (active()) game.pause(message);
     select("player-track").replaceChildren(
-      new Option("Start camera to see tracks", ""),
+      new Option("Automatic · one participant", ""),
     );
     setPlayerStatus(message);
     setMessage(message);
@@ -417,7 +562,7 @@ export function mountMoleGame(
     return released;
   }
   async function startCamera() {
-    if (connecting || releases.state.pendingCount > 0) return;
+    if (connecting || epoch || releases.state.pendingCount > 0) return;
     let camera: CameraSelection;
     try {
       camera = cameraChoice.selection();
@@ -493,7 +638,10 @@ export function mountMoleGame(
               image?.close();
               image = null;
               session.release();
-              game.pause("Camera input is stale. Join again after recovery.");
+              readySince = null;
+              game.pause(
+                "Camera input is stale. Waiting for the same participant.",
+              );
             }
           } else {
             const packet = decodeFramePacket(event.data);
@@ -527,13 +675,8 @@ export function mountMoleGame(
             observation = packet.observation;
             receivedAt = arrival;
             connecting = false;
-            frame = session.ingest(observation, receivedAt);
+            ingestCamera();
             updateTrackChoices();
-            if (!session.binding)
-              setPlayerStatus(
-                session.reason ||
-                  "Choose the participant's track, then join player 1.",
-              );
           }
           tick();
         } catch (error) {
@@ -555,9 +698,7 @@ export function mountMoleGame(
       };
       ws.onclose = () => {
         if (own === generation)
-          void stopCamera(
-            "Camera connection closed. Reconnect and join again.",
-          );
+          void stopCamera("Camera connection closed. Start the camera again.");
       };
     } catch (error) {
       if (own === generation)
@@ -580,10 +721,10 @@ export function mountMoleGame(
     updateSettings();
     setPlayerStatus(
       isDemo()
-        ? "Join player 1 explicitly, then start your rehearsal."
-        : "Start the camera, choose the participant's track, then join.",
+        ? "Rehearsal ready. Press Start round."
+        : "Start the camera, then press Start round.",
     );
-    setMessage("Choose your input and join a player.");
+    setMessage("Choose your input and press Start round.");
     tick();
   });
   for (const id of ["mode-select", "difficulty-select"])
@@ -600,48 +741,46 @@ export function mountMoleGame(
       updateSettings();
       tick();
     });
-  listen(get("join-player"), "click", () => {
-    if (isDemo()) {
-      demoJoined = true;
-      frame = demoFrame(now());
-    } else if (observation)
-      frame = session.join(
-        observation,
-        select("player-track").value,
-        receivedAt,
-      );
-    if (isJoined()) {
-      setPlayerStatus("Player 1 joined. Keep both feet visible.");
-      setMessage("Player 1 ready. Start your round.");
-    } else
-      setMessage(
-        session.reason ||
-          "Start the camera and choose a confident participant track first.",
-      );
+  listen(select("player-track"), "change", () => {
+    if (game.state.phase !== "ready") return;
+    session.release();
+    readySince = null;
+    ingestCamera();
     tick();
   });
+  listen(get("show-tracking"), "change", () => render());
+  listen(get("open-game-display"), "click", () => {
+    if (display.isOpen) display.close();
+    else if (!display.open())
+      get("display-status").textContent =
+        "Allow pop-ups for this local page, then try again.";
+  });
   listen(get("start-round"), "click", () => {
-    if (isJoined() && !document.hidden && game.readiness(now(), frame).ready) {
-      game.start(now());
-      tick();
-    }
+    requested = true;
+    manualPaused = false;
+    tick();
   });
   listen(get("pause-round"), "click", () => {
+    manualPaused = true;
     game.pause("Paused by player.");
     tick();
   });
   listen(get("resume-round"), "click", () => {
-    if (isJoined() && !document.hidden && game.readiness(now(), frame).ready) {
-      game.resume(now());
-      tick();
-    }
+    manualPaused = false;
+    readySince = null;
+    tick();
   });
   listen(get("end-round"), "click", () => {
-    game.finish();
+    if (requested) resetGame();
+    else game.finish();
     tick();
   });
   listen(get("restart-round"), "click", () => {
+    const startAgain =
+      needsNewOwner || game.readiness(now(), frame).requiresNewRound;
     resetGame();
+    requested = startAgain;
+    if (!isDemo()) ingestCamera();
     setMessage("Ready for another round. Adjust your setup or start again.");
     tick();
   });
@@ -692,19 +831,23 @@ export function mountMoleGame(
     key.preventDefault();
     tick();
   });
-  listen(document, "visibilitychange", () => {
-    if (document.hidden) {
-      game.pause("Tab hidden. Resume when you return.");
+  function visibilityChanged() {
+    if (!viewVisible()) {
+      manualPaused = true;
+      readySince = null;
+      game.pause("Game hidden. Resume when you return.");
       pushUntil = -1;
       if (!disposed) render();
     }
-  });
+  }
+  listen(document, "visibilitychange", visibilityChanged);
   listen(window, "pagehide", () => {
     void stopCamera();
   });
   const resize = new ResizeObserver(() => render());
   resize.observe(get("game-canvas"));
-  const timer = deps.autoTick === false ? null : window.setInterval(tick, 50);
+  const stopTicker =
+    deps.autoTick === false ? () => {} : display.startTicker(tick);
   updateSettings();
   tick();
   return {
@@ -713,8 +856,9 @@ export function mountMoleGame(
       disposed = true;
       cameraChoice.dispose();
       listeners.abort();
+      display.dispose();
       resize.disconnect();
-      if (timer !== null) window.clearInterval(timer);
+      stopTicker();
       void stopCamera();
     },
   };

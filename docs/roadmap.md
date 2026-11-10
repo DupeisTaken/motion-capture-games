@@ -58,6 +58,8 @@ All six remain open. [ADR 0004](decisions/0004-proposed-vision-experiment.md) re
 
 ## M2: Whack-a-mole vertical slice
 
+**Camera gameplay follow-up:** [Issue #25](https://github.com/DupeisTaken/motion-capture-games/issues/25) simplifies Mole Motion and Dodgeball to Start that waits for unique stable input, untinted camera pictures, operator-only tracking graphics and a separate window for the existing live game stage. Same-owner joint loss recovers fairly; explicit identity loss requires a new round. [The report](../reports/raw-game-display.html) owns executed tests/browser/review evidence. Windows/macOS/Linux software compatibility is separate from physical camera and participant certification.
+
 **Problem:** Establish a complete, understandable game interaction and reliable attribution.
 
 **Owns:** Game-ready motion input, session lifecycle, explicit joining, practice, target interaction, score/results and replay. Depends on the relevant M1 gates.

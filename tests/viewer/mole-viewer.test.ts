@@ -13,6 +13,17 @@ const renderer = vi.hoisted(() => ({
   })),
 }));
 vi.mock("../../apps/mirror/src/mole-renderer", () => renderer);
+const display = vi.hoisted(() => ({
+  isOpen: false,
+  visible: false,
+  open: vi.fn(() => false),
+  close: vi.fn(),
+  dispose: vi.fn(),
+  startTicker: vi.fn(() => () => {}),
+}));
+vi.mock("../../apps/mirror/src/game-display", () => ({
+  createGameDisplay: () => display,
+}));
 
 let now: number;
 let app: ReturnType<typeof mountMoleGame>;
@@ -133,7 +144,6 @@ function startDemo(): void {
     choose("source-select", "demo");
   }
   app.tick();
-  element<HTMLButtonElement>("join-player").click();
   app.tick();
   element<HTMLButtonElement>("start-round").click();
   advance(3500);
@@ -161,6 +171,8 @@ function targetPosition(): { x: number; y: number } {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  display.isOpen = false;
+  display.visible = false;
   fetchMock.mockReset();
   fetchMock.mockResolvedValue({
     ok: true,
@@ -228,28 +240,19 @@ afterEach(() => {
 });
 
 describe("Mole Motion operator integration", () => {
-  it("opens a labeled synthetic rehearsal without starting a camera", () => {
-    app.tick();
-    expect(element<HTMLSelectElement>("source-select").value).toBe("demo");
-    expect(document.body.textContent).toMatch(/synthetic/i);
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(Number(element("score-value").textContent)).toBe(0);
-    expect(renderer.drawMoleScene).toHaveBeenCalled();
+  it("keeps a connected camera stable until Stop, including a forged Start click", async () => {
+    await startCamera();
+    const connect = element<HTMLButtonElement>("source-connect");
+    expect(connect.disabled).toBe(true);
+    connect.dispatchEvent(new Event("click"));
+    await flushPromises();
+    expect(
+      fetchMock.mock.calls.filter(([path]) => path === "/api/start"),
+    ).toHaveLength(1);
+    element<HTMLButtonElement>("source-stop").click();
+    await flushPromises();
+    expect(connect.disabled).toBe(false);
   });
-
-  it("requires explicit joining before a round can begin", () => {
-    app.tick();
-    expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
-    element<HTMLButtonElement>("join-player").click();
-    app.tick();
-    expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
-    element<HTMLButtonElement>("start-round").click();
-    app.tick();
-    expect(element("overlay-title").textContent).toMatch(/3|ready|countdown/i);
-    advance(3500);
-    expect(element("mole-target").hidden).toBe(false);
-  });
-
   it("offers all four round modes and three difficulty choices", () => {
     expect(
       Array.from(element<HTMLSelectElement>("mode-select").options).map(
@@ -275,29 +278,6 @@ describe("Mole Motion operator integration", () => {
     expect(element<HTMLButtonElement>("interaction-push").disabled).toBe(true);
     expect(document.body.textContent).toMatch(/depth/i);
     expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("pauses without time or score loss while feet are outside the frame", () => {
-    startDemo();
-    const framing = element<HTMLInputElement>("demo-framing");
-    framing.checked = false;
-    framing.dispatchEvent(new Event("change", { bubbles: true }));
-    app.tick();
-    expect(element("overlay-title").textContent).toMatch(/step back|feet/i);
-    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
-    const time = element("time-value").textContent;
-    const score = element("score-value").textContent;
-    advance(5000);
-    expect(element("time-value").textContent).toBe(time);
-    expect(element("score-value").textContent).toBe(score);
-    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
-    framing.checked = true;
-    framing.dispatchEvent(new Event("change", { bubbles: true }));
-    app.tick();
-    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(false);
-    element<HTMLButtonElement>("resume-round").click();
-    app.tick();
-    expect(element("overlay-title").textContent).toMatch(/2|ready|countdown/i);
   });
 
   it("freezes the round on operator pause and resumes through countdown", () => {
@@ -396,91 +376,6 @@ describe("Mole Motion operator integration", () => {
     expect(element("hits-value").textContent).toBe("1");
   });
 
-  it("blocks start while known feet are missing and enables it after framing recovery", () => {
-    const framing = element<HTMLInputElement>("demo-framing");
-    framing.checked = false;
-    element<HTMLButtonElement>("join-player").click();
-    expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
-    expect(element("game-status").textContent).toMatch(/feet/i);
-    framing.checked = true;
-    framing.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
-  });
-
-  it("keeps camera track options stable and displays the actual bound owner", async () => {
-    const socket = await startCamera();
-    const first = observation();
-    const spectator = {
-      ...structuredClone(first.people[0]),
-      trackId: "camera-track-2",
-    };
-    first.people.push(spectator);
-    first.detectedCount = 2;
-    await socket.receive(packet(first));
-    choose("player-track", "camera-track-1");
-    const control = element<HTMLSelectElement>("player-track");
-    const options = [...control.options];
-    const next = observation(2);
-    next.people.push(spectator);
-    next.people.reverse();
-    next.detectedCount = 2;
-    now += 50;
-    await socket.receive(packet(next));
-    expect([...control.options]).toEqual(options);
-    for (let index = 0; index < options.length; index++)
-      expect(control.options[index]).toBe(options[index]);
-    expect(control.value).toBe("camera-track-1");
-    element<HTMLButtonElement>("join-player").click();
-    expect(control.disabled).toBe(true);
-    expect(element("player-binding").textContent).toMatch(
-      /player 1.*camera-track-1/i,
-    );
-    const later = observation(3);
-    later.people.push(spectator);
-    later.detectedCount = 2;
-    now += 50;
-    await socket.receive(packet(later));
-    expect(control.disabled).toBe(true);
-    expect(control.value).toBe("camera-track-1");
-  });
-
-  it("blocks start for stale joined camera input without spending round time", async () => {
-    const socket = await startCamera();
-    await socket.receive(packet(observation()));
-    choose("player-track", "camera-track-1");
-    element<HTMLButtonElement>("join-player").click();
-    advance(400);
-    expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
-    expect(element("game-status").textContent).toMatch(/stale/i);
-    expect(element("time-value").textContent).toBe("1:00");
-  });
-
-  it("blocks stale camera resume and preserves time until fresh input and explicit recovery", async () => {
-    const socket = await startCamera();
-    await socket.receive(packet(observation()));
-    choose("player-track", "camera-track-1");
-    element<HTMLButtonElement>("join-player").click();
-    element<HTMLButtonElement>("start-round").click();
-    for (let sequence = 2; sequence <= 65; sequence++) {
-      now += 50;
-      await socket.receive(packet(observation(sequence)));
-    }
-    element<HTMLButtonElement>("pause-round").click();
-    const time = element("time-value").textContent;
-    advance(400);
-    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
-    expect(element("game-status").textContent).toMatch(/stale/i);
-    expect(element("time-value").textContent).toBe(time);
-    // The gap invalidates membership too; fresh poses alone cannot grant control.
-    now += 50;
-    await socket.receive(packet(observation(74)));
-    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
-    choose("player-track", "camera-track-1");
-    element<HTMLButtonElement>("join-player").click();
-    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(false);
-    expect(element("time-value").textContent).toBe(time);
-  });
-
   it("keeps a failed late-start release available after switching to rehearsal", async () => {
     await selectCamera();
     let finishStart!: (value: object) => void;
@@ -547,9 +442,7 @@ describe("Mole Motion operator integration", () => {
       choose("source-select", "demo");
       await flushPromises();
       expect(element("camera-release").hidden).toBe(false);
-      expect(element("player-status").textContent).toMatch(
-        /join player 1.*rehearsal/i,
-      );
+      expect(element("player-status").textContent).toMatch(/rehearsal ready/i);
       element<HTMLButtonElement>("retry-camera-stop").click();
       await flushPromises();
       expect(element("camera-release").hidden).toBe(true);
@@ -564,35 +457,6 @@ describe("Mole Motion operator integration", () => {
       ).toBe(true);
     },
   );
-
-  it("renders camera preview before admission and releases only its acknowledged epoch", async () => {
-    const socket = await startCamera();
-    const startRequest = fetchMock.mock.calls.find(
-      ([path]) => path === "/api/start",
-    );
-    expect(JSON.parse(startRequest?.[1].body as string).algorithm).toBe(
-      "rtmpose",
-    );
-    expect(JSON.parse(startRequest?.[1].body as string).cameraId).toBe(
-      "a".repeat(64),
-    );
-    const cameraFrame = observation();
-    await socket.receive(packet(cameraFrame));
-    expect(renderer.drawMoleScene.mock.calls.at(-1)?.[1]).toEqual(cameraFrame);
-    expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
-    expect(socket.send).toHaveBeenCalledWith(JSON.stringify({ type: "next" }));
-    const bitmap = await createBitmap.mock.results[0].value;
-    element<HTMLButtonElement>("source-stop").click();
-    await flushPromises();
-    expect(bitmap.close).toHaveBeenCalledTimes(1);
-    expect(socket.close).toHaveBeenCalledTimes(1);
-    const stops = fetchMock.mock.calls.filter(([path]) => path === "/api/stop");
-    expect(stops).toHaveLength(1);
-    expect(JSON.parse(stops[0][1].body as string)).toEqual({
-      epoch: "camera-test",
-    });
-    expect(renderer.drawMoleScene.mock.calls.at(-1)?.[1]).toBeNull();
-  });
 
   it("closes a late decoded image after the camera has stopped", async () => {
     const socket = await startCamera();
@@ -615,39 +479,9 @@ describe("Mole Motion operator integration", () => {
     finishDecode(bitmap);
     await receiving;
     expect(bitmap.close).toHaveBeenCalledTimes(1);
-    expect(element("stage-player").textContent).toBe("NOT JOINED");
+    expect(element("stage-player").textContent).toBe("WAITING");
     expect(renderer.drawMoleScene.mock.calls.at(-1)?.[1]).toBeNull();
   });
-
-  it("shows an actionable backend failure and permits another connection attempt", async () => {
-    await selectCamera();
-    fetchMock.mockRejectedValueOnce(new Error("Service offline"));
-    element<HTMLButtonElement>("source-connect").click();
-    await flushPromises();
-    expect(element("game-status").textContent).toMatch(/offline.*pnpm dev/i);
-    expect(element<HTMLButtonElement>("source-connect").disabled).toBe(false);
-    expect(element<HTMLButtonElement>("source-stop").disabled).toBe(true);
-    expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
-  });
-
-  it.each(["epoch", "sequence"])(
-    "rejects a camera %s discontinuity without reviving its preview",
-    async (field) => {
-      const socket = await startCamera();
-      await socket.receive(packet(observation()));
-      const invalid = observation(2);
-      if (field === "epoch") invalid.epoch = "unexpected-restart";
-      else invalid.sequence = 1;
-      now += 50;
-      await socket.receive(packet(invalid));
-      expect(createBitmap).toHaveBeenCalledTimes(1);
-      expect(element("game-status").textContent).toMatch(
-        /stream changed|old frame/i,
-      );
-      expect(element<HTMLButtonElement>("source-connect").disabled).toBe(false);
-      expect(renderer.drawMoleScene.mock.calls.at(-1)?.[1]).toBeNull();
-    },
-  );
 
   it("releases a late camera-start acknowledgement after an operator stop", async () => {
     await selectCamera();
@@ -675,51 +509,150 @@ describe("Mole Motion operator integration", () => {
     expect(element<HTMLButtonElement>("source-connect").disabled).toBe(false);
   });
 
-  it("pauses camera scoring on ambiguous identity and requires explicit rejoin", async () => {
-    const socket = await startCamera();
-    await socket.receive(packet(observation()));
-    choose("player-track", "camera-track-1");
-    element<HTMLButtonElement>("join-player").click();
+  it("starts rehearsal directly without a join step or camera access", () => {
+    expect(document.getElementById("join-player")).toBeNull();
+    expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
     element<HTMLButtonElement>("start-round").click();
-    for (let sequence = 2; sequence <= 65; sequence++) {
+    expect(element("overlay-title").textContent).toBe("3");
+    advance(3500);
+    expect(element("mole-target").hidden).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(element("display-score").textContent).toBe("000");
+  });
+
+  it("accepts Start with incomplete framing and waits without spending round time", () => {
+    const framing = element<HTMLInputElement>("demo-framing");
+    framing.checked = false;
+    element<HTMLButtonElement>("start-round").click();
+    advance(1000);
+    expect(element("time-value").textContent).toBe("1:00");
+    expect(element("overlay-copy").textContent).toMatch(/feet/i);
+    expect(element<HTMLButtonElement>("end-round").disabled).toBe(false);
+    framing.checked = true;
+    framing.dispatchEvent(new Event("change"));
+    expect(element("overlay-title").textContent).toBe("3");
+    advance(3500);
+    expect(element("mole-target").hidden).toBe(false);
+  });
+
+  it("automatically recovers missing feet through a countdown without manual resume", () => {
+    startDemo();
+    const framing = element<HTMLInputElement>("demo-framing");
+    framing.checked = false;
+    framing.dispatchEvent(new Event("change"));
+    const time = element("time-value").textContent;
+    advance(1000);
+    expect(element("time-value").textContent).toBe(time);
+    expect(element("resume-round").hidden).toBe(true);
+    framing.checked = true;
+    framing.dispatchEvent(new Event("change"));
+    expect(element("overlay-title").textContent).toBe("2");
+    expect(element("time-value").textContent).toBe(time);
+    advance(2500);
+    expect(element("mole-target").hidden).toBe(false);
+  });
+
+  it("arms camera Start before a pose exists, then auto starts after stable input", async () => {
+    const socket = await startCamera();
+    expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
+    element<HTMLButtonElement>("start-round").click();
+    advance(500);
+    expect(element("time-value").textContent).toBe("1:00");
+    for (let sequence = 1; sequence <= 80; sequence++) {
       now += 50;
       await socket.receive(packet(observation(sequence)));
     }
     expect(element("mole-target").hidden).toBe(false);
-    const uncertain = observation(66);
+    expect(element("player-binding").textContent).toMatch(/camera-track-1/);
+  });
+
+  it("does not select by detection order when multiple participants are present", async () => {
+    const socket = await startCamera();
+    element<HTMLButtonElement>("start-round").click();
+    for (let sequence = 1; sequence <= 20; sequence++) {
+      const value = observation(sequence);
+      value.people.push({
+        ...structuredClone(value.people[0]),
+        trackId: "camera-track-2",
+      });
+      if (sequence % 2) value.people.reverse();
+      value.detectedCount = 2;
+      now += 50;
+      await socket.receive(packet(value));
+    }
+    expect(element("player-binding").hidden).toBe(true);
+    expect(element("player-status").textContent).toMatch(/more than one/i);
+    expect(element("mole-target").hidden).toBe(true);
+    expect(element("time-value").textContent).toBe("1:00");
+  });
+
+  it("supports an optional explicit override before Start for a crowded camera view", async () => {
+    const socket = await startCamera();
+    const value = observation();
+    value.people.push({
+      ...structuredClone(value.people[0]),
+      trackId: "camera-track-2",
+    });
+    value.detectedCount = 2;
+    await socket.receive(packet(value));
+    choose("player-track", "camera-track-2");
+    expect(element("player-binding").textContent).toMatch(/camera-track-2/);
+    element<HTMLButtonElement>("start-round").click();
+    expect(element<HTMLSelectElement>("player-track").disabled).toBe(false);
+    for (let sequence = 2; sequence <= 15; sequence++) {
+      const next = {
+        ...value,
+        sequence,
+        capturedAtNs: String(BigInt(sequence) * 50_000_000n),
+        processedAtNs: String(BigInt(sequence) * 50_000_000n + 16_000_000n),
+      };
+      now += 50;
+      await socket.receive(packet(next));
+    }
+    expect(element<HTMLSelectElement>("player-track").disabled).toBe(true);
+  });
+
+  it("requires a new round after explicit identity uncertainty even if the same track returns", async () => {
+    const socket = await startCamera();
+    element<HTMLButtonElement>("start-round").click();
+    for (let sequence = 1; sequence <= 80; sequence++) {
+      now += 50;
+      await socket.receive(packet(observation(sequence)));
+    }
+    const uncertain = observation(81);
     uncertain.people[0].identity = "ambiguous";
     now += 50;
     await socket.receive(packet(uncertain));
+    expect(element("stage-player").textContent).toBe("WAITING");
+    expect(element("player-status").textContent).toMatch(/New round needed/);
     const time = element("time-value").textContent;
     const score = element("score-value").textContent;
-    expect(element("game-overlay").hidden).toBe(false);
-    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
-    expect(element("player-status").textContent).toMatch(/missing|uncertain/i);
-    now += 50;
-    await socket.receive(packet(observation(67)));
+    expect(element("mole-target").hidden).toBe(true);
+    for (let sequence = 82; sequence <= 92; sequence++) {
+      now += 50;
+      await socket.receive(packet(observation(sequence)));
+    }
     expect(element("time-value").textContent).toBe(time);
     expect(element("score-value").textContent).toBe(score);
-    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
-    choose("player-track", "camera-track-1");
-    element<HTMLButtonElement>("join-player").click();
-    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(false);
+    expect(element("mole-target").hidden).toBe(true);
+    for (let sequence = 93; sequence <= 145; sequence++) {
+      now += 50;
+      await socket.receive(packet(observation(sequence)));
+    }
+    expect(element("mole-target").hidden).toBe(true);
+    expect(element("restart-round").hidden).toBe(false);
   });
 
   it.each(["track", "calibration"])(
-    "offers a new round after a changed camera %s instead of a resume loop",
+    "requires a fresh round after changed %s, with no score transfer",
     async (change) => {
       const socket = await startCamera();
-      await socket.receive(packet(observation()));
-      choose("player-track", "camera-track-1");
-      element<HTMLButtonElement>("join-player").click();
       element<HTMLButtonElement>("start-round").click();
-      for (let sequence = 2; sequence <= 65; sequence++) {
+      for (let sequence = 1; sequence <= 80; sequence++) {
         now += 50;
         await socket.receive(packet(observation(sequence)));
       }
-
-      // Establish a real camera-input score before changing its score owner/space.
-      const outside = observation(66);
+      const outside = observation(81);
       outside.people[0].joints.left_wrist = {
         x: 0.01,
         y: 0.01,
@@ -730,7 +663,7 @@ describe("Mole Motion operator integration", () => {
       now += 50;
       await socket.receive(packet(outside));
       const target = targetPosition();
-      const hit = observation(67);
+      const hit = observation(82);
       hit.people[0].joints.left_wrist = {
         x: 1 - target.x / 960,
         y: target.y / 600,
@@ -740,40 +673,163 @@ describe("Mole Motion operator integration", () => {
       };
       now += 50;
       await socket.receive(packet(hit));
-      expect(Number(element("score-value").textContent)).toBe(100);
-
-      const changedObservation = (sequence: number): Observation => {
-        const changed = observation(sequence);
-        if (change === "track") changed.people[0].trackId = "camera-track-2";
-        else changed.calibrationId = "calibration-v2";
-        return changed;
-      };
-      now += 50;
-      await socket.receive(packet(changedObservation(68)));
-      expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
-      choose(
-        "player-track",
-        change === "track" ? "camera-track-2" : "camera-track-1",
-      );
-      element<HTMLButtonElement>("join-player").click();
-      element<HTMLButtonElement>("resume-round").click();
-      expect(element("resume-round").hidden).toBe(true);
-      expect(element("restart-round").hidden).toBe(false);
-      expect(element("restart-round").textContent).toMatch(/set up new round/i);
-      expect(element("overlay-copy").textContent).toMatch(/score ownership/i);
-      expect(Number(element("score-value").textContent)).toBe(100);
-
-      element<HTMLButtonElement>("restart-round").click();
-      expect(Number(element("score-value").textContent)).toBe(0);
-      expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
-      element<HTMLButtonElement>("start-round").click();
-      for (let sequence = 69; sequence <= 130; sequence++) {
+      expect(element("score-value").textContent).toBe("100");
+      for (let sequence = 83; sequence <= 110; sequence++) {
+        const value = observation(sequence);
+        if (change === "track") value.people[0].trackId = "camera-track-2";
+        else value.calibrationId = "changed-calibration";
         now += 50;
-        await socket.receive(packet(changedObservation(sequence)));
+        await socket.receive(packet(value));
       }
-      expect(element("mole-target").hidden).toBe(false);
-      expect(element("game-overlay").hidden).toBe(true);
-      expect(Number(element("score-value").textContent)).toBe(0);
+      expect(element("score-value").textContent).toBe("100");
+      expect(element("mole-target").hidden).toBe(true);
+      expect(element("restart-round").hidden).toBe(false);
+      expect(element("overlay-copy").textContent).toMatch(/score ownership/i);
+      element<HTMLButtonElement>("restart-round").click();
+      expect(element("score-value").textContent).toBe("000");
+      expect(element("start-round").hidden).toBe(true);
+      expect(element("game-status").textContent).toMatch(/waiting/i);
+    },
+  );
+
+  it("keeps camera diagnostics off by default and out of the separate player display", async () => {
+    const socket = await startCamera();
+    await socket.receive(packet(observation()));
+    expect(renderer.drawMoleScene.mock.calls.at(-1)?.[5]).toBe(false);
+    const toggle = element<HTMLInputElement>("show-tracking");
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event("change"));
+    expect(renderer.drawMoleScene.mock.calls.at(-1)?.[5]).toBe(true);
+    display.isOpen = true;
+    app.tick();
+    expect(renderer.drawMoleScene.mock.calls.at(-1)?.[5]).toBe(false);
+  });
+
+  it("keeps playing when the operator tab hides while the game display is visible", () => {
+    startDemo();
+    display.visible = true;
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: true,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+    advance(500);
+    expect(element("game-overlay").hidden).toBe(true);
+    expect(element("mole-target").hidden).toBe(false);
+  });
+
+  it("reports blocked popups with an actionable operator message", () => {
+    element<HTMLButtonElement>("open-game-display").click();
+    expect(display.open).toHaveBeenCalledOnce();
+    expect(element("display-status").textContent).toMatch(/allow pop-ups/i);
+  });
+  it.each([500, 2500])(
+    "handles a %i ms transport gap without transferring score",
+    async (gap) => {
+      const socket = await startCamera();
+      element<HTMLButtonElement>("start-round").click();
+      for (let sequence = 1; sequence <= 80; sequence++) {
+        now += 50;
+        await socket.receive(packet(observation(sequence)));
+      }
+      const time = element("time-value").textContent;
+      advance(gap);
+      const skipped = Math.ceil(gap / 50);
+      for (
+        let sequence = 81 + skipped;
+        sequence <= 81 + skipped + 60;
+        sequence++
+      ) {
+        now += 50;
+        await socket.receive(packet(observation(sequence)));
+      }
+      if (gap > 2000) {
+        expect(element("restart-round").hidden).toBe(false);
+        expect(element("time-value").textContent).toBe(time);
+        expect(element("mole-target").hidden).toBe(true);
+      } else {
+        expect(element("restart-round").hidden).toBe(true);
+        expect(element("mole-target").hidden).toBe(false);
+      }
+    },
+  );
+
+  it("keeps a confident camera owner through missing feet and resumes automatically", async () => {
+    const socket = await startCamera();
+    element<HTMLButtonElement>("start-round").click();
+    for (let sequence = 1; sequence <= 80; sequence++) {
+      now += 50;
+      await socket.receive(packet(observation(sequence)));
+    }
+    const value = observation(81);
+    value.people[0].joints.left_ankle = {
+      x: null,
+      y: null,
+      score: 0,
+      status: "missing",
+      inFrame: false,
+    };
+    now += 50;
+    await socket.receive(packet(value));
+    expect(element("mole-target").hidden).toBe(true);
+    expect(element("player-binding").textContent).toMatch(/camera-track-1/);
+    expect(element("stage-player").textContent).toBe("WAITING");
+    expect(element("player-status").textContent).toMatch(/feet/i);
+    const time = element("time-value").textContent;
+    for (let sequence = 82; sequence <= 92; sequence++) {
+      now += 50;
+      await socket.receive(packet(observation(sequence)));
+    }
+    expect(element("time-value").textContent).toBe(time);
+    for (let sequence = 93; sequence <= 145; sequence++) {
+      now += 50;
+      await socket.receive(packet(observation(sequence)));
+    }
+    expect(element("mole-target").hidden).toBe(false);
+    expect(element("restart-round").hidden).toBe(true);
+  });
+  it("preserves actionable camera startup errors while keeping Start available", async () => {
+    await selectCamera();
+    fetchMock.mockRejectedValueOnce(new Error("Service offline"));
+    element<HTMLButtonElement>("source-connect").click();
+    await flushPromises();
+    expect(element("game-status").textContent).toMatch(/offline.*pnpm dev/i);
+    expect(element<HTMLButtonElement>("source-connect").disabled).toBe(false);
+    expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
+  });
+  it.each(["epoch", "sequence"])(
+    "rejects a camera %s discontinuity before decoding or rendering the invalid image",
+    async (field) => {
+      const socket = await startCamera();
+      const first = observation();
+      await socket.receive(packet(first));
+      const bitmap = await createBitmap.mock.results[0].value;
+      const invalid = observation(2);
+      if (field === "epoch") invalid.epoch = "unexpected-restart";
+      else invalid.sequence = 1;
+      const renderedBefore = renderer.drawMoleScene.mock.calls.length;
+      now += 50;
+      await socket.receive(packet(invalid));
+      expect(createBitmap).toHaveBeenCalledTimes(1);
+      expect(
+        renderer.drawMoleScene.mock.calls
+          .slice(renderedBefore)
+          .every((call) => call[1] === null),
+      ).toBe(true);
+      expect(renderer.drawMoleScene.mock.calls.at(-1)?.[1]).toBeNull();
+      expect(bitmap.close).toHaveBeenCalledOnce();
+      expect(socket.close).toHaveBeenCalledOnce();
+      expect(element("game-status").textContent).toMatch(
+        /stream changed|old frame/i,
+      );
+      expect(element<HTMLButtonElement>("source-connect").disabled).toBe(false);
+      expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
+      const stops = fetchMock.mock.calls.filter(
+        ([path]) => path === "/api/stop",
+      );
+      expect(JSON.parse(stops.at(-1)![1].body as string)).toEqual({
+        epoch: "camera-test",
+      });
     },
   );
 });

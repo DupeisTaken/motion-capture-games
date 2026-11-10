@@ -1,0 +1,61 @@
+{
+  "date": "2026-11-10",
+  "issue": "https://github.com/DupeisTaken/motion-capture-games/issues/25",
+  "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/27",
+  "checks": [
+    [
+      "Frozen dependencies",
+      "Passed",
+      "pnpm install --frozen-lockfile; pinned uv sync --frozen using existing local Python"
+    ],
+    [
+      "Python checks",
+      "Passed",
+      "Types, Ruff, 119 pytest tests, format and byte compilation"
+    ],
+    [
+      "pnpm check",
+      "Passed",
+      "55 documentation/report files; canonical schema; TypeScript/Python types; ESLint/Ruff; 378 Vitest tests in 20 files; 119 pytest tests; formatting and byte compilation"
+    ],
+    [
+      "pnpm build",
+      "Passed",
+      "101 modules; all 3 application entries and emitted asset references verified"
+    ],
+    [
+      "Real-server UI",
+      "Verified",
+      "Desktop 1440×1000, mobile 390×844 and narrow 320×740; English; raw fixture, Start, framing, identity, popup/return/close/fullscreen and console toggle"
+    ],
+    [
+      "Hosted OS checks",
+      "Passed",
+      "All 8 jobs: repository conventions, TypeScript/build and Python on Windows/macOS/Ubuntu, plus software-checks gate. Run 42809615912."
+    ],
+    [
+      "Report render and media",
+      "Passed",
+      "HTTP desktop/mobile verification; 11 embedded images decoded with correct MIME; no external rendering assets or horizontal overflow"
+    ]
+  ],
+  "review": {
+    "gameplay": 10,
+    "visuals": 10,
+    "controls": 10,
+    "scope": "Independent code and real-server screenshot review of the experimental single-player software flow. The reviewer inspected code/evidence; root ran the reported test suites. Physical gameplay and cross-platform hardware capture are not certified."
+  },
+  "physicalCameraTested": false,
+  "horizontalOverflow": {
+    "mole": false,
+    "dodgeball": false,
+    "console": false
+  },
+  "followup": "https://github.com/DupeisTaken/motion-capture-games/issues/26",
+  "hosted": {
+    "url": "https://github.com/DupeisTaken/motion-capture-games/actions/runs/42809615912",
+    "head": "d7d8e3e4c1de472c5329a76ee5b6fc692376254d",
+    "conclusion": "success",
+    "jobs": 8
+  }
+}

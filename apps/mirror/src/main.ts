@@ -68,7 +68,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="standby" id="standby"><span class="standby-icon">${icon("camera")}</span><h2>Ready to observe</h2><p>Choose a camera, then press Start camera.<br>Synthetic scenes work without a camera.</p></div>
           <div class="stage-corner stage-bottom"><span id="stage-source">No source connected</span><span id="frame-state">Waiting for frames</span></div>
         </div>
-        <div class="view-options"><label><input id="mirror" type="checkbox" checked>Mirror</label><label><input id="show-video" type="checkbox" checked>Image</label><label><input id="show-boxes" type="checkbox" checked>Bounds</label><span class="view-hint">Anatomical L/R preserved</span></div>
+        <div class="view-options"><label><input id="mirror" type="checkbox" checked>Mirror</label><label><input id="show-video" type="checkbox" checked>Image</label><label><input id="show-tracking" type="checkbox" checked>Tracking overlay</label><label><input id="show-boxes" type="checkbox" checked>Bounds</label><span class="view-hint">Untinted camera · anatomical L/R preserved</span></div>
         <div class="status-banner" id="status-banner" role="status"><span class="status-symbol"></span><div><strong id="status-title">Ready when you are</strong><p id="status-message">Choose an input source, then start the preview.</p></div></div>
       </section>
       <div class="diagnostic-column">
@@ -161,6 +161,7 @@ const renderOptions = () => ({
   mirror: get<HTMLInputElement>("mirror").checked,
   showImage: get<HTMLInputElement>("show-video").checked,
   showBoxes: get<HTMLInputElement>("show-boxes").checked,
+  showTracking: get<HTMLInputElement>("show-tracking").checked,
   confidence: Number(get<HTMLInputElement>("confidence").value),
 });
 
@@ -649,18 +650,19 @@ sourceButtons.forEach((button, index) =>
 );
 startButton.addEventListener("click", () => void start());
 stopButton.addEventListener("click", () => void stop());
-["mirror", "show-video", "show-boxes", "confidence"].forEach((id) =>
-  get(id).addEventListener("input", () => {
-    get("confidence-value").textContent = Number(
-      get<HTMLInputElement>("confidence").value,
-    ).toFixed(2);
-    get("view-label").textContent = renderOptions().mirror
-      ? "Mirrored view"
-      : "Camera view";
-    redraw();
-    if (lastFrame && performance.now() - poseReceivedAt <= 500)
-      updatePeople(lastFrame);
-  }),
+["mirror", "show-video", "show-boxes", "show-tracking", "confidence"].forEach(
+  (id) =>
+    get(id).addEventListener("input", () => {
+      get("confidence-value").textContent = Number(
+        get<HTMLInputElement>("confidence").value,
+      ).toFixed(2);
+      get("view-label").textContent = renderOptions().mirror
+        ? "Mirrored view"
+        : "Camera view";
+      redraw();
+      if (lastFrame && performance.now() - poseReceivedAt <= 500)
+        updatePeople(lastFrame);
+    }),
 );
 get("fullscreen").addEventListener("click", () => {
   if (document.fullscreenElement) void document.exitFullscreen();

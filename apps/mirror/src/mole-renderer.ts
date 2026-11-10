@@ -15,10 +15,15 @@ export function drawMoleScene(
   image: ImageBitmap | null,
   contacts: MotionContact[],
   mirror = true,
+  diagnostics = false,
+  rehearsal = !frame,
 ): Rect {
   const width = Math.max(1, canvas.clientWidth || 960);
   const height = Math.max(1, canvas.clientHeight || 600);
-  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const ratio = Math.min(
+    canvas.ownerDocument.defaultView?.devicePixelRatio || 1,
+    2,
+  );
   if (
     canvas.width !== Math.round(width * ratio) ||
     canvas.height !== Math.round(height * ratio)
@@ -41,8 +46,6 @@ export function drawMoleScene(
     if (mirror) ctx.scale(-1, 1);
     ctx.drawImage(image, 0, 0, rect.width, rect.height);
     ctx.restore();
-    ctx.fillStyle = "#10232155";
-    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
   } else {
     ctx.strokeStyle = "#b1d9bc0b";
     ctx.lineWidth = 1;
@@ -58,6 +61,8 @@ export function drawMoleScene(
       ctx.lineTo(width, y);
       ctx.stroke();
     }
+  }
+  if (rehearsal && diagnostics) {
     // A synthetic body is a control guide, never an inferred camera participant.
     const body = [
       [0.5, 0.2, 0.5, 0.58],
@@ -83,42 +88,45 @@ export function drawMoleScene(
     ctx.arc(head.x, head.y, rect.height * 0.046, 0, Math.PI * 2);
     ctx.stroke();
   }
-  ctx.strokeStyle = "#c6e9d544";
-  ctx.lineWidth = 1;
-  ctx.setLineDash([6, 8]);
-  ctx.strokeRect(
-    rect.x + rect.width * 0.12,
-    rect.y + rect.height * 0.16,
-    rect.width * 0.76,
-    rect.height * 0.68,
-  );
-  ctx.setLineDash([]);
-  if (frame) {
-    ctx.strokeStyle = "#c4f4dd99";
-    ctx.lineWidth = 2;
-    for (const person of frame.people) {
-      const label = mapJoint(
-        { x: person.box.x + person.box.width / 2, y: person.box.y },
-        rect,
-        mirror,
-      );
-      ctx.fillStyle = "#edf6dd";
-      ctx.font = "11px Segoe UI";
-      ctx.fillText(person.trackId || "Unassigned", label.x, label.y - 8);
-      for (const [a, b] of BONES) {
-        const ja = person.joints[a],
-          jb = person.joints[b];
-        if (!isRenderableJoint(ja) || !isRenderableJoint(jb)) continue;
-        const pa = mapJoint(ja, rect, mirror),
-          pb = mapJoint(jb, rect, mirror);
-        ctx.beginPath();
-        ctx.moveTo(pa.x, pa.y);
-        ctx.lineTo(pb.x, pb.y);
-        ctx.stroke();
+  if (diagnostics) {
+    ctx.strokeStyle = "#c6e9d544";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 8]);
+    ctx.strokeRect(
+      rect.x + rect.width * 0.12,
+      rect.y + rect.height * 0.16,
+      rect.width * 0.76,
+      rect.height * 0.68,
+    );
+    ctx.setLineDash([]);
+    if (frame) {
+      ctx.strokeStyle = "#c4f4dd99";
+      ctx.lineWidth = 2;
+      for (const person of frame.people) {
+        const label = mapJoint(
+          { x: person.box.x + person.box.width / 2, y: person.box.y },
+          rect,
+          mirror,
+        );
+        ctx.fillStyle = "#edf6dd";
+        ctx.font = "11px Segoe UI";
+        ctx.fillText(person.trackId || "Unassigned", label.x, label.y - 8);
+        for (const [a, b] of BONES) {
+          const ja = person.joints[a],
+            jb = person.joints[b];
+          if (!isRenderableJoint(ja) || !isRenderableJoint(jb)) continue;
+          const pa = mapJoint(ja, rect, mirror),
+            pb = mapJoint(jb, rect, mirror);
+          ctx.beginPath();
+          ctx.moveTo(pa.x, pa.y);
+          ctx.lineTo(pb.x, pb.y);
+          ctx.stroke();
+        }
       }
     }
   }
-  for (const contact of contacts) {
+  // Rehearsal needs an aiming cursor even with camera diagnostics hidden.
+  for (const contact of diagnostics || rehearsal ? contacts : []) {
     const point = mapJoint(contact, rect, mirror);
     ctx.beginPath();
     ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);

@@ -799,3 +799,107 @@ button:disabled {
     transition: none;
   }
 }
+
+/* Operator choices stay separate from the clean, movable player display. */
+.advanced-controls {
+  margin-top: 18px;
+  border-top: 1px solid #e6e7dc;
+  padding-top: 14px;
+}
+.advanced-controls summary {
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 650;
+  color: #3d5a45;
+}
+.player-readiness {
+  padding: 12px;
+  margin: 18px 0 0;
+  border-radius: 7px;
+  background: #edf2e5;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #3d5a45;
+}
+.display-controls {
+  border-top: 1px solid #e6e7dc;
+  margin-top: 18px;
+  padding-top: 16px;
+}
+.display-controls button {
+  width: 100%;
+}
+.display-controls .check-row {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.display-hud {
+  position: absolute;
+  top: 17px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  gap: 18px;
+  background: #102722ed;
+  color: #bad2be;
+  border: 1px solid #b0d2bd33;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+.game-display-stage .display-hud {
+  display: flex;
+}
+.display-hud span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.display-hud strong {
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: #f5f1de;
+}
+.mm-overlay.camera-notice {
+  inset: auto 15% 18%;
+  padding: 16px;
+  background: #102722ed;
+  border: 1px solid #b0d2bd33;
+  border-radius: 12px;
+}
+.camera-notice .overlay-mole {
+  display: none;
+}
+.camera-notice #overlay-title {
+  font-size: clamp(24px, 3vw, 36px);
+  margin-bottom: 8px;
+}
+.camera-notice #overlay-kicker {
+  margin: 0 0 8px;
+}
+@media (max-width: 680px) {
+  .mm-game {
+    order: -1;
+  }
+  .display-hud {
+    top: 48px;
+    padding: 5px 10px;
+  }
+  .display-hud strong {
+    font-size: 16px;
+  }
+  .mm-overlay.camera-notice {
+    inset: auto 7% 17%;
+    padding: 12px;
+  }
+  .camera-notice #overlay-title {
+    font-size: 23px;
+  }
+  .camera-notice #overlay-copy {
+    font-size: 11px;
+  }
+}

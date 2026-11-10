@@ -53,6 +53,8 @@ Capture, inference, simulation, and rendering have independent rates. Prefer rec
 
 The session runtime controls joining, practice, countdown, playing, pause, results and restart. Per-player tracking quality is independent of the global session state. An ambiguous player may be suspended while others continue where the game rules permit it. Camera or calibration failures can require a global pause.
 
+The experimental single-player UI combines participation intent with Start and waits for stable input. Session membership still uses the canonical track/epoch boundary; explicit identity loss cannot resume an old score on a guessed participant. An optional separate game window reparents the existing stage, HUD and interaction listeners. It shares the operator's one runtime, packet decoder and acquisition; the ticker moves to the game window to avoid background operator throttling. Closing returns the stage and focus. Tracking graphics are operator-only and camera pixels are not tinted. This browser arrangement supports Windows, macOS and Linux without selecting a native desktop packaging stack.
+
 ## Provisional technologies
 
 | Area | First candidate | Required evidence |

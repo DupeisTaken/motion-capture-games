@@ -4,7 +4,7 @@ This is the first runnable motion-input middle layer: one locally acquired image
 
 ## Run it
 
-Requirements: Node **24.21.0**, pnpm **11.25.0**, and an existing Python 3.9+ interpreter to bootstrap the pinned repository-local tools. The application uses Python **3.12.16**. Windows and macOS are intended targets; only the development environment named in the delivery report has been exercised.
+Requirements: Node **24.21.0**, pnpm **11.25.0**, and an existing Python 3.9+ interpreter to bootstrap the pinned repository-local tools. The application uses Python **3.12.16**. Windows, macOS and Linux are intended targets; only the development environment named in the delivery report has been exercised.
 
 ```text
 pnpm install --frozen-lockfile
@@ -68,7 +68,7 @@ pnpm benchmark:runtime --samples 200 --models
 pnpm benchmark:preview --duration 30000 --warmup 5000 --scale-factor 2
 ```
 
-`pnpm check` runs repository documentation/whitespace checks, schema drift, TypeScript/Python types, ESLint/Ruff, Vitest/pytest, formatting and Python byte compilation. `pnpm build` runs independent workspace build scripts and produces the frontend in `dist/mirror/`, verifying every configured HTML entry and its local bundles. [CI conventions](continuous-integration.md) define per-language commands, OS coverage and package requirements. Run `pnpm vision` in one terminal and `pnpm preview` in another to serve that build on port 4173. Start and stop commands use Node across Windows and macOS. `pnpm dev` manages its own two child processes.
+`pnpm check` runs repository documentation/whitespace checks, schema drift, TypeScript/Python types, ESLint/Ruff, Vitest/pytest, formatting and Python byte compilation. `pnpm build` runs independent workspace build scripts and produces the frontend in `dist/mirror/`, verifying every configured HTML entry and its local bundles. [CI conventions](continuous-integration.md) define per-language commands, OS coverage and package requirements. Run `pnpm vision` in one terminal and `pnpm preview` in another to serve that build on port 4173. Start and stop commands use Node across Windows, macOS and Linux. `pnpm dev` manages its own two child processes.
 
 Tests use synthetic observations, fake captures and local HTTP/WebSocket clients. They check transforms, absent joints, bounded packets, ordering/restarts, counting, ambiguous association and capture/resource recovery. Model smoke checks and physical camera trials are separate evidence; consult the delivery report rather than assuming these passed from a unit-test result.
 
@@ -94,7 +94,7 @@ The console, Mole Motion and Dodgeball share **Choose camera** and **Refresh** c
 2. Choose **Start camera**. The selected OS device identity is resolved again before replacing the source and after model loading, using the native capture backend's current order. A missing device fails rather than falling back to another camera. Selection and Refresh are locked during active capture; stop before switching.
 3. Refresh preserves a still-connected selection across list reordering. If it disappeared, the choice clears with a disconnected message. Identical model names receive separate numbered options. Display names use text nodes, not HTML. Empty, service-error and timed-out discovery states provide recovery instructions and never silently choose a fallback.
 
-On macOS, discovery mirrors the pinned OpenCV 4.11 AVFoundation video/muxed list sorted by unique ID. Windows uses Media Foundation metadata from pinned `cv2-enumerate-cameras` 1.4.0. Each scan runs in a fresh, serialized subprocess with a ten-second deadline and at most 32 devices; it does not open a range of camera indices. Raw OS paths/serials are replaced by opaque hashes and remain out of reports. These are device references, not participant identities or calibration records. Linux named discovery is unsupported; use the manual fallback.
+On macOS, discovery mirrors the pinned OpenCV 4.11 AVFoundation video/muxed list sorted by unique ID. Windows uses Media Foundation metadata from pinned `cv2-enumerate-cameras` 1.4.0. Each scan runs in a fresh, serialized subprocess with a ten-second deadline and at most 32 devices; it does not open a range of camera indices. Raw OS paths/serials are replaced by opaque hashes and remain out of reports. These are device references, not participant identities or calibration records. Linux uses the same pinned enumerator with V4L2 metadata; it prefers `/dev/v4l/by-id` or `by-path` references and falls back to sysfs device topology plus interface index. A device without stable metadata requires the manual fallback. Enumeration starts no video stream or frame reads; Linux QUERYCAP metadata access briefly opens a read-only device descriptor. Physical Linux capture is not certified by software CI.
 
 **Manual camera index** exposes the existing 0–9 field when native discovery is unavailable. It has no stable-device guarantee across reconnects. The optional **Browser camera identification** section in the console requests browser permission only after **Allow & discover cameras**. Its temporary video is released before native capture, on source changes and when hiding/closing the page. Browser IDs are setup references and are never inferred native indices.
 
@@ -113,3 +113,9 @@ On Python 3.12/Windows, `monotonic_ns` can have 15.625 ms resolution. Capture an
 Person rows are retained while displayed identity, joint count and capacity stay unchanged. Positions still redraw the paired canvas on every received frame. The sample window and existing one-frame queues remain bounded.
 
 Mole Motion and Dodgeball continue to consume the compatible exact-pair observation endpoint for game input; their camera model default is also RTMPose. The smooth independent preview policy applies to the tracking console and does not change game scoring or session identity rules.
+
+## Raw camera and separate game display
+
+Camera pictures are untinted. The console keeps its diagnostic overlay by default; **Tracking overlay** turns it off without changing inference, counting or game input. Mole Motion and Dodgeball default to raw camera pictures with tracking graphics hidden. Their operator **Show tracking diagnostics** option exposes setup geometry only in the inline view. **Open game window** moves the existing stage and game HUD to a separate window and always hides tracking graphics there; it creates no second camera, decoder or game. Return/close restores the stage and focus. Keep the operator page open. Popup blocking leaves the inline game usable; some mobile browsers open a tab.
+
+Start in each game records participation intent and waits for stable input, without a mandatory Select/Join sequence. Confident same-owner framing/joint loss pauses score and time, then automatically counts down to recovery. Explicit missing/uncertain identity, changed source/geometry and long gaps require a single new-round action; another track cannot inherit the score. The paired game transport still follows inference cadence; removing the tint does not make it uncompressed sensor output or the console’s independent high-rate video path. See [the camera gameplay report](../reports/raw-game-display.html).
