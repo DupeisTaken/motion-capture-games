@@ -17,3 +17,5 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Pull request integration](pr-integration.html) records merge order, documentation conflict resolution, combined software checks and remaining hardware gates.
 
 [Diagnostic console](diagnostic-console.html) records the dense responsive test page, explicit camera setup, timing/pacing corrections, actual checks, synthetic measurements and embedded before/after screenshots.
+
+[Mole Motion](mole-motion.html) records the experimental game slice, rule/session/UI tests, real-server desktop/mobile synthetic screenshots and the remaining depth/hardware gates.

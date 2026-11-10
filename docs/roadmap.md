@@ -58,6 +58,8 @@ All six remain open. [ADR 0004](decisions/0004-proposed-vision-experiment.md) re
 
 **Owns:** Game-ready motion input, session lifecycle, explicit joining, practice, target interaction, score/results and replay. Depends on the relevant M1 gates.
 
+**Experimental software progress:** [Issue #12](https://github.com/DupeisTaken/motion-capture-games/issues/12) and [PR #17](https://github.com/DupeisTaken/motion-capture-games/pull/17) start [Mole Motion](games/mole-motion.md) early at the user's request. Its one-player runtime includes seeded target/scoring replay, camera wrist/ankle contact, synthetic depth-push rehearsal, timed/challenge/survival/practice modes, hard distance-biased placement and explicit framing/identity pause recovery. [The delivery report](../reports/mole-motion.html) owns actual software and browser evidence. This does not close M1, certify physical pushes, establish participant reach/latency, or deliver three-player scoring. Next issue-ready work: calibrated depth provider and participant reach setup; physical hit/framing trials; measured session identity/recovery before multiplayer admission. Reuse the existing [XYZ experiment issue #4](https://github.com/DupeisTaken/motion-capture-games/issues/4) when scoping calibrated depth.
+
 **Acceptance criteria:**
 
 - A one-player session starts, teaches reaching, scores targets and restarts without operator code changes.

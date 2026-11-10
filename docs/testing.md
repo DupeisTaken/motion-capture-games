@@ -6,6 +6,8 @@ The skeleton diagnostic slice has Vitest contract/motion/viewer tests, pytest vi
 
 The runner documentation update has its own [change report](../reports/motion-runner.html). Its acceptance scenarios below remain future implementation requirements.
 
+The experimental [Mole Motion slice](games/mole-motion.md) adds game rules/replay, motion contacts, one-slot membership and operator UI tests. [Its report](../reports/mole-motion.html) records actual check results and English desktop/mobile real-server screenshots. Required scenarios cover timed/challenge/survival/practice outcomes, wrist/foot touch and hip push rehearsal, forward-miss/repeat-hit rearming, hard placement/bounds, stale/order/clock/identity/geometry gaps, hidden-tab/framing pause, camera decode/start/stop races and restart. Calibrated depth, camera hit/framing accuracy, participant reach, physical latency and multiplayer remain hardware gates.
+
 ## Documentation changes
 
 Check Git whitespace, local Markdown links/anchors, HTML document structure, and any structured examples. Verify that accepted requirements, proposals, measurements and unrun checks are labeled consistently. Validate HTML reports from a local HTTP server at desktop and mobile widths; reports must work offline without external assets.

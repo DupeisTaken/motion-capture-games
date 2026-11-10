@@ -14,6 +14,8 @@
   "include": [
     "apps/mirror/src",
     "packages/motion/src",
+    "packages/session/src",
+    "games/mole-motion/src",
     "contracts/src",
     "contracts/generated",
     "tests/**/*.ts",
