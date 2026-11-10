@@ -1,7 +1,7 @@
 {
   "date": "2026-11-11",
   "environment": "Windows; Node 24.21.0; pnpm 11.25.0; Python 3.12.16; installed Microsoft Edge via playwright-core; English only",
-  "pullRequest": null,
+  "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/41",
   "hosted": null,
   "baselineNote": "Before screenshots use the rig entry, stylesheet and renderer from merged main commit 145195aa21d3ea4f5fa8ceb077d2ccec0814583b with current shared imports and the same recorded solver fixture. After screenshots use the current real Vite-served application. All observations and device names are synthetic; there is no camera footage.",
   "browserSummary": "Real Vite-server browser verification passed all 144 display selections across 9 scenarios and 72 recorded samples: 120 usable, 8 partial and 16 unavailable outputs, with no failures or acquisition attempts. Desktop 1440 × 1050, mobile 390 × 844, narrow 320 × 740 and tablet 800 × 1000 layouts were checked; the popup was checked at the three main widths. Saved preference, missing/stale source recovery, source-specific geometry/context, unchanged XYZ/roles, planning isolation and popup return all passed. A screenshot review caught an oversized inline view; the final compact layout keeps all three desktop XYZ estimate cells within the initial viewport.",

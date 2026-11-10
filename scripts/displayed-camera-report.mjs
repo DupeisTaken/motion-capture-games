@@ -30,7 +30,7 @@ const reviews = evidence.reviews
   .join("");
 const hosted = evidence.hosted
   ? `<p><a href="${escape(evidence.hosted.url)}">Hosted verification</a>: ${escape(evidence.hosted.result)} for <code>${escape(evidence.hosted.head)}</code>. Latest-head <code>software-checks</code> must pass before merge.</p>`
-  : "<p>Hosted checks have not yet been verified. Latest-head software-checks must pass before merge.</p>";
+  : `<p>Hosted results for the current commit are tracked on ${evidence.pullRequest ? `<a href="${escape(evidence.pullRequest)}/checks">the PR Checks tab</a>` : "the implementation PR"}. This static report records local verification; latest-head <code>software-checks</code> must pass before merge.</p>`;
 const pr = evidence.pullRequest
   ? `<a href="${escape(evidence.pullRequest)}">Implementation PR</a> · `
   : "";
