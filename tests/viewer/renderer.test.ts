@@ -26,9 +26,8 @@ function surface() {
     measureText: vi.fn(() => ({ width: 60 })),
     fillText: vi.fn(),
   };
-  vi.spyOn(canvas, "getContext").mockReturnValue(
-    context as unknown as CanvasRenderingContext2D,
-  );
+  // Install the 2D test surface without selecting the final WebGPU overload.
+  Object.defineProperty(canvas, "getContext", { value: vi.fn(() => context) });
   return { canvas, context };
 }
 const options = {

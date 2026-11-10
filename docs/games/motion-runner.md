@@ -2,15 +2,15 @@
 
 ## Status and scope
 
-Planned game in the documentation scaffold; no runtime or gesture recognition is implemented. The agreed interaction is one person controlling an on-screen runner through left, right, center, jump and squat movements. Temple Run / Subway Surfers are gameplay references, not dependencies or an integration target. Use an original game world and assets.
+Experimental playable implementation at `runner.html`, requested before physical M1/M6 certification. Neon Rails and Gold Rush share a deterministic three-lane game engine, with original procedural 3D worlds and Nova, Moss and Ember skins. Subway Surfers and Talking Tom Gold Run are gameplay references; their code, characters and assets are not dependencies.
 
-This brief owns the runner's intended behavior. The three-lane mapping, squat-to-duck behavior and recovery rules below are the initial design; recognition algorithms, numeric thresholds, action durations, speed, scoring formula and obstacle generation remain proposals to validate. Implementation belongs to [M6](../roadmap.md#m6-single-player-motion-runner), after the relevant diagnostic and session gates.
+The camera-free software slice implements the rules below. The existing canonical observation/session boundary supplies experimental camera controls. Numeric tuning is proposed and synthetic-tested; physical accuracy, body-size/reach coverage, exposure timing and end-to-end latency remain open milestone gates. [Issue #39](https://github.com/DupeisTaken/motion-capture-games/issues/39) tracks implementation; [the delivery report](../../reports/motion-runner-game.html) records actual verification and limitations.
 
 ## Presentation and player admission
 
 - Show a runner advancing automatically through a scrolling world. Physical running in place and forward travel are not required controls.
 - Provide three virtual lanes: left, center and right. The player moves within a bounded physical play area; the avatar supplies forward travel.
-- Show a rendered game world during play. Setup/practice may include mirrored camera feedback, lane guides and recognized-action cues. Text stays readable and is never mirrored with video.
+- Show a rendered game world during play. Setup/practice uses lane guides and recognized-action cues. Camera imagery is never displayed in this runner, including setup and practice.
 - Admit exactly one anonymous session slot. A higher-capacity rig does not enable multiplayer for this game. Reject additional join attempts visibly; spectators cannot take over the existing slot.
 - Keep operator pause/stop available. Tracking status, lane/action feedback and recovery instructions must remain visible without relying only on sound or color.
 
@@ -40,7 +40,7 @@ Lane selection remains available during a jump or duck when its required evidenc
 4. Confirm required joints/derived body signals are usable through the full movement range. Refuse start with an actionable explanation if the profile cannot support them; do not silently substitute a different control.
 5. Begin a visible countdown once the player is ready. Recalibrate when camera geometry or the physical play area changes; invalidate incompatible input history.
 
-Candidate signals include named hip/shoulder positions for body center, torso/leg posture for squatting, and temporally consistent body/foot evidence for jumping. The minimum capability set and treatment of temporarily hidden joints require trials; no vendor joint indices, image-pixel cutoffs, trained classifier or numeric threshold is chosen here. Store selected thresholds, units, normalization and rationale in versioned configuration with replay evidence.
+Candidate signals include named hip/shoulder positions for body center, torso/leg posture for squatting, and temporally consistent body/foot evidence for jumping. The minimum capability set and treatment of temporarily hidden joints require trials; no vendor joint indices or trained classifier is used. Proposed normalized numeric thresholds are listed under the experimental choices below. Store selected thresholds, units, normalization and rationale in versioned configuration with replay evidence.
 
 ## Motion and game boundary
 
@@ -64,4 +64,23 @@ Re-establish the same joined slot under the session identity policy, verify fres
 
 Use [the runner acceptance scenarios](../testing.md#motion-runner-acceptance-scenarios) and [M6 criteria](../roadmap.md#m6-single-player-motion-runner). They cover held lanes, return to center, boundary jitter, jump rearming, held squat, simultaneous actions, spectator interference, loss/recovery, deterministic obstacle outcomes and real-server UI evidence.
 
-Before implementation is accepted, choose and document the minimum observation capabilities, normalization and thresholds; direct lane-transition/collision rules; jump duration and rearm policy; duck activation/release windows; resume placement; obstacle fairness and scoring. Measure false activations, missed controls and action-to-visible timing on the declared rig with varied heights and movement ranges. No runtime, physical accuracy or performance result is claimed by this brief.
+Before implementation is accepted, choose and document the minimum observation capabilities, normalization and thresholds; direct lane-transition/collision rules; jump duration and rearm policy; duck activation/release windows; resume placement; obstacle fairness and scoring. Measure false activations, missed controls and action-to-visible timing on the declared rig with varied heights and movement ranges. The delivery report records runtime software verification; physical accuracy and performance certification remain unmeasured.
+
+## Experimental implementation choices
+
+- `games/motion-runner/src/index.ts` owns the seeded world, 120 Hz bounded collision substeps, absolute lane selection and a single game clock. Inputs keep source time, epoch, sequence and session space revision. The simulation splits an elapsed frame at the incoming source-mapped control instant, preventing retroactive obstacle rescue. A display gap over 250 ms pauses instead of catching up.
+- Speed begins at 10 m/s and gains 0.035 m/s each active second up to 18 m/s. Rows are 30 m apart, with at least one open lane. Hurdles, overhead gates and train/cart blockers are distinct. Five-coin trails guide an open lane. Score is floor(distance in meters) + 25 per coin; three hits end a run. Practice retains hit feedback without ending the run.
+- Lane interpolation is 6.25 lane units/s; collision uses actual interpolated position within 0.58 lane units. Train occupancy persists across its visible longitudinal volume. A virtual jump lasts 950 ms and peaks at 1.8 m; 0.8 m clears a hurdle. Held duck selects a compact rolling model beneath the overhead gate. Camera jump requires a confirmed takeoff/landing cycle; a held key cannot repeatedly trigger jumps.
+- `games/motion-runner/src/pose-controls.ts` consumes observed shoulders, hips, knees and ankles, all in-frame with score >= 0.5. Standing calibration uses shoulder-to-ankle height. Lane enter/release thresholds are 0.20/0.12 body heights; both foot lift and hip lift with 45 ms confirmation establish takeoff, and 100 ms landing rearms it. Hip/shoulder drop plus knee flexion establishes duck. The versioned exported tuning constants own exact thresholds. These are image-space heuristics, not calibrated room geometry or measured participant thresholds.
+- A camera facing the participant maps decreasing image x to screen-right through one explicit control transform; anatomical joint names stay unchanged. Rehearsal emits display-relative absolute lanes directly. No camera preview or mirrored image is shown in this runner.
+- Standing is explicit evidence, independent of the one-frame jump event. Before camera start, countdown or recovery, both feet must be within 0.035 body heights of their individual baselines, hips within 0.07, shoulders within 0.09, and both knees at least 150 degrees for 100 ms. Airborne followups cannot complete standing practice or start/resume merely because the jump event has ended. These normalized tolerances remain proposed pending physical trials.
+- The app binds one confident canonical track through `SinglePlayerSession`; more than one detected person pauses even if the original track is confident. Same-owner fresh standing evidence permits a two-second recovery countdown. Identity, source, transform or long continuity loss requires a new run. Recovery clears transient actions and moves pending hazards together to at least 26 m ahead, preserving authored spacing without an immediate collision.
+- The app owns native camera selection and acknowledged scoped release. Packet metadata is decoded without creating camera-image bitmaps. Pose practice is required before camera play. WebGL, not pose reconstruction, supplies visual 3D; Three.js is bundled locally. No remote render assets are fetched.
+
+Run `pnpm benchmark:runner` for the declared 24 camera-free oracle cases (two worlds, four seeds and 30/60/120 Hz input over 60 active seconds). [The committed results](../../reports/motion-runner-results.json) distinguish synthetic pattern solvability and pause invariants from human difficulty or physical measurements.
+
+## Reference benchmark and remaining gates
+
+Official gameplay footage was inspected for chase-camera framing, three-lane depth, coin trails, readable blocker types and character silhouette. The self-contained report compares accepted reference frames with real local-server gameplay and seeded simulation results. This is a bounded experimental implementation, without commercial-game content breadth, powerups, missions, chase AI, rooftop routes or production animation/audio. It does not establish commercial parity or a perfect physical-control score.
+
+Physical gates remain: repeat comfortable calibration across heights/movement ranges, measure false jump/duck activations and missed controls, validate spectator occlusion with actual cameras, establish framing/lane reach and safe jump clearance, and measure externally observed action-to-display latency. Synthetic software tests cannot close those gates.

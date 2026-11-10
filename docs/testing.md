@@ -56,7 +56,7 @@ Test camera unplug/replug, source restart, clock discontinuity, profile change, 
 
 ## Motion runner acceptance scenarios
 
-These are future [M6](roadmap.md#m6-single-player-motion-runner) requirements, not completed tests. Use synthetic canonical pose input and game-input replays before physical trials; identify the rig/profile for recognition and timing measurements.
+These [M6](roadmap.md#m6-single-player-motion-runner) requirements have an experimental synthetic software implementation. Runner game/motion/viewer tests cover the bounded software behavior; physical accuracy and latency remain uncompleted gates. [The delivery report](../reports/motion-runner-game.html) identifies actual checks. Use synthetic canonical pose input and game-input replays before physical trials; identify the rig/profile for recognition and timing measurements.
 
 | Area | Required scenarios and evidence |
 | --- | --- |

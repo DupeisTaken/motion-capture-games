@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "prUrl": null,
+  "checks": [
+    {
+      "command": "pnpm check",
+      "result": "PASS: repository conventions; schema drift; TypeScript types/lint/format; 537 Vitest tests; Python types/lint/format/byte compilation and 208 pytest tests."
+    },
+    {
+      "command": "pnpm build",
+      "result": "PASS: all five Vite application entries built, all emitted local asset references verified. Vite advisory: runner chunk545.06kB (144.41kB gzip)."
+    },
+    {
+      "command": "pnpm benchmark:runner",
+      "result": "24 declared synthetic cases passed; zero safe-lane oracle hits, exact alternate-player freeze."
+    },
+    {
+      "command": "Real Vite-server browser verification",
+      "result": "English desktop1440×1000, mobile390×844 and narrow320×740 checked; three skins, jump/roll, extra-player pause, touch dock and in-stage Pause. No console errors in accepted session."
+    },
+    {
+      "command": "Self-contained HTML visual and asset verification",
+      "result": "PASS: desktop1440×1000 and mobile390×844; all10embeddedimages loaded; no document overflow; static report rendering-assets check passed."
+    }
+  ],
+  "review": {
+    "verdict": "No known blocking correctness defect remains in the reviewed experimental software scope. The lead reports that the final isolated delivery tree passed the required local checks, build and declared simulation benchmark; it is ready for PR review. The evidence does not justify a perfect score in every dimension, commercial-game parity, or physical motion certification.",
+    "ratings": [
+      {
+        "dimension": "Lane controls, jump/roll and collision correctness",
+        "rating": "9",
+        "evidence": "Absolute lanes, hysteresis, causal source-time consumption, jump rearming, held duck, continuous train occupancy and coin removal are covered by focused behavior tests and code review."
+      },
+      {
+        "dimension": "Single-player ownership and fair pause/recovery",
+        "rating": "9",
+        "evidence": "Extra participants freeze the entire timeline; identity/space changes require a fresh run. Identity loss takes priority when another person is detected simultaneously, so clearing the extra-person condition cannot restore an uncertain score owner. Confirmed standing evidence gates admission and recovery. Transport tests use synthetic people; physical detection reliability remains unverified."
+      },
+      {
+        "dimension": "3D models and action readability",
+        "rating": "8",
+        "evidence": "Distinct rail/gold worlds and three skins, readable hurdle/overhead/train silhouettes, bounded tucked roll and visible jump. Geometry tests verify train contact, hurdle clearance and roll bounds. Art and animation remain a simple original low-poly treatment."
+      },
+      {
+        "dimension": "Desktop GUI clarity and interaction",
+        "rating": "9",
+        "evidence": "Accepted live-server screenshot shows readable HUD backplates, visible in-stage Pause, controls, settings and an unobstructed game scene. Start, pause, results and recovery have explanatory copy."
+      },
+      {
+        "dimension": "Mobile GUI and touch play",
+        "rating": "8.5",
+        "evidence": "The final 390x844 viewport shows the runner, in-stage Pause and all five touch actions together. The paused 320px view reflows legibly. The avatar is relatively small on mobile, and accessibility testing is bounded rather than a full compliance audit."
+      },
+      {
+        "dimension": "Automated software verification",
+        "rating": "9",
+        "evidence": "Meaningful unit, DOM, synthetic transport, geometry, determinism and multi-rate simulation evidence. The lead owns final repository/build/CI results; unit tests do not replace hardware or browser performance measurements."
+      },
+      {
+        "dimension": "Gameplay and presentation parity with reference footage",
+        "rating": "6.5",
+        "evidence": "The essential three-lane chase view, collectible trails and three obstacle/action categories are present. Commercial references have substantially greater environment, character-animation, audio and gameplay-content breadth. No reference timing was measured."
+      }
+    ]
+  },
+  "hostedStatus": "Hosted checks are reported on the linked PR; require its latest-commit software-checks gate before merge. No merge performed.",
+  "environment": {
+    "node": "24.16.0",
+    "pnpm": "11.25.0",
+    "python": "3.12.14",
+    "repositoryPins": {
+      "node": "24.21.0",
+      "python": "3.12.16"
+    }
+  },
+  "isolatedDelivery": {
+    "path": "E:\\.codex\\worktrees\\motion-runner-delivery\\motion-capture-games",
+    "reason": "Exclude concurrent Mole Motion to Slap a Mole rename edits. Task-owned files copied into a clean origin/main worktree; source checkout left intact."
+  },
+  "browserPauseInvariant": {
+    "score": 87,
+    "coins": 0,
+    "distanceM": 87,
+    "repeatedObservationsEqual": true
+  }
+}

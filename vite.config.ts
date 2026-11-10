@@ -26,6 +26,9 @@ export default defineConfig({
         dodgeball: fileURLToPath(
           new URL("apps/mirror/dodgeball.html", import.meta.url),
         ),
+        runner: fileURLToPath(
+          new URL("apps/mirror/runner.html", import.meta.url),
+        ),
       },
     },
   },
