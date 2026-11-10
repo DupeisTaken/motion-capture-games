@@ -2,8 +2,12 @@
   "date": "2026-11-10",
   "timezone": "Asia/Shanghai",
   "environment": "Windows x64, Node 24.21.0, pnpm 11.25.0, Python 3.12.16, NumPy 2.3.5; installed headless Edge 156.0.4314.50; synthetic data only",
-  "pullRequest": null,
-  "hosted": null,
+  "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/31",
+  "hosted": {
+    "url": "https://github.com/DupeisTaken/motion-capture-games/actions/runs/42837435563",
+    "head": "f4ef937e68a969c7721d1ffdeb322b931508a1c1",
+    "result": "All eight jobs passed: repository conventions, TypeScript/build and Python on Ubuntu, Windows and macOS, plus software-checks. This records the implementation commit."
+  },
   "checks": [
     {
       "name": "Frozen/locked environment",
@@ -54,6 +58,11 @@
       "name": "Production build",
       "result": "Passed",
       "detail": "pnpm build passed: source-only workspace phase, TypeScript, 101 Vite modules, all three application entries and emitted asset references verified. No new distributable package."
+    },
+    {
+      "name": "Hosted implementation gate",
+      "result": "Passed",
+      "detail": "Run 42837435563 passed all eight jobs on implementation commit f4ef937. Six OS/language lanes, repository conventions and software-checks succeeded. Final documentation follow-up must independently pass its latest-head gate."
     }
   ],
   "reviews": [
