@@ -21,7 +21,7 @@ def test_recorded_fixture_is_bounded_finite_and_matches_solver(dataset):
     assert dataset["version"] == 1
     assert dataset["coordinateSpace"] == "calibrated-rig-meters"
     assert len(dataset["cases"]) == 9
-    assert all(len(case["frames"]) == 12 for case in dataset["cases"])
+    assert all(len(case["frames"]) == 8 for case in dataset["cases"])
     encoded = json.dumps(dataset, allow_nan=False, separators=(",", ":"))
     assert len(encoded) < 1_000_000
     committed = json.loads(OUTPUT.read_text(encoding="utf-8"))
@@ -46,6 +46,17 @@ def test_roles_source_metadata_and_reference_are_explicit(dataset):
 
 def test_nominal_root_and_motion_path_come_from_solver(dataset):
     frames = scenario(dataset, "nominal")["frames"]
+    assert [int(frame["views"][0]["frameId"]) for frame in frames] == [
+        0,
+        19,
+        38,
+        57,
+        75,
+        94,
+        113,
+        132,
+    ]
+    assert int(frames[-1]["timeNs"]) - int(frames[0]["timeNs"]) == 2_200_000_000
     for frame in frames:
         result = frame["reconstruction"]
         assert all(joint["reason"] == "observed" for joint in result["joints"])

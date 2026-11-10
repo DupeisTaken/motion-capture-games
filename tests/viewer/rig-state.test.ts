@@ -22,7 +22,7 @@ describe("recorded two-camera rehearsal", () => {
     expect(frame.views[0].cameraId).not.toBe(frame.views[1].cameraId);
     expect(frame.views[0].cameraTrackId).not.toBe(frame.views[1].cameraTrackId);
     expect(frame.reconstruction.root).not.toEqual(frame.reference.root);
-    expect(selectRigFrame(data, "nominal", 11).frame.sequence).toBe(11);
+    expect(selectRigFrame(data, "nominal", 7).frame.sequence).toBe(7);
   });
 
   it("never turns a simulated available sample into physical or maze readiness", () => {
@@ -97,7 +97,7 @@ describe("recorded two-camera rehearsal", () => {
 
   it("rejects invalid recorded selection without inventing a sample", () => {
     expect(() => selectRigFrame(data, "unknown", 0)).toThrow();
-    for (const index of [-1, 12, NaN, 0.5])
+    for (const index of [-1, 8, NaN, 0.5])
       expect(() => selectRigFrame(data, "nominal", index)).toThrow();
   });
 

@@ -26,6 +26,8 @@ from motion_vision.xyz.reconstruction import Gates, reconstruct  # noqa: E402
 from tools.xyz_benchmark import JOINTS, ROOT, Scenario, cameras, make_views  # noqa: E402
 
 OUTPUT = ROOT / "apps/mirror/src/rig-rehearsal.json"
+SAMPLE_COUNT = 8
+SOURCE_FRAME_END = 132
 CASES = (
     (
         "nominal",
@@ -144,9 +146,10 @@ def build_rehearsal() -> dict[str, Any]:
         estimated = cameras(scenario.baseline_m, scenario.yaw_error_deg, scenario.scale_error)
         rng = np.random.default_rng(config["seed"])
         frames = []
-        for sequence in range(12):
-            # Twelve recorded samples span 2.2 seconds; playback is not a live sensor stream.
-            views, reference = make_views(truth, scenario, sequence * 12, 0, rng)
+        for sequence in range(SAMPLE_COUNT):
+            # Preserve the full 2.2-second path with a small, evenly sampled UI recording.
+            source_frame = round(sequence * SOURCE_FRAME_END / (SAMPLE_COUNT - 1))
+            views, reference = make_views(truth, scenario, source_frame, 0, rng)
             if case_id == "missing-hip":
                 pixels = views[1].pixels.copy()
                 pixels[JOINTS.index("left_hip")] = np.nan
@@ -281,7 +284,7 @@ def main() -> None:
     else:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(serialized, encoding="utf-8")
-        print(f"Wrote {len(CASES)} synthetic cases, twelve frames each: {args.output}")
+        print(f"Wrote {len(CASES)} synthetic cases, {SAMPLE_COUNT} frames each: {args.output}")
 
 
 if __name__ == "__main__":

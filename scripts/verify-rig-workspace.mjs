@@ -198,6 +198,23 @@ try {
         ),
     );
     await capture(page, "report");
+    for (const [name, width, height] of viewports) {
+      await page.setViewportSize({ width, height });
+      for (const section of ["evidence", "checks", "limits"]) {
+        await page
+          .locator(`#${section} h2`)
+          .evaluate((heading) => heading.scrollIntoView({ block: "start" }));
+        const filename = `report-${name}-${section}.png`;
+        await page.screenshot({ path: resolve(output, filename) });
+        result.screenshots.push(filename);
+      }
+      const reviews = page.locator("#checks .cards");
+      if (await reviews.locator("article").count()) {
+        const filename = `report-${name}-reviews.png`;
+        await reviews.screenshot({ path: resolve(output, filename) });
+        result.screenshots.push(filename);
+      }
+    }
     assert.deepEqual(externalRequests, []);
     result.checks.push(
       "Self-contained English report and embedded screenshots render at desktop/mobile/narrow widths.",
@@ -427,24 +444,39 @@ try {
       `All ${dataset.cases.length} recorded solver scenarios display their own estimates/reference, accepted joints and unavailable/partial reasons, including stale input; physical XYZ and maze input remain disabled.`,
     );
     await page.locator("#rig-scenario").selectOption("nominal");
-    await page.locator("#rig-frame").fill("5");
-    const scrubbedRoot = dataset.cases.find(
-      (scenario) => scenario.id === "nominal",
-    ).frames[5].reconstruction.root;
+    const nominal = dataset.cases.find((scenario) => scenario.id === "nominal");
+    assert(
+      nominal.frames.length >= 3,
+      "Playback acceptance needs at least three recorded samples.",
+    );
+    const lastFrame = nominal.frames.length - 1;
+    const middleFrame = Math.floor(lastFrame / 2);
+    await page.locator("#rig-frame").fill(String(middleFrame));
+    const scrubbedRoot = nominal.frames[middleFrame].reconstruction.root;
     for (const axis of ["x", "y", "z"])
       assert.equal(
         await page.locator(`#rig-${axis}`).innerText(),
         metricText(scrubbedRoot[axis]),
       );
-    assert.equal(await page.locator("#rig-frame-label").innerText(), "6 / 12");
+    assert.equal(
+      await page.locator("#rig-frame-label").innerText(),
+      `${middleFrame + 1} / ${nominal.frames.length}`,
+    );
     await page.locator("#rig-view-pair").focus();
     await page.keyboard.press("ArrowRight");
-    assert.equal(await page.locator("#rig-frame").inputValue(), "6");
+    assert.equal(
+      await page.locator("#rig-frame").inputValue(),
+      String(middleFrame + 1),
+    );
     await page.keyboard.press("ArrowLeft");
-    assert.equal(await page.locator("#rig-frame").inputValue(), "5");
+    assert.equal(
+      await page.locator("#rig-frame").inputValue(),
+      String(middleFrame),
+    );
     await page.keyboard.press("Space");
     await page.waitForFunction(
-      () => Number(document.querySelector("#rig-frame").value) > 5,
+      (index) => Number(document.querySelector("#rig-frame").value) > index,
+      middleFrame,
     );
     await page.locator("#rig-play").click();
     const paused = await page.locator("#rig-frame").inputValue();
@@ -453,7 +485,7 @@ try {
     await page.locator("#rig-reset").click();
     assert.equal(await page.locator("#rig-frame").inputValue(), "0");
     assert(await page.locator("#rig-previous").isDisabled());
-    await page.locator("#rig-frame").fill("11");
+    await page.locator("#rig-frame").fill(String(lastFrame));
     assert(await page.locator("#rig-next").isDisabled());
     await page.locator("#rig-play").click();
     await page.waitForFunction(

@@ -7,6 +7,8 @@ let workspace: ReturnType<typeof createRigWorkspace>;
 const fetchMock = vi.fn();
 const acquire = vi.fn();
 const websocket = vi.fn();
+const sampleCount = dataset.cases[0].frames.length;
+const frameLabel = (sample: number) => `${sample} / ${sampleCount}`;
 const cameraA = { id: "a".repeat(64), name: "Reference USB" };
 const cameraB = { id: "b".repeat(64), name: "Supporting USB" };
 const get = <T extends HTMLElement = HTMLElement>(id: string) =>
@@ -68,7 +70,7 @@ describe("two-view operator workspace", () => {
     expect(get<HTMLSelectElement>("rig-scenario").options.length).toBe(
       dataset.cases.length,
     );
-    expect(get("rig-frame-label").textContent).toBe("1 / 12");
+    expect(get("rig-frame-label").textContent).toBe(frameLabel(1));
     expect(get("rig-root-state").textContent).toContain("Both hips accepted");
     expect(get("rig-x").textContent).not.toBe("Unavailable");
     expect(
@@ -187,19 +189,21 @@ describe("two-view operator workspace", () => {
     get("rig-view-pair").dispatchEvent(
       new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
     );
-    expect(get("rig-frame-label").textContent).toBe("2 / 12");
-    get<HTMLInputElement>("rig-frame").value = "10";
+    expect(get("rig-frame-label").textContent).toBe(frameLabel(2));
+    get<HTMLInputElement>("rig-frame").value = String(sampleCount - 2);
     get("rig-frame").dispatchEvent(new Event("input"));
-    expect(get("rig-frame-label").textContent).toBe("11 / 12");
+    expect(get("rig-frame-label").textContent).toBe(
+      frameLabel(sampleCount - 1),
+    );
     get("rig-view-pair").dispatchEvent(
       new KeyboardEvent("keydown", { key: " ", bubbles: true }),
     );
     vi.advanceTimersByTime(1000);
-    expect(get("rig-frame-label").textContent).toBe("12 / 12");
+    expect(get("rig-frame-label").textContent).toBe(frameLabel(sampleCount));
     expect(get("rig-play").textContent).toBe("Play samples");
     expect(get<HTMLButtonElement>("rig-next").disabled).toBe(true);
     click("rig-reset");
-    expect(get("rig-frame-label").textContent).toBe("1 / 12");
+    expect(get("rig-frame-label").textContent).toBe(frameLabel(1));
   });
   it("pauses on visibility loss, scenario changes and mode switches with accurate origin labels", () => {
     click("rig-play");
@@ -220,7 +224,7 @@ describe("two-view operator workspace", () => {
     click("rig-play");
     selectCase("missing-hip");
     vi.advanceTimersByTime(1000);
-    expect(get("rig-frame-label").textContent).toBe("1 / 12");
+    expect(get("rig-frame-label").textContent).toBe(frameLabel(1));
     click("rig-play");
     click("rig-tab-planning");
     vi.advanceTimersByTime(1000);
@@ -332,9 +336,9 @@ describe("two-view operator workspace", () => {
     Object.defineProperty(pagehide, "persisted", { value: true });
     window.dispatchEvent(pagehide);
     vi.advanceTimersByTime(1000);
-    expect(get("rig-frame-label").textContent).toBe("1 / 12");
+    expect(get("rig-frame-label").textContent).toBe(frameLabel(1));
     click("rig-next");
-    expect(get("rig-frame-label").textContent).toBe("2 / 12");
+    expect(get("rig-frame-label").textContent).toBe(frameLabel(2));
   });
   it("fails closed on malformed local rehearsal data while keeping capture unavailable", () => {
     workspace.dispose();
