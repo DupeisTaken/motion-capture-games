@@ -106,6 +106,7 @@
         </tbody>
       </table>
     </div>
+    <p class="small" id="cleanup-test-evidence"><strong>CI cleanup test correction:</strong> the documentation follow-up's <a href="https://github.com/DupeisTaken/motion-capture-games/actions/runs/42775275684/attempts/1">first hosted attempt</a> exposed an unchanged WebSocket test race: it asserted idle before asynchronous final-viewer cleanup finished. All tracking regressions passed in that run; the unchanged retry passed. <a href="https://github.com/DupeisTaken/motion-capture-games/issues/14">Issue #14</a> records the cause. The test now closes the socket inside its context and waits for an event after real cleanup completes, with a five-second failure timeout, before asserting idle. This avoids Starlette's context-exit cancellation race without changing production cleanup behavior. The targeted test and subsequent full local checks/build passed.</p>
     <p class="small">Regression coverage targets both association modes, reordered detections, small disturbances, stop/reversal conflicts, sustained motion, retirement/reacquisition, missing input and epoch resets. Software checks do not substitute for physical crossing trials.</p>
     <p class="small"><strong>Environment:</strong> Windows, Python 3.12.16, Node 24.16.0 and pnpm 11.25.0. The installed Node version satisfies the repository’s <code>&gt;=24 &lt;25</code> engine range; the README recommends Node 24.21.0. No inference benchmark or camera trial was part of this evidence.</p>
   </section>
