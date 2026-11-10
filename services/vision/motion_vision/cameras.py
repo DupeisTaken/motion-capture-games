@@ -9,12 +9,28 @@ import platform
 import subprocess
 import sys
 import threading
+from pathlib import Path
 from typing import Any
 
 import cv2
 
 SCAN_LOCK = threading.Lock()
 MAX_CAMERAS = 32
+
+
+def _linux_identity(path: str) -> str:
+    node = Path(path)
+    # /dev/videoN is an acquisition index, not identity. Prefer udev's stable
+    # device links; topology + interface index is a same-port fallback.
+    for directory in (Path("/dev/v4l/by-id"), Path("/dev/v4l/by-path")):
+        for link in sorted(directory.glob("*")):
+            if link.resolve() == node.resolve():
+                return str(link)
+    entry = Path("/sys/class/video4linux") / node.name
+    try:
+        return f"{(entry / 'device').resolve(strict=True)}:{(entry / 'index').read_text().strip()}"
+    except OSError:
+        return ""  # No stable reference: use the explicitly selected manual fallback.
 
 
 def _native_devices() -> list[tuple[int, str, str, int]]:
@@ -31,14 +47,24 @@ def _native_devices() -> list[tuple[int, str, str, int]]:
             (index, str(device.localizedName()), str(device.uniqueID()), cv2.CAP_AVFOUNDATION)
             for index, device in enumerate(devices)
         ]
-    if system == "Windows":
+    if system in {"Windows", "Linux"}:
         from cv2_enumerate_cameras import enumerate_cameras
 
+        backend = cv2.CAP_MSMF if system == "Windows" else cv2.CAP_V4L2
         return [
-            (device.index, device.name, device.path or "", cv2.CAP_MSMF)
-            for device in enumerate_cameras(cv2.CAP_MSMF)
+            (
+                device.index,
+                device.name,
+                _linux_identity(device.path)
+                if system == "Linux" and device.path
+                else device.path or "",
+                backend,
+            )
+            for device in enumerate_cameras(backend)
         ]
-    raise RuntimeError("Named camera discovery supports macOS and Windows. Use the manual index.")
+    raise RuntimeError(
+        "Named camera discovery supports Windows, macOS and Linux. Use the manual index."
+    )
 
 
 def _scan() -> list[dict[str, Any]]:

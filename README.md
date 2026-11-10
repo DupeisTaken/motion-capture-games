@@ -2,7 +2,7 @@
 
 A collection of local games played through body movement, with immediate on-screen feedback in a mirrored camera view or a rendered game world.
 
-**Status: diagnostic viewer plus experimental Mole Motion and Dodgeball games.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Mole Motion](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both use explicit single-player joining and fair pause/recovery. Production model selection, calibrated push input, physical collision tuning, multiplayer games, multi-view reconstruction and hardware certification remain open.
+**Status: diagnostic viewer plus experimental Mole Motion and Dodgeball games.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Mole Motion](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both offer one-action Start, raw mirrored camera pictures and an optional separate game window. Production model selection, calibrated push input, physical collision tuning, multiplayer games, multi-view reconstruction and hardware certification remain open.
 
 ## Run the diagnostic viewer
 
@@ -18,15 +18,15 @@ Open **http://127.0.0.1:5173**. The compact test console keeps controls, skeleto
 
 ## Play Mole Motion
 
-Open **http://127.0.0.1:5173/mole.html** (also linked from the tracking console). Choose Timed, Challenge, Survival or Practice; set difficulty and Touch or Push; then **Join player 1** and **Start round**. Rehearsal works without a camera or Python service: move the pointer or use arrow keys in the stage; tap or press Space for a simulated push. Select a wrist, hip (push only) or foot (touch only) to rehearse it.
+Open **http://127.0.0.1:5173/mole.html** (also linked from the tracking console). Choose Timed, Challenge, Survival or Practice; set difficulty and Touch or Push; then **Start round**. Rehearsal works without a camera or Python service: move the pointer or use arrow keys in the stage; tap or press Space for a simulated push. Select a wrist, hip (push only) or foot (touch only) to rehearse it.
 
-For body tracking choose Camera, explicitly start it, choose the labeled participant track and join. Touch uses observed wrist/ankle proxies. Existing camera adapters have no calibrated depth, so camera Push is unavailable; rehearsal is not a physical push measurement. Both feet must remain visible; missing feet, stale/uncertain input or a hidden tab suspend the round with explicit countdown recovery. Camera loss requires explicit rejoin; a changed track/source/calibration requires a new round. End a round to change settings. See the [game design and tuning](docs/games/mole-motion.md) and [delivery report](reports/mole-motion.html).
+For body tracking choose Camera, select a named device and **Start camera**, then **Start round**. Start waits for stable input from one confident participant; no separate Join is needed. Touch uses observed wrist/ankle proxies. Camera Push remains unavailable without calibrated depth. Missing feet/joints pause scoring and recover through a countdown. Explicit identity loss, a changed track/source/calibration or a long input gap needs **New round**, which resets the score in one action. End a round to change settings. See [the game design](docs/games/mole-motion.md).
 
-Start and Resume remain disabled while required input is unavailable. The joined camera track is labeled and locked during membership. If camera release cannot be confirmed, the local preview stops and **Retry camera stop** stays available, even in rehearsal; retry before starting another camera source. This reports driver/network failures without claiming capture has been released.
+**Open game window** moves the same live stage and score HUD to a separate window; controls and tracking details stay with the operator. Camera pixels have no tint or body mask. Tracking graphics are optional in the operator preview and always hidden in the game window. Closing the window returns the stage without restarting capture. Keep the operator page open. A browser may open a tab instead, especially on mobile; popup-blocked guidance keeps the inline game usable. If capture release cannot be confirmed, **Retry camera stop** stays available and replacement capture waits for acknowledgement. [The camera gameplay report](reports/raw-game-display.html) records actual checks and limitations.
 
 ## Play the experimental arcade
 
-Open [Mole Motion](http://127.0.0.1:5173/mole.html) or [Dodgeball](http://127.0.0.1:5173/dodgeball.html) after starting the local server. Both offer a camera-free synthetic rehearsal and explicit single-player joining. Dodgeball previews each virtual ball with a warning ring: move your visible body clear before impact. Missing feet, body joints or uncertain tracking pause the round with explicit recovery. See [the dodgeball design](docs/games/dodgeball.md) and [delivery report](reports/dodgeball.html).
+Open [Mole Motion](http://127.0.0.1:5173/mole.html) or [Dodgeball](http://127.0.0.1:5173/dodgeball.html) after starting the local server. Both offer camera-free rehearsal and Start that waits for usable input. Dodgeball previews each virtual ball with a warning ring: move your body clear before impact. Missing feet, joints or uncertain tracking pause the round fairly. See [the dodgeball design](docs/games/dodgeball.md) and [delivery report](reports/dodgeball.html).
 
 These are early experimental game slices. Physical framing/collision accuracy, participant height and movement tuning, hardware capacity and latency still require M1/M4 evidence.
 
@@ -37,7 +37,7 @@ These are early experimental game slices. Physical framing/collision accuracy, p
 - Start gameplay with one player and build toward three simultaneous players.
 - Add a single-player motion runner: move left, center or right to choose a lane, jump to clear low obstacles, and squat to duck overhead obstacles. Its player limit stays at one.
 - Support free movement, crossing, overlap, and explicit recovery when identity is uncertain.
-- Target Windows and macOS. A Windows machine with an RTX 3070 is the proposed reference rig; integrated graphics require separate validation.
+- Target Windows, macOS and Linux. A Windows machine with an RTX 3070 is the proposed reference rig; physical capture and integrated graphics require separate validation per platform.
 - Run gameplay locally and offline after installation.
 
 ## Read first

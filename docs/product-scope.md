@@ -4,7 +4,9 @@
 
 The product is a set of games with computer vision input and immediate on-screen feedback. Camera-overlay games show a mirrored live camera image with game graphics. The motion runner shows a rendered game world, with camera feedback available for setup and practice. The digital mirror is a display mode, not a physical two-way mirror or a requirement to place every game over video.
 
-The installation has two USB cameras advertised as 4K at 60 fps. Exact camera models, capture formats, synchronization capabilities, host computer, and room geometry are not selected or verified. Windows and macOS are target platforms; a Windows RTX 3070 rig is a proposed reference, while integrated graphics are a separate validation target.
+The installation has two USB cameras advertised as 4K at 60 fps. Exact camera models, capture formats, synchronization capabilities, host computer, and room geometry are not selected or verified. Windows, macOS and Linux are target platforms; a Windows RTX 3070 rig is a proposed reference, while integrated graphics are a separate validation target.
+
+Camera games present untinted mirrored video with game graphics. Tracking skeletons, bounds and body collision diagrams are optional operator diagnostics, hidden in the separate player window. The local browser application can move its existing game stage to a dedicated window without acquiring another camera. Desktop packaging remains M5. In the experimental single-player games, Start also requests admission and can wait for input; a separate player-selection/join sequence is optional rather than required. Identity uncertainty still suspends scoring and cannot transfer an existing score to another track.
 
 The first playable slice may support one player. The platform must grow to three simultaneous players who can move freely, cross, and overlap in supported games. Individual games may impose a lower limit: the motion runner is one person only, even on a three-player performance profile. The product must communicate tracking uncertainty and recover explicitly; complete occlusion does not guarantee recoverable identity.
 

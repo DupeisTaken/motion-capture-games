@@ -2,12 +2,44 @@
 
 import json
 import subprocess
+import sys
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from motion_vision import cameras, runtime, server
+
+
+@pytest.mark.parametrize("system,backend", [("Windows", 1400), ("Linux", 200)])
+def test_named_inventory_uses_os_backend_and_linux_stable_identity(monkeypatch, system, backend):
+    enumerate_devices = Mock(return_value=[SimpleNamespace(index=3, name="USB", path="device-3")])
+    monkeypatch.setitem(
+        sys.modules, "cv2_enumerate_cameras", SimpleNamespace(enumerate_cameras=enumerate_devices)
+    )
+    monkeypatch.setattr(cameras.platform, "system", lambda: system)
+    monkeypatch.setattr(cameras, "_linux_identity", lambda path: f"stable:{path}")
+    result = cameras._native_devices()
+    enumerate_devices.assert_called_once_with(backend)
+    assert result == [(3, "USB", "stable:device-3" if system == "Linux" else "device-3", backend)]
+
+
+def test_linux_device_identity_prefers_udev_reference_not_numeric_node(tmp_path):
+    node = tmp_path / "video3"
+    node.write_text("")
+    alias = Mock()
+    alias.resolve.return_value = node.resolve()
+    alias.__str__ = Mock(return_value="/dev/v4l/by-id/synthetic-camera-video-index0")
+    with patch.object(cameras.Path, "glob", return_value=[alias]):
+        assert cameras._linux_identity(str(node)) == "/dev/v4l/by-id/synthetic-camera-video-index0"
+
+
+def test_linux_device_without_stable_metadata_requires_manual_choice():
+    with (
+        patch.object(cameras.Path, "glob", return_value=[]),
+        patch.object(cameras.Path, "resolve", side_effect=FileNotFoundError),
+    ):
+        assert cameras._linux_identity("/dev/video3") == ""
 
 
 def test_native_choices_distinguish_identical_names_without_exposing_paths(monkeypatch):

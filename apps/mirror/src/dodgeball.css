@@ -403,3 +403,69 @@
     padding: 43px 16px 42px;
   }
 }
+
+/* Camera pixels remain visible while a compact notice explains fair pauses. */
+.camera-stage .mm-overlay {
+  inset: auto 12% 17%;
+  padding: 16px 20px;
+  background: #102722ed;
+  border: 1px solid #b0d2bd33;
+  border-radius: 12px;
+}
+.camera-stage .overlay-ball {
+  display: none;
+}
+.camera-stage #overlay-title {
+  font-size: clamp(22px, 3vw, 34px);
+  margin-bottom: 8px;
+}
+.camera-stage #overlay-kicker {
+  margin: 0 0 8px;
+}
+.display-button {
+  width: 100%;
+}
+#player-status {
+  min-height: 2.6em;
+}
+.display-hud {
+  display: none;
+}
+.game-display-stage .display-hud {
+  display: flex;
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  gap: 24px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: #102722ed;
+  color: #d6e8d9;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.display-hud strong {
+  margin-left: 8px;
+  font-size: 24px;
+  color: #fff1d6;
+}
+@media (max-width: 680px) {
+  .camera-stage .mm-overlay {
+    inset: auto 7% 17%;
+    padding: 12px;
+  }
+  .camera-stage #overlay-title {
+    font-size: 23px;
+  }
+  .game-display-stage .display-hud {
+    top: 48px;
+    gap: 14px;
+    padding: 8px 12px;
+  }
+  .display-hud strong {
+    font-size: 18px;
+    margin-left: 4px;
+  }
+}

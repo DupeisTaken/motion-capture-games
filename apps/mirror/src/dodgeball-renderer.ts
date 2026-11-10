@@ -21,10 +21,14 @@ export function drawDodgeScene(
   body: BodyPoint[],
   obstacle: DodgeGame["state"]["obstacle"],
   mirror = true,
+  diagnostics = false,
 ): Rect {
   const width = Math.max(1, canvas.clientWidth || 960),
     height = Math.max(1, canvas.clientHeight || 600);
-  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const ratio = Math.min(
+    canvas.ownerDocument.defaultView?.devicePixelRatio || 1,
+    2,
+  );
   if (
     canvas.width !== Math.round(width * ratio) ||
     canvas.height !== Math.round(height * ratio)
@@ -51,8 +55,6 @@ export function drawDodgeScene(
     if (mirror) ctx.scale(-1, 1);
     ctx.drawImage(image, 0, 0, rect.width, rect.height);
     ctx.restore();
-    ctx.fillStyle = "#10262366";
-    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
   } else {
     const glow = ctx.createRadialGradient(
       width * 0.5,
@@ -81,8 +83,8 @@ export function drawDodgeScene(
       ctx.stroke();
     }
   }
-  // Preview labels make explicit enrollment possible without guessing by position.
-  if (observation) {
+  // Diagnostics are opt-in; ordinary camera play shows the unmasked mirrored feed.
+  if (observation && diagnostics) {
     for (const person of observation.people) {
       const label = mapJoint(
         { x: person.box.x + person.box.width / 2, y: person.box.y },
@@ -117,7 +119,7 @@ export function drawDodgeScene(
   ctx.translate(rect.x + (mirror ? rect.width : 0), rect.y);
   ctx.scale(mirror ? -rect.width : rect.width, rect.height);
   const shapes = bodyShapes(body);
-  if (shapes) {
+  if (shapes && (!image || diagnostics)) {
     ctx.fillStyle = "#cde5ce35";
     ctx.strokeStyle = "#bde6ce";
     ctx.lineCap = "round";
@@ -212,29 +214,33 @@ export function drawDodgeScene(
       ctx.restore();
     }
   }
-  const bounds = TUNING.bounds;
-  ctx.strokeStyle = "#c5dfc74d";
-  ctx.lineWidth = 0.0015;
-  ctx.setLineDash([0.008, 0.012]);
-  ctx.strokeRect(
-    bounds.left,
-    bounds.top,
-    bounds.right - bounds.left,
-    bounds.bottom - bounds.top,
-  );
-  ctx.setLineDash([]);
+  if (diagnostics) {
+    const bounds = TUNING.bounds;
+    ctx.strokeStyle = "#c5dfc74d";
+    ctx.lineWidth = 0.0015;
+    ctx.setLineDash([0.008, 0.012]);
+    ctx.strokeRect(
+      bounds.left,
+      bounds.top,
+      bounds.right - bounds.left,
+      bounds.bottom - bounds.top,
+    );
+    ctx.setLineDash([]);
+  }
   ctx.restore();
   ctx.restore();
-  // Source boundary remains visible even on mobile letterboxing.
-  ctx.strokeStyle = "#c5dfc74d";
-  ctx.lineWidth = 1;
-  ctx.setLineDash([5, 8]);
-  ctx.strokeRect(
-    rect.x + 1,
-    rect.y + 1,
-    Math.max(0, rect.width - 2),
-    Math.max(0, rect.height - 2),
-  );
-  ctx.setLineDash([]);
+  if (diagnostics) {
+    // Source boundary remains visible even on mobile letterboxing.
+    ctx.strokeStyle = "#c5dfc74d";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 8]);
+    ctx.strokeRect(
+      rect.x + 1,
+      rect.y + 1,
+      Math.max(0, rect.width - 2),
+      Math.max(0, rect.height - 2),
+    );
+    ctx.setLineDash([]);
+  }
   return rect;
 }

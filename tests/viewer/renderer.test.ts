@@ -38,6 +38,23 @@ const options = {
   confidence: 0.5,
 };
 describe("batched skeleton drawing", () => {
+  it("draws untinted camera pixels and no tracking graphics in raw view", () => {
+    const { canvas, context } = surface();
+    drawFrame(
+      canvas,
+      {} as ImageBitmap,
+      structuredClone(fixture) as Observation,
+      {
+        ...options,
+        showTracking: false,
+      },
+    );
+    expect(context.drawImage).toHaveBeenCalledOnce();
+    // Only the letterbox background is filled, before the camera image.
+    expect(context.fillRect).toHaveBeenCalledOnce();
+    expect(context.stroke).not.toHaveBeenCalled();
+    expect(context.fillText).not.toHaveBeenCalled();
+  });
   it("bounds expensive strokes by people rather than by the number of bones", () => {
     const { canvas, context } = surface();
     const frame = {

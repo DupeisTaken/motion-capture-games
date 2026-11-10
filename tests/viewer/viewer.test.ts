@@ -168,6 +168,18 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 describe("independent diagnostic viewer", () => {
+  it("lets the operator hide tracking while retaining independent raw camera delivery", async () => {
+    const streams = await start();
+    await frame(streams, pose(1));
+    const overlay = el<HTMLInputElement>("show-tracking");
+    overlay.checked = false;
+    overlay.dispatchEvent(new Event("input"));
+    expect(renderer.drawFrame.mock.calls.at(-1)?.[3].showTracking).toBe(false);
+    expect(el("person-count").textContent).toBe("1");
+    overlay.checked = true;
+    overlay.dispatchEvent(new Event("input"));
+    expect(renderer.drawFrame.mock.calls.at(-1)?.[3].showTracking).toBe(true);
+  });
   it("defaults to RTMPose and separates display draws from image and pose arrivals", async () => {
     const streams = await start();
     const request = JSON.parse(
