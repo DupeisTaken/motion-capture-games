@@ -24,7 +24,7 @@ import {
 export function mountMaze(root: HTMLElement) {
   root.innerHTML = `
   <a class="skip-link" href="#maze-map">Skip to maze</a>
-  <header class="maze-header"><a class="brand" href="/">Motion<span class="brand-light">Studio</span></a><a href="/rig.html">Two-camera workspace ↗</a><a href="/mole.html">Mole Motion ↗</a><span class="maze-badge">Synthetic rehearsal</span></header>
+  <header class="maze-header"><a class="brand" href="/">Motion<span class="brand-light">Studio</span></a><a href="/rig.html">Two-camera workspace ↗</a><a href="/mole.html">Slap a Mole ↗</a><span class="maze-badge">Synthetic rehearsal</span></header>
   <main class="maze-workspace"><div class="maze-title"><div><p class="maze-eyebrow">Movement lab / Virtual maze</p><h1>Find your way by sound.</h1><p>Build a maze. Follow the quiet. Keep the map with the operator.</p></div><button id="maze-view" class="maze-button">Preview participant display</button></div>
   <div id="maze-admin"><div class="maze-grid">
     <form id="maze-config" class="maze-panel" aria-label="Maze generation"><p class="maze-eyebrow">01 / Build</p><h2>Maze settings</h2><div class="maze-pair"><div><label for="maze-width">Width · m</label><input id="maze-width" type="number" min="5" max="10" step="0.5" value="8" required></div><div><label for="maze-depth">Depth · m</label><input id="maze-depth" type="number" min="5" max="10" step="0.5" value="8" required></div></div><p class="maze-hint">Each side from 5 to 10 meters.</p>
