@@ -11,3 +11,5 @@ Run `pnpm dev` at the repository root. [The viewer guide](../../docs/diagnostic-
 Future game composition supports camera-overlay games and the [motion runner's rendered world](../../docs/games/motion-runner.md#presentation-and-player-admission), with camera feedback for setup/practice. The runner is planned; it is not implemented in the diagnostic viewer.
 
 Operator telemetry updates at most four times per second, using a bounded 120-frame window. Person rows change only when displayed identity/joint-count/capacity information changes; the canvas still draws every paired frame. Controls, stage timings and stream context share one responsive page. See [the console report](../../reports/diagnostic-console.html) for actual measurements and verification.
+
+`dodgeball.html` composes the experimental [Dodgeball game](../../docs/games/dodgeball.md). It adds full-body rehearsal/camera input, shared contain/mirror placement for visible collision shapes and ball warning rings, explicit joining and framing recovery. Run the same local server; rehearsal needs no camera service. The game owns collisions and score while this app owns transport and controls.

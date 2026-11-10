@@ -11,6 +11,13 @@ export {
   observationToGameFrame,
 } from "./game-input";
 export type { ContactName, GameMotionFrame, MotionContact } from "./game-input";
+export {
+  BODY_NAMES,
+  SYNTHETIC_BODY_BOUNDS,
+  observationToDodgeFrame,
+  syntheticBody,
+} from "./dodgeball-input";
+export type { BodyName, BodyPoint, DodgeMotionFrame } from "./dodgeball-input";
 export type Person = Observation["people"][number];
 export type Joints = Person["joints"];
 export type JointName = keyof Joints;

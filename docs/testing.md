@@ -8,6 +8,8 @@ The runner documentation update has its own [change report](../reports/motion-ru
 
 The experimental [Mole Motion slice](games/mole-motion.md) adds game rules/replay, motion contacts, one-slot membership and operator UI tests. [Its report](../reports/mole-motion.html) records actual check results and English desktop/mobile real-server screenshots. Required scenarios cover timed/challenge/survival/practice outcomes, wrist/foot touch and hip push rehearsal, forward-miss/repeat-hit rearming, hard placement/bounds, stale/order/clock/identity/geometry gaps, hidden-tab/framing pause, camera decode/start/stop races and restart. Calibrated depth, camera hit/framing accuracy, participant reach, physical latency and multiplayer remain hardware gates.
 
+The experimental [Dodgeball slice](games/dodgeball.md) adds seeded warning/danger obstacle outcomes, visible head/torso/limb collision regions, full-body confidence validation, mode and replay tests, and operator UI coverage. [Its report](../reports/dodgeball.html) records actual results. Required cases include missing ankles and upper-body joints, body/ball boundary contact, repeated outcomes, stale/clock/identity changes, interruption during danger, explicit countdown recovery and results/restart. Physical height/position playtests and camera accuracy remain open.
+
 ## Documentation changes
 
 Check Git whitespace, local Markdown links/anchors, HTML document structure, and any structured examples. Verify that accepted requirements, proposals, measurements and unrun checks are labeled consistently. Validate HTML reports from a local HTTP server at desktop and mobile widths; reports must work offline without external assets.
