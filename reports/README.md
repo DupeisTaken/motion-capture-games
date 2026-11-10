@@ -1,5 +1,7 @@
 # Change reports
 
+[Slap a Mole rename](slap-a-mole-rename.html) records the display-name update, compatible routes and source paths, isolated software checks and synthetic desktop/mobile before/after screenshots.
+
 [Two-camera operator workspace](two-camera-workspace.html) records paired synthetic XYZ rehearsal, physical camera-role planning, independent review, actual checks and responsive before/after screenshots. Planning inputs and simulated output do not establish physical calibration, synchronization, accuracy or maze readiness.
 
 [Vision issues #3 and #4](vision-issues.html) records the viewer audit/freshness fix, camera-free XYZ comparison, independent reviews, actual checks and real-server English desktop/mobile evidence. [XYZ measurements](xyz-results.json) contain coverage, unsafe acceptances and serial reconstruction-only timings. Physical calibration, camera, identity and external latency certification remain open.

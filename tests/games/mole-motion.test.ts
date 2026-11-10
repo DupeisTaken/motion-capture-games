@@ -76,7 +76,7 @@ class Play {
   }
 }
 
-describe("Mole Motion lifecycle and scoring", () => {
+describe("Slap a Mole lifecycle and scoring", () => {
   it.each([
     [{ feetVisible: false }, /feet/i],
     [{ identity: "uncertain" }, /identity/i],

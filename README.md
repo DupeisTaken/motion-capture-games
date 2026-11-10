@@ -2,7 +2,7 @@
 
 A collection of local games played through body movement, with immediate on-screen feedback in a mirrored camera view or a rendered game world.
 
-**Status: diagnostic viewer plus experimental Mole Motion and Dodgeball games.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Mole Motion](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both offer a combined pre-game setup menu, raw mirrored camera pictures and an optional separate game window. Production model selection, calibrated push input, physical collision tuning, multiplayer games, multi-view reconstruction and hardware certification remain open.
+**Status: diagnostic viewer plus experimental Slap a Mole and Dodgeball games.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Slap a Mole](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both offer a combined pre-game setup menu, raw mirrored camera pictures and an optional separate game window. Production model selection, calibrated push input, physical collision tuning, multiplayer games, multi-view reconstruction and hardware certification remain open.
 
 ## Run the diagnostic viewer
 
@@ -26,7 +26,7 @@ Choose **Displayed camera** to show either recorded angle in the selected-view s
 
 `pnpm benchmark:xyz` compares three calibrated two-view reconstruction methods using seeded synthetic joints, including timing, calibration and identity failures. It uses the existing Python environment and opens no cameras. `pnpm verify:vision` checks the diagnostic viewer through real local HTTP/WebSocket transport and saves desktop/mobile screenshots. See [the XYZ design](docs/player-xyz-experiment.md) and [the issues #3/#4 delivery report](reports/vision-issues.html). Live multi-camera input, calibrated pushes and physical certification remain open.
 
-## Play Mole Motion
+## Play Slap a Mole
 
 Open **http://127.0.0.1:5173/mole.html** (also linked from the tracking console). The setup menu opens automatically: choose Timed, Challenge, Survival or Practice, set difficulty and Touch, Flick or Push, then confirm **Start round**. Video/input and display options share the menu. Every new round, including Play again, returns to setup; Pause/Resume stay in the play view. Flick whacks a nearby mole with a quick wrist flap; settle briefly between flicks. Your wrist must visibly move; finger-only flapping is not tracked. Rehearsal works without a camera or Python service: move the pointer or use arrow keys in the stage; aim, settle, then move quickly for Flick; tap or press Space for a simulated push. Select a wrist, hip (push only) or foot (touch only) to rehearse it.
 
@@ -38,7 +38,7 @@ For body tracking choose Camera, select a named device and **Start camera**, the
 
 Both games default to **Camera** and list connected devices on load. Choose a device and press **Start camera** to begin capture. Facing the screen, moving to your left moves your mirrored image left; rehearsal pointer and arrow controls follow the same screen directions. Select **Rehearsal** for camera-free controls. [The camera-default report](reports/camera-default.html) records the verification.
 
-Open [Mole Motion](http://127.0.0.1:5173/mole.html) or [Dodgeball](http://127.0.0.1:5173/dodgeball.html) after starting the local server. Both offer camera-free rehearsal and a combined video/game setup menu before every new round. Its Start confirmation waits for usable input. Dodgeball previews each virtual ball with a warning ring: move your body clear before impact. Missing feet, joints or uncertain tracking pause the round fairly. See [the dodgeball design](docs/games/dodgeball.md) and [delivery report](reports/dodgeball.html).
+Open [Slap a Mole](http://127.0.0.1:5173/mole.html) or [Dodgeball](http://127.0.0.1:5173/dodgeball.html) after starting the local server. Both offer camera-free rehearsal and a combined video/game setup menu before every new round. Its Start confirmation waits for usable input. Dodgeball previews each virtual ball with a warning ring: move your body clear before impact. Missing feet, joints or uncertain tracking pause the round fairly. See [the dodgeball design](docs/games/dodgeball.md) and [delivery report](reports/dodgeball.html).
 
 These are early experimental game slices. Physical framing/collision accuracy, participant height and movement tuning, hardware capacity and latency still require M1/M4 evidence.
 
@@ -58,7 +58,7 @@ These are early experimental game slices. Physical framing/collision accuracy, p
 | --- | --- |
 | [Product scope](docs/product-scope.md) | Requirements, game sequence, and exclusions |
 | [Motion runner brief](docs/games/motion-runner.md) | Single-player lanes, jump/duck controls, recovery and validation |
-| [Mole Motion](docs/games/mole-motion.md) | Play modes, touch/push rules, session safety, tuning and remaining gates |
+| [Slap a Mole](docs/games/mole-motion.md) | Play modes, touch/push rules, session safety, tuning and remaining gates |
 | [Dodgeball](docs/games/dodgeball.md) | Full-body avoidance, warning rings, collision shapes and recovery |
 | [Architecture](docs/architecture.md) | Runtime boundaries, ownership, and provisional stack |
 | [Diagnostic viewer](docs/diagnostic-viewer.md) | Setup, skeleton rendering, automatic counts, algorithms and recovery |
@@ -96,11 +96,11 @@ docs/                       Owning design documents and decisions
 reports/                    Shareable, self-contained change reports
 ```
 
-The diagnostic slice implements vision, contracts, motion presentation and the mirror viewer. Experimental Mole Motion and Dodgeball implement game-ready input, one explicitly joined session slot and deterministic game runtimes. Other game directories remain ownership notes until their milestones begin.
+The diagnostic slice implements vision, contracts, motion presentation and the mirror viewer. Experimental Slap a Mole and Dodgeball implement game-ready input, one explicitly joined session slot and deterministic game runtimes. Other game directories remain ownership notes until their milestones begin.
 
 ## Next milestone
 
-Continue the [M1 diagnostic mirror experiment](docs/roadmap.md#m1-diagnostic-mirror-and-hardware-experiment) alongside experimental M2/M4 software development. Mole Motion and Dodgeball start early at the user's request; they do not close M1. Actual camera formats, the production video path, three-player crossings, calibrated pushes, participant avoidance trials and physical latency still require evidence. Run `pnpm check` and `pnpm build` for the software checks.
+Continue the [M1 diagnostic mirror experiment](docs/roadmap.md#m1-diagnostic-mirror-and-hardware-experiment) alongside experimental M2/M4 software development. Slap a Mole and Dodgeball start early at the user's request; they do not close M1. Actual camera formats, the production video path, three-player crossings, calibrated pushes, participant avoidance trials and physical latency still require evidence. Run `pnpm check` and `pnpm build` for the software checks.
 
 ## Repository hosting
 
