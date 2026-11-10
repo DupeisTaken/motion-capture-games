@@ -14,7 +14,7 @@ Explain the problem, final change and rationale. Include relevant before/after s
 
 Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.local/`.
 
-[Displayed camera](displayed-camera.html) records independent camera presentation selection, matching synthetic observations and timing, separate-window behavior, actual checks and embedded before/after screenshots. Live dual-camera capture remains deferred.
+[Gameplay camera and operator views](displayed-camera.html) records the correction from a third skeleton output to actual Slap a Mole rehearsal gameplay, with both operator diagnostics retained. It covers explicit pointer input, selected synthetic background mapping, state/ownership isolation, player-window lifecycle and actual verification. Live dual-camera capture and body-driven XYZ gameplay remain deferred.
 
 [Camera defaults and mirrored movement](camera-default.html) records camera-first setup, the explicit viewer-left mapping, software checks and embedded synthetic desktop/mobile browser evidence.
 

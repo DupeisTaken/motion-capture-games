@@ -176,128 +176,33 @@
   flex-direction: column;
   gap: 16px;
 }
-.rig-output-panel #rig-display-window {
-  border-radius: 5px;
-  padding: 8px 12px;
-  min-height: 44px;
-  font-size: 12px;
-  font-weight: 600;
+.rig-gameplay-panel > .rig-panel-heading {
+  flex-wrap: wrap;
 }
-.rig-output-panel #rig-display-location {
-  margin: -6px 0 14px;
-}
-/* These styles belong to the movable stage and apply in either document. */
-.rig-selected-stage {
-  min-width: 0;
-  background: #172132;
-  color: #e1eafa;
+.rig-gameplay-selection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr);
+  gap: 20px;
   padding: 14px;
+  margin: 18px 0;
+  background: #f3f6fb;
+  border: 1px solid #e0e7f0;
   border-radius: 6px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-  gap: 0 18px;
-  align-items: start;
 }
-.rig-selected-stage:focus-visible {
-  outline: 3px solid #5685ef;
-  outline-offset: 3px;
+.rig-gameplay-selection .field-label {
+  margin-top: 0;
 }
-.rig-selected-heading {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.rig-selected-heading > div {
+.rig-gameplay-source {
   min-width: 0;
-}
-.rig-selected-heading h3 {
-  font-size: 15px;
-  font-weight: 600;
   overflow-wrap: anywhere;
-  margin: 0;
 }
-.rig-selected-origin {
-  color: #e5c784;
-  font-size: 11px;
-  margin: 0 0 5px;
-}
-.rig-selected-heading .subtle-badge {
-  flex: none;
-  max-width: 155px;
-  color: #dce7f6;
-  background: #2a3e58;
-  font-size: 11px;
-  white-space: normal;
-}
-.rig-selected-diagram {
-  grid-column: 1;
-  grid-row: 2 / span 2;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: 120px;
-  max-height: 230px;
-  overflow: hidden;
-}
-.rig-selected-diagram svg {
+.rig-gameplay-source > strong {
   display: block;
-  width: 100%;
-  height: 100%;
+  margin-bottom: 8px;
+  font-size: 13px;
 }
-.rig-selected-context,
-.rig-selected-warning,
-.rig-selected-limit {
-  overflow-wrap: anywhere;
-  font-size: 11px;
-  line-height: 1.7;
-  margin: 8px 0 0;
-}
-.rig-selected-context {
-  grid-column: 2;
-  grid-row: 2;
-  color: #b9cadf;
-  font-variant-numeric: tabular-nums;
-}
-.rig-selected-warning {
-  grid-column: 2;
-  grid-row: 3;
-  color: #e5c784;
-}
-.rig-selected-limit {
-  grid-column: 1 / -1;
-  border-top: 1px solid #344960;
-  padding-top: 9px;
-  color: #c4d0e0;
-}
-.rig-selected-unavailable {
-  grid-column: 1;
-  grid-row: 2 / span 2;
-  min-height: 200px;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  padding: 24px;
-  color: #e5c784;
-  background: #1d2c40;
-  border-radius: 5px;
-  line-height: 1.8;
-  margin: 0;
-}
-.game-display-window .rig-selected-stage {
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
-  padding: 16px;
-}
-.game-display-window .rig-selected-diagram {
-  flex: 1;
-  aspect-ratio: auto;
-  max-height: none;
-}
-.game-display-window .rig-selected-unavailable {
-  flex: 1;
+.rig-gameplay-source > .rig-note {
+  margin-bottom: 0;
 }
 .rig-view-pair {
   display: grid;
@@ -625,13 +530,9 @@
   }
 }
 @media (max-width: 600px) {
-  .rig-output-panel > .rig-panel-heading,
-  .rig-selected-heading {
-    flex-wrap: wrap;
-  }
-  .rig-selected-stage {
-    display: flex;
-    flex-direction: column;
+  .rig-gameplay-selection {
+    grid-template-columns: 1fr;
+    gap: 16px;
     padding: 12px;
   }
   .rig-joint-details ul {

@@ -17,7 +17,7 @@ const { values } = parseArgs({
     "chrome-executable": { type: "string" },
     baseline: {
       type: "string",
-      default: "145195aa21d3ea4f5fa8ceb077d2ccec0814583b",
+      default: "cc8b13c99fb2af67a4cb7b6ed96c241958ac7b38",
     },
   },
 });
@@ -65,7 +65,7 @@ const viewports = [
   ["narrow", 320, 740],
 ];
 const result = {
-  mode: values["report-only"] ? "offline-report" : "real-ui-displayed-camera",
+  mode: values["report-only"] ? "offline-report" : "real-ui-gameplay-camera",
   language: "en",
   headless: true,
   baselineRef: baselineRef || null,
@@ -75,7 +75,7 @@ const result = {
   requests: [],
   errors: [],
   limitations: [
-    "Recorded synthetic samples from the actual solver; no live multi-camera capture, physical calibration or latency certification.",
+    "Actual Slap a Mole Practice/Touch game with pointer/keyboard input and a selected recorded synthetic background. Recorded bodies and XYZ do not drive scoring; no physical capture or accuracy claim.",
     "Planning uses synthetic device metadata. Acquisition requests, streams and getUserMedia are blocked and counted.",
     "Baseline snapshots the rig entry, stylesheet and renderer at the recorded commit, with current shared imports and recorded data.",
   ],
@@ -192,6 +192,7 @@ try {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1050 },
     locale: "en-US",
+    hasTouch: true,
   });
   context.setDefaultTimeout(10000);
   if (!values["report-only"]) {
@@ -277,587 +278,511 @@ try {
       "Offline English report, embedded images and responsive layout verified at three widths.",
     );
   } else {
-    const rawDataset = await readFile(
+    const bytes = await readFile(
       resolve(root, "apps/mirror/src/rig-rehearsal.json"),
     );
-    result.datasetSha256 = createHash("sha256")
-      .update(rawDataset)
-      .digest("hex");
+    const dataset = JSON.parse(bytes);
+    result.datasetSha256 = createHash("sha256").update(bytes).digest("hex");
     await page.goto(`${url}displayed-baseline.html`, {
       waitUntil: "networkidle",
     });
     await capture(page, "before-rig");
-    assert.equal(
-      await page.evaluate(() => window.__displayedAcquisitionAttempts),
-      0,
-    );
-    const dataset = JSON.parse(rawDataset.toString("utf8"));
-    const nominal = dataset.cases.find((scenario) => scenario.id === "nominal");
-    const primaryId = nominal.frames[0].views.find(
-      (view) => view.role === "primary",
-    ).cameraId;
-    const secondaryId = nominal.frames[0].views.find(
-      (view) => view.role === "secondary",
-    ).cameraId;
-    const preferenceKey = "motion-studio.rig.synthetic-displayed-camera.v1";
-    const diagnostics = async () =>
-      page.evaluate(() => {
-        const ids = [
-          "rig-x",
-          "rig-y",
-          "rig-z",
-          "rig-reference-x",
-          "rig-reference-y",
-          "rig-reference-z",
-          "rig-track",
-          "rig-joint-count",
-          "rig-reference-context",
-          "rig-support-context",
-          "rig-quality",
-        ];
-        return {
-          text: Object.fromEntries(
-            ids.map((id) => [id, document.getElementById(id).textContent]),
-          ),
-          map: document.querySelector("#rig-space").innerHTML,
-          primary: document.querySelector("#rig-reference-view").innerHTML,
-          secondary: document.querySelector("#rig-support-view").innerHTML,
-        };
-      });
-    async function selectedMatches(target, frame, cameraId) {
-      const view = frame.views.find((item) => item.cameraId === cameraId);
-      assert(view, "Requested recorded view is missing from fixture.");
-      assert.equal(
-        await target
-          .locator("#rig-selected-stage")
-          .getAttribute("data-camera-id"),
-        cameraId,
-      );
-      const sourceContext = await target
-        .locator("#rig-selected-context")
-        .innerText();
-      for (const expected of [
-        view.cameraId,
-        `source frame ${view.frameId}`,
-        view.cameraTrackId,
-        `${view.timeNs} ns`,
-        view.imageSize.join(" × "),
-      ])
-        assert(
-          sourceContext.includes(expected),
-          `Selected context does not contain ${expected}.`,
-        );
-      const circles = await target
-        .locator("#rig-selected-diagram circle")
-        .evaluateAll((elements) =>
-          elements.map((element) => [
-            Number(element.getAttribute("cx")),
-            Number(element.getAttribute("cy")),
-          ]),
-        );
-      const [width, height] = view.imageSize;
-      const points = view.joints
-        .filter(
-          (joint) =>
-            joint.x !== null &&
-            joint.y !== null &&
-            Number.isFinite(joint.x) &&
-            Number.isFinite(joint.y) &&
-            joint.x >= 0 &&
-            joint.x < width &&
-            joint.y >= 0 &&
-            joint.y < height,
-        )
-        .map((joint) => [joint.x, joint.y]);
-      assert.deepEqual(
-        circles,
-        points,
-        "Selected overlay must use exactly that camera's own observations.",
-      );
-      assert.deepEqual(
-        (
-          await target
-            .locator("#rig-selected-diagram svg")
-            .getAttribute("viewBox")
-        )
-          .split(" ")
-          .map(Number),
-        [0, 0, width, height],
-      );
-      assert.equal(
-        await target
-          .locator("#rig-selected-diagram svg")
-          .getAttribute("preserveAspectRatio"),
-        "xMidYMid meet",
-        "Selected source must contain-fit its complete canonical image geometry.",
-      );
-      assert.equal(
-        await target.locator("#rig-selected-diagram").innerHTML(),
-        await page
-          .locator(
-            view.role === "primary"
-              ? "#rig-reference-view"
-              : "#rig-support-view",
-          )
-          .innerHTML(),
-      );
-      return sourceContext;
-    }
-    async function acquisitionCount() {
-      let attempts = 0;
-      for (const item of context.pages())
-        if (!item.isClosed())
-          attempts += await item.evaluate(
-            () => window.__displayedAcquisitionAttempts || 0,
-          );
-      assert.equal(attempts, 0, "Presentation acquired a physical camera.");
-    }
     await page.goto(`${url}rig.html`, { waitUntil: "networkidle" });
-    assert.equal(await page.locator("#rig-load-error").isVisible(), false);
-    assert.equal(
-      await page.locator("#rig-displayed-camera").inputValue(),
-      primaryId,
-    );
-    assert.equal(
-      result.requests.length,
-      0,
-      "Rehearsal should make no API request.",
-    );
-    await selectedMatches(page, nominal.frames[0], primaryId);
-    await capture(page, "after-primary");
-    await page.setViewportSize({ width: 1440, height: 1050 });
-    await page.evaluate(() => window.scrollTo(0, 0));
-    result.desktopDensity = await page.evaluate(() => ({
-      viewportHeight: window.innerHeight,
-      diagramHeight: document
-        .querySelector("#rig-selected-diagram")
-        .getBoundingClientRect().height,
-      coordinates: ["rig-x", "rig-y", "rig-z"].map((id) => {
-        const box = document.getElementById(id).getBoundingClientRect();
-        return { id, top: box.top, bottom: box.bottom };
-      }),
-      diagnosticsFollowXYZ: Boolean(
-        document
-          .querySelector(".rig-space-panel")
-          .compareDocumentPosition(document.querySelector("#rig-view-pair")) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-      ),
-    }));
-    assert(
-      result.desktopDensity.diagramHeight <= 260,
-      "Inline selected diagram must remain compact.",
-    );
-    assert(
-      result.desktopDensity.coordinates.every(
-        (box) =>
-          box.top >= 0 &&
-          box.bottom <= result.desktopDensity.viewportHeight - 8,
-      ),
-      "All desktop XYZ estimate cells must fit completely within the initial viewport with an 8px margin.",
-    );
-    assert(
-      result.desktopDensity.diagnosticsFollowXYZ,
-      "Both diagnostic cameras should follow the shared XYZ section.",
-    );
-    const beforeSelection = await diagnostics();
-    const primaryDiagram = await page
-      .locator("#rig-selected-diagram")
-      .innerHTML();
-    await page.locator("#rig-displayed-camera").selectOption(secondaryId);
-    await selectedMatches(page, nominal.frames[0], secondaryId);
-    assert.notEqual(
-      await page.locator("#rig-selected-diagram").innerHTML(),
-      primaryDiagram,
-      "The selected camera changed only its label.",
-    );
-    assert.deepEqual(
-      await diagnostics(),
-      beforeSelection,
-      "A display preference changed reconstruction or diagnostic roles.",
-    );
-    await capture(page, "after-secondary");
-    await capture(page, "after-secondary", [["tablet", 800, 1000]]);
-    result.tabletControls = await page
-      .locator(".rig-controls")
-      .evaluate((element) =>
-        Array.from(element.children)
-          .map((child) => {
-            const box = child.getBoundingClientRect();
-            return {
-              label: child.id || child.tagName.toLowerCase(),
-              x: box.x,
-              y: box.y,
-              width: box.width,
-              height: box.height,
-            };
-          })
-          .filter((box) => box.width > 0 && box.height > 0),
+    const primary = dataset.cases[0].frames[0].views.find(
+      (v) => v.role === "primary",
+    ).cameraId;
+    const secondary = dataset.cases[0].frames[0].views.find(
+      (v) => v.role === "secondary",
+    ).cameraId;
+    const preference = "motion-studio.rig.synthetic-displayed-camera.v1";
+    const choose = (id) =>
+      page.locator("#rig-displayed-camera").selectOption(id);
+    const score = (target) =>
+      target.locator("#rig-game-score").innerText().then(Number);
+    const phase = (target) =>
+      target.locator("#rig-game-stage").getAttribute("data-phase");
+    const diagnostics = () =>
+      page.evaluate(() =>
+        JSON.stringify({
+          html: ["rig-reference-view", "rig-support-view", "rig-space"].map(
+            (id) => document.getElementById(id).innerHTML,
+          ),
+          text: [
+            "rig-x",
+            "rig-y",
+            "rig-z",
+            "rig-track",
+            "rig-reference-context",
+            "rig-support-context",
+          ].map((id) => document.getElementById(id).textContent),
+        }),
       );
-    for (let i = 0; i < result.tabletControls.length; i++)
-      for (let j = i + 1; j < result.tabletControls.length; j++) {
-        const a = result.tabletControls[i],
-          b = result.tabletControls[j];
-        assert(
-          Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) < 0.5 ||
-            Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) < 0.5,
-          `Tablet controls overlap: ${a.label} / ${b.label}`,
-        );
-      }
-    result.selection = {
-      primaryId,
-      secondaryId,
-      sameRigDiagnostics: true,
-      sourceAndOverlaySwitch: true,
-    };
-    result.checks.push(
-      "Primary/secondary selection switches the exact recorded source geometry, overlay and context; XYZ, map, roles and both diagnostic views remain unchanged.",
+    assert.equal(
+      await page.locator("#rig-selected-stage").count(),
+      0,
+      "The third skeleton output must be removed.",
     );
-    const config = JSON.parse(
+    assert.equal(
+      await page.locator("#rig-game-inline").getAttribute("open"),
+      null,
+    );
+    assert.equal(await page.locator("#rig-reference-view").isVisible(), true);
+    assert.equal(await page.locator("#rig-support-view").isVisible(), true);
+    assert(
+      await page.evaluate(() =>
+        Boolean(
+          document
+            .querySelector("#rig-view-pair")
+            .compareDocumentPosition(
+              document.querySelector(".rig-space-panel"),
+            ) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+      ),
+    );
+    assert(
+      await page.evaluate(() =>
+        Boolean(
+          document
+            .querySelector(".rig-space-panel")
+            .compareDocumentPosition(
+              document.querySelector("#rig-gameplay-host"),
+            ) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+      ),
+    );
+    const before = await diagnostics();
+    await choose(secondary);
+    assert.equal(await diagnostics(), before);
+    assert.equal(
+      await page.locator("#rig-game-stage").getAttribute("data-camera-id"),
+      secondary,
+    );
+    await capture(page, "after-operator");
+    await capture(page, "after-operator", [["tablet", 800, 1000]]);
+    const gates = JSON.parse(
       await readFile(resolve(root, "configs/xyz-experiment.json"), "utf8"),
-    );
+    ).gates;
     result.matrix = await page.evaluate(
-      ({ cases, maxAgeNs }) => {
-        const select = document.querySelector("#rig-displayed-camera");
-        const scenario = document.querySelector("#rig-scenario");
-        const slider = document.querySelector("#rig-frame");
-        const failures = [];
-        const states = {};
+      ({ cases, gates }) => {
+        const scenario = document.querySelector("#rig-scenario"),
+          slider = document.querySelector("#rig-frame"),
+          selection = document.querySelector("#rig-displayed-camera");
+        const failures = [],
+          states = {};
         let selections = 0;
         const snapshot = () =>
-          JSON.stringify({
-            text: [
+          JSON.stringify(
+            [
+              "rig-reference-view",
+              "rig-support-view",
+              "rig-space",
               "rig-x",
               "rig-y",
               "rig-z",
-              "rig-reference-x",
-              "rig-reference-y",
-              "rig-reference-z",
               "rig-track",
-              "rig-joint-count",
-              "rig-reference-context",
-              "rig-support-context",
-              "rig-quality",
-            ].map((id) => document.getElementById(id).textContent),
-            html: ["rig-space", "rig-reference-view", "rig-support-view"].map(
-              (id) => document.getElementById(id).innerHTML,
-            ),
-          });
-        const check = (condition, label, reason) => {
-          if (!condition && failures.length < 12)
-            failures.push(`${label}: ${reason}`);
-        };
+            ].map((id) => document.getElementById(id).innerHTML),
+          );
         for (const item of cases) {
           scenario.value = item.id;
           scenario.dispatchEvent(new Event("change", { bubbles: true }));
           for (const [index, frame] of item.frames.entries()) {
             slider.value = String(index);
             slider.dispatchEvent(new Event("input", { bubbles: true }));
-            const before = snapshot();
+            const original = snapshot();
             for (const view of frame.views) {
-              select.value = view.cameraId;
-              select.dispatchEvent(new Event("change", { bubbles: true }));
-              const label = `${item.id}/${index}/${view.cameraId}`;
-              const stage = document.querySelector("#rig-selected-stage");
-              const diagram = document.querySelector("#rig-selected-diagram");
-              const contextText = document.querySelector(
-                "#rig-selected-context",
-              ).textContent;
-              const status = stage.dataset.sourceStatus;
-              states[status] = (states[status] || 0) + 1;
+              selection.value = view.cameraId;
+              selection.dispatchEvent(new Event("change", { bubbles: true }));
+              const stage = document.querySelector("#rig-game-stage");
               selections++;
-              check(
-                stage.dataset.cameraId === view.cameraId,
-                label,
-                "camera identity substituted",
-              );
-              check(
-                snapshot() === before,
-                label,
-                "selection changed XYZ/map/roles/diagnostics",
-              );
-              for (const text of [
-                view.cameraId,
-                `source frame ${view.frameId}`,
-                view.cameraTrackId,
-                `${view.timeNs} ns`,
-                view.clockDomain,
-              ])
-                check(
-                  contextText.includes(text),
-                  label,
-                  "source context mismatch",
-                );
-              const [width, height] = view.imageSize;
-              const points = view.joints
-                .filter(
-                  (joint) =>
-                    joint.x !== null &&
-                    joint.y !== null &&
-                    Number.isFinite(joint.x) &&
-                    Number.isFinite(joint.y) &&
-                    joint.x >= 0 &&
-                    joint.x < width &&
-                    joint.y >= 0 &&
-                    joint.y < height,
-                )
-                .map((joint) => [joint.x, joint.y]);
+              const status = stage.dataset.sourceState;
+              states[status] = (states[status] || 0) + 1;
+              const label = `${item.id}/${index}/${view.cameraId}`;
+              const check = (condition, detail) => {
+                if (!condition) failures.push(`${label}: ${detail}`);
+              };
               const sourceTime = BigInt(view.timeNs),
                 uncertainty = BigInt(view.uncertaintyNs),
                 evaluated = BigInt(frame.evaluatedAtNs);
-              const drawable =
-                points.length > 0 &&
+              const points = new Map(
+                view.joints
+                  .filter(
+                    (joint) =>
+                      joint.x !== null &&
+                      joint.y !== null &&
+                      joint.x >= 0 &&
+                      joint.y >= 0 &&
+                      joint.x < view.imageSize[0] &&
+                      joint.y < view.imageSize[1],
+                  )
+                  .map((joint) => [joint.name, joint]),
+              );
+              const allowed =
+                points.size > 0 &&
                 view.clockDomain === "mapped-host" &&
                 sourceTime + uncertainty <= evaluated &&
-                evaluated - (sourceTime - uncertainty) <= BigInt(maxAgeNs);
-              if (drawable) {
+                evaluated - (sourceTime - uncertainty) <=
+                  BigInt(gates.max_age_ns) &&
+                uncertainty <= BigInt(gates.max_time_uncertainty_ns) &&
+                view.timeVerified &&
+                view.timestampKind !== "host-read-completion" &&
+                view.identityConfirmed &&
+                view.rigTrackId !== null;
+              const scene = document.querySelector("#rig-game-scene");
+              if (!allowed) {
                 check(
-                  diagram.innerHTML ===
-                    document.querySelector(
-                      view.role === "primary"
-                        ? "#rig-reference-view"
-                        : "#rig-support-view",
-                    ).innerHTML,
-                  label,
-                  "diagram does not match its own diagnostic source",
-                );
-                const circles = Array.from(
-                  diagram.querySelectorAll("circle"),
-                  (circle) => [
-                    Number(circle.getAttribute("cx")),
-                    Number(circle.getAttribute("cy")),
-                  ],
+                  status === "unavailable",
+                  "quality gate advertised gameplay availability",
                 );
                 check(
-                  JSON.stringify(circles) === JSON.stringify(points),
-                  label,
-                  "joint geometry does not match fixture",
-                );
-                check(
-                  status ===
-                    (points.length === view.joints.length
-                      ? "usable"
-                      : "partial"),
-                  label,
-                  "incorrect source availability",
+                  scene.hasAttribute("hidden") && scene.children.length === 0,
+                  "invalid source retained gameplay artwork",
                 );
               } else {
                 check(
-                  diagram.querySelectorAll("svg").length === 0 &&
-                    diagram.hidden,
-                  label,
-                  "expired/unavailable source retained a diagram",
+                  status ===
+                    (points.size === view.joints.length ? "usable" : "partial"),
+                  "source availability mismatch",
                 );
                 check(
-                  status === "unavailable",
-                  label,
-                  "expired/unavailable source mislabeled",
+                  scene.getAttribute("viewBox") ===
+                    `0 0 ${view.imageSize.join(" ")}`,
+                  "source image geometry mismatch",
                 );
+                const background = scene.querySelector("#rig-game-background");
                 check(
-                  !document.querySelector("#rig-selected-unavailable").hidden,
-                  label,
-                  "unavailable feedback hidden",
+                  background?.getAttribute("data-camera-id") === view.cameraId,
+                  "wrong source backdrop",
                 );
+                const nose = points.get("nose"),
+                  head = background?.querySelector('[data-joint="nose"]');
+                check(
+                  nose
+                    ? !!head &&
+                        Number(head.getAttribute("cx")) === nose.x &&
+                        Number(head.getAttribute("cy")) === nose.y
+                    : !head,
+                  "source head geometry mismatch",
+                );
+                for (const segment of background?.querySelectorAll(
+                  "[data-from-joint]",
+                ) || []) {
+                  const from = points.get(
+                      segment.getAttribute("data-from-joint"),
+                    ),
+                    to = points.get(segment.getAttribute("data-to-joint"));
+                  check(
+                    !!from &&
+                      !!to &&
+                      Number(segment.getAttribute("x1")) === from.x &&
+                      Number(segment.getAttribute("y1")) === from.y &&
+                      Number(segment.getAttribute("x2")) === to.x &&
+                      Number(segment.getAttribute("y2")) === to.y,
+                    "source limb geometry mismatch",
+                  );
+                }
               }
-              check(
-                document.querySelector("#rig-physical-state").textContent ===
-                  "Physical XYZ unavailable",
-                label,
-                "synthetic selection enabled physical input",
-              );
+              if (
+                stage.dataset.cameraId !== view.cameraId ||
+                snapshot() !== original
+              )
+                failures.push(
+                  `${item.id}/${index}/${view.cameraId}: source or diagnostics changed`,
+                );
+              if (
+                document.querySelector("#rig-game-score").textContent.trim() !==
+                  "0" &&
+                Number(
+                  document.querySelector("#rig-game-score").textContent,
+                ) !== 0
+              )
+                failures.push(
+                  `${item.id}/${index}: diagnostic replay scored without game input`,
+                );
             }
           }
         }
         return {
           cases: cases.length,
-          recordedFrames: cases.reduce(
-            (count, item) => count + item.frames.length,
-            0,
-          ),
+          recordedFrames: cases.reduce((sum, c) => sum + c.frames.length, 0),
           selections,
           states,
           failures,
         };
       },
-      { cases: dataset.cases, maxAgeNs: String(config.gates.max_age_ns) },
+      { cases: dataset.cases, gates },
     );
+    assert.equal(result.matrix.selections, 144);
     assert.deepEqual(result.matrix.failures, []);
-    assert.equal(result.matrix.selections, result.matrix.recordedFrames * 2);
     result.checks.push(
-      `Bounded full matrix: ${result.matrix.cases} cases × recorded samples × two camera choices (${result.matrix.selections} selections), checking own source/geometry/context, unchanged XYZ/roles, recorded source availability and stale rejection.`,
+      "All 144 recorded source selections retain both operator views, XYZ and zero gameplay score; changing a diagnostic sample cannot manufacture a hit.",
     );
     await page.locator("#rig-scenario").selectOption("nominal");
-    await page.locator("#rig-displayed-camera").selectOption(secondaryId);
-    await acquisitionCount();
+    await choose(secondary);
     await page.reload({ waitUntil: "networkidle" });
     assert.equal(
       await page.locator("#rig-displayed-camera").inputValue(),
-      secondaryId,
-    );
-    await selectedMatches(page, nominal.frames[0], secondaryId);
-    result.checks.push(
-      "Displayed camera identity persists through a real page reload.",
-    );
-    await page.setViewportSize({ width: 1440, height: 1050 });
-    const opening = page.waitForEvent("popup");
-    await page.locator("#rig-display-window").click();
-    const popup = await opening;
-    observe(popup);
-    await popup.locator("#rig-selected-stage").waitFor();
-    assert.equal(
-      await page.locator("#rig-selected-stage").count(),
-      0,
-      "Popup duplicated the selected stage instead of moving it.",
-    );
-    assert.equal(await page.locator("#rig-reference-view").isVisible(), true);
-    assert.equal(await page.locator("#rig-support-view").isVisible(), true);
-    await page.locator("#rig-displayed-camera").selectOption(primaryId);
-    await selectedMatches(popup, nominal.frames[0], primaryId);
-    const middle = Math.floor((nominal.frames.length - 1) / 2);
-    await page.locator("#rig-frame").fill(String(middle));
-    await selectedMatches(popup, nominal.frames[middle], primaryId);
-    await page.locator("#rig-displayed-camera").selectOption(secondaryId);
-    await selectedMatches(popup, nominal.frames[middle], secondaryId);
-    await capture(popup, "popup");
-    await acquisitionCount();
-    await popup.close();
-    await page.locator("#rig-selected-stage").waitFor();
-    await selectedMatches(page, nominal.frames[middle], secondaryId);
-    assert.match(
-      await page.locator("#rig-display-location").innerText(),
-      /shown here/,
-    );
-    result.checks.push(
-      "The same stage moves to a popup, follows operator camera/scrub changes at three viewport widths, and returns unchanged when closed.",
+      secondary,
     );
     await page.evaluate(
       (key) => window.localStorage.setItem(key, "missing-recorded-camera"),
-      preferenceKey,
+      preference,
     );
-    await acquisitionCount();
     await page.reload({ waitUntil: "networkidle" });
     assert.equal(
       await page.locator("#rig-displayed-camera").inputValue(),
       "missing-recorded-camera",
     );
-    assert.equal(
-      await page.locator("#rig-selected-stage").getAttribute("data-camera-id"),
-      "missing-recorded-camera",
-    );
-    assert.equal(await page.locator("#rig-selected-diagram svg").count(), 0);
     assert.match(
       await page.locator("#rig-selected-unavailable").innerText(),
-      /selected camera is unavailable/,
+      /unavailable/i,
     );
-    assert.match(
-      await page.locator("#rig-selected-context").innerText(),
-      /not replaced by another view/,
-    );
-    assert.equal(await page.locator("#rig-reference-view svg").count(), 1);
-    assert.equal(await page.locator("#rig-support-view svg").count(), 1);
     await capture(page, "selected-unavailable", [viewports[0]]);
-    await page.locator("#rig-displayed-camera").selectOption(secondaryId);
-    await page.locator("#rig-scenario").selectOption("missing-hip");
-    const missingHip = dataset.cases.find(
-      (scenario) => scenario.id === "missing-hip",
-    ).frames[0];
-    await selectedMatches(page, missingHip, secondaryId);
-    assert.equal(
+    await choose(primary);
+    await page.setViewportSize({ width: 1440, height: 1050 });
+    await page.locator("#rig-game-start").click();
+    await page
+      .locator("#rig-game-target")
+      .waitFor({ state: "visible", timeout: 8000 });
+    async function targetState(target) {
+      return target.locator("#rig-game-target").evaluate((el) => ({
+        x: Number(el.dataset.x),
+        y: Number(el.dataset.y),
+        radius: Number(el.dataset.radius),
+      }));
+    }
+    async function alignedTarget(target) {
+      await target.locator("#rig-game-scene").scrollIntoViewIfNeeded();
+      const item = await targetState(target);
+      const scene = await target.locator("#rig-game-scene").boundingBox();
+      const viewBox = await target
+        .locator("#rig-game-scene")
+        .getAttribute("viewBox");
+      const [, , width, height] = viewBox.split(/\s+/).map(Number);
+      const scale = Math.min(scene.width / width, scene.height / height);
+      const rect = {
+        x: scene.x + (scene.width - width * scale) / 2,
+        y: scene.y + (scene.height - height * scale) / 2,
+        width: width * scale,
+        height: height * scale,
+      };
+      const sprite = await target.locator("#rig-game-target").evaluate((el) => {
+        // Art bounds are asymmetric; verify the rendered game-coordinate center.
+        const point = el.createSVGPoint();
+        point.x = 60;
+        point.y = 55;
+        const projected = point.matrixTransform(el.getScreenCTM());
+        return { x: projected.x, y: projected.y };
+      });
+      const expected = {
+        x: rect.x + (1 - item.x) * rect.width,
+        y: rect.y + item.y * rect.height,
+      };
+      result.projection = { item, scene, viewBox, sprite, rect, expected };
+      assert(
+        Math.abs(sprite.x - expected.x) < 1,
+        "Game target and mirrored source must share X mapping.",
+      );
+      assert(
+        Math.abs(sprite.y - expected.y) < 1,
+        "Game target and source must share Y mapping.",
+      );
+      return { item, rect, expected };
+    }
+    async function hit(target) {
+      const old = await score(target);
+      const { expected } = await alignedTarget(target);
+      await target.mouse.move(expected.x, expected.y);
+      await target.waitForFunction(
+        (value) =>
+          Number(document.querySelector("#rig-game-score").textContent) > value,
+        old,
+      );
+      return score(target);
+    }
+    result.primaryScore = await hit(page);
+    for (const [name, width, height] of viewports) {
+      await page.setViewportSize({ width, height });
       await page
-        .locator("#rig-selected-stage")
-        .getAttribute("data-source-status"),
-      "partial",
+        .locator("#rig-game-stage")
+        .screenshot({ path: resolve(output, `game-primary-${name}.png`) });
+      result.screenshots.push(`game-primary-${name}.png`);
+    }
+    await page.locator("#rig-game-pause").click();
+    await page.setViewportSize({ width: 1440, height: 1050 });
+    const preserved = {
+      score: await score(page),
+      phase: await phase(page),
+      target: await targetState(page),
+      diagnostics: await diagnostics(),
+    };
+    await choose(secondary);
+    assert.equal(await score(page), preserved.score);
+    assert.equal(await phase(page), preserved.phase);
+    assert.deepEqual(await targetState(page), preserved.target);
+    assert.equal(await diagnostics(), preserved.diagnostics);
+    assert.equal(
+      await page.locator("#rig-game-scene").getAttribute("preserveAspectRatio"),
+      "xMidYMid meet",
     );
-    assert.match(
-      await page.locator("#rig-selected-warning").innerText(),
-      /missing/,
+    await page.locator("#rig-game-resume").click();
+    await page
+      .locator("#rig-game-target")
+      .waitFor({ state: "visible", timeout: 6000 });
+    // Move away first: each new contact is an explicit pointer action.
+    const scene = await page.locator("#rig-game-scene").boundingBox();
+    await page.mouse.move(
+      scene.x + scene.width / 2,
+      scene.y + scene.height * 0.15,
     );
-    assert.equal(await page.locator("#rig-x").innerText(), "Unavailable");
-    await capture(page, "selected-missing-hip", [viewports[0]]);
+    result.secondaryScore = await hit(page);
+    assert(result.secondaryScore > result.primaryScore);
+    await page
+      .locator("#rig-game-stage")
+      .screenshot({ path: resolve(output, "game-secondary-desktop.png") });
+    result.screenshots.push("game-secondary-desktop.png");
+    const opening = page.waitForEvent("popup");
+    await page.locator("#rig-game-open").click();
+    const popup = await opening;
+    observe(popup);
+    await popup.locator("#rig-game-scene").waitFor();
+    assert.equal(await page.locator("#rig-game-stage").count(), 0);
+    assert.equal(await page.locator("#rig-reference-view").isVisible(), true);
+    assert.equal(await page.locator("#rig-support-view").isVisible(), true);
+    assert.equal(
+      await popup
+        .locator(
+          "#rig-reference-view,#rig-support-view,#rig-space,#rig-selected-context",
+        )
+        .count(),
+      0,
+    );
+    assert.match(await popup.locator("body").innerText(), /Slap a Mole/);
+    await choose(primary);
+    assert.equal(
+      await popup.locator("#rig-game-stage").getAttribute("data-camera-id"),
+      primary,
+    );
+    await alignedTarget(popup);
+    await capture(popup, "popup");
+    const popupScore = await score(popup);
+    await page.evaluate(() => {
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        value: true,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    assert.equal(
+      await phase(popup),
+      "playing",
+      "A visible gameplay window must continue when only the operator is hidden.",
+    );
+    await popup.close();
+    await page.locator("#rig-game-stage").waitFor();
+    assert.equal(await score(page), popupScore);
+    assert.equal(await phase(page), "paused");
+    await page.evaluate(() => {
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        value: false,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
     await page.locator("#rig-scenario").selectOption("stale-input");
-    assert.equal(
-      await page.locator("#rig-displayed-camera").inputValue(),
-      secondaryId,
-    );
-    assert.equal(
-      await page
-        .locator("#rig-selected-stage")
-        .getAttribute("data-source-status"),
-      "unavailable",
-    );
-    assert.equal(await page.locator("#rig-selected-diagram svg").count(), 0);
-    assert.match(
-      await page.locator("#rig-selected-unavailable").innerText(),
-      /stale/,
-    );
-    assert.equal(await page.locator("#rig-reference-view svg").count(), 1);
-    assert.equal(await page.locator("#rig-support-view svg").count(), 1);
+    assert.equal(await phase(page), "paused");
+    assert.equal(await score(page), popupScore);
+    assert.equal(await page.locator("#rig-game-target").isVisible(), false);
     await capture(page, "selected-stale", [viewports[0]]);
-    result.checks.push(
-      "Missing saved identities remain selected and unavailable; partial joint input stays explicit; stale selected input clears output without substituting another source while forensic diagnostics remain.",
-    );
+    await page.locator("#rig-scenario").selectOption("uncertain-identity");
+    assert.equal(await phase(page), "paused");
+    assert.equal(await score(page), popupScore);
     await page.locator("#rig-scenario").selectOption("nominal");
-    const reopening = page.waitForEvent("popup");
-    await page.locator("#rig-display-window").click();
-    const secondPopup = await reopening;
-    observe(secondPopup);
-    await secondPopup.locator("#rig-selected-stage").waitFor();
+    assert.equal(
+      await phase(page),
+      "paused",
+      "Source recovery requires explicit Resume.",
+    );
+    await page.locator("#rig-game-resume").click();
+    await page
+      .locator("#rig-game-target")
+      .waitFor({ state: "visible", timeout: 6000 });
+    const reopen = page.waitForEvent("popup");
+    await page.locator("#rig-game-open").click();
+    const nextPopup = await reopen;
+    observe(nextPopup);
     await page.locator("#rig-tab-planning").click();
-    if (!secondPopup.isClosed()) await secondPopup.waitForEvent("close");
-    assert.equal(await page.locator("#rig-selected-stage").isVisible(), false);
+    if (!nextPopup.isClosed()) await nextPopup.waitForEvent("close");
+    assert.equal(await page.locator("#rig-game-stage").isVisible(), false);
     assert.equal(await page.locator("#rig-reference-view").isVisible(), false);
     assert.equal(await page.locator("#rig-x").isVisible(), false);
-    assert.equal(
-      await page.locator("#reference-camera-choice").inputValue(),
-      "",
-    );
-    assert.equal(await page.locator("#support-camera-choice").inputValue(), "");
-    assert.equal(
-      result.requests.length,
-      0,
-      "Planning should not discover devices until explicit Refresh.",
-    );
+    assert.equal(await phase(page), "paused");
     await capture(page, "planning");
-    await page.locator("#reference-refresh-cameras").click();
-    await page.waitForFunction(
-      () =>
-        document
-          .querySelector("#reference-camera-choice")
-          .getAttribute("aria-busy") === "false",
-    );
-    await page.locator("#support-refresh-cameras").click();
-    await page.waitForFunction(
-      () =>
-        document
-          .querySelector("#support-camera-choice")
-          .getAttribute("aria-busy") === "false",
-    );
-    await page.locator("#reference-camera-choice").selectOption("a".repeat(64));
-    await page.locator("#support-camera-choice").selectOption("b".repeat(64));
-    assert.equal(
-      await page.locator("#rig-displayed-camera").inputValue(),
-      secondaryId,
-    );
+    await page.locator("#rig-tab-rehearsal").click();
+    assert.equal(await score(page), popupScore);
+    assert.equal(await phase(page), "paused");
     assert.equal(
       await page.locator("#rig-physical-state").innerText(),
       "Physical XYZ unavailable",
     );
-    await page.locator("#rig-tab-rehearsal").click();
-    await selectedMatches(page, nominal.frames[0], secondaryId);
+    await page.close();
+    const touchPage = await context.newPage();
+    observe(touchPage);
+    await touchPage.setViewportSize({ width: 390, height: 844 });
+    await touchPage.goto(`${url}rig.html`, { waitUntil: "networkidle" });
+    await touchPage.locator("#rig-displayed-camera").selectOption(secondary);
+    await touchPage.locator("#rig-game-start").click();
+    await touchPage
+      .locator("#rig-game-target")
+      .waitFor({ state: "visible", timeout: 8000 });
     assert.equal(
-      await page.locator("#rig-maze-state").innerText(),
-      "Maze input disabled",
+      await touchPage
+        .locator(".rig-game-image")
+        .evaluate((el) => window.getComputedStyle(el).touchAction),
+      "none",
     );
-    await acquisitionCount();
-    assert(
-      result.requests.every(
-        (request) =>
-          request.method === "GET" && request.path === "/api/cameras",
-      ),
+    const touchTarget = await alignedTarget(touchPage);
+    await touchPage.touchscreen.tap(
+      touchTarget.expected.x,
+      touchTarget.expected.y,
+    );
+    await touchPage.waitForFunction(
+      () => Number(document.querySelector("#rig-game-score").textContent) > 0,
+    );
+    result.touchScore = await score(touchPage);
+    await touchPage
+      .locator("#rig-game-stage")
+      .screenshot({ path: resolve(output, "game-touch-mobile.png") });
+    result.screenshots.push("game-touch-mobile.png");
+    result.checks.push(
+      "A real touchscreen tap awards a Slap a Mole hit on the secondary scene in a 390px touch-enabled browser context; the playable region declares touch-action:none.",
+    );
+    result.checks.push(
+      "Genuine Slap a Mole countdown, target, hit and score verified under both selected camera scenes using shared mirrored source/target/pointer geometry.",
+    );
+    result.checks.push(
+      "Healthy source switches preserve paused game target/score/phase and operator diagnostics; unavailable/stale/uncertain presentation pauses scoring and requires explicit recovery.",
+    );
+    result.checks.push(
+      "One game stage/HUD moves to a diagnostic-free player window, stays playable with a hidden operator, and restores safely; planning closes and pauses it.",
+    );
+    for (const item of context.pages())
+      if (!item.isClosed())
+        assert.equal(
+          await item.evaluate(() => window.__displayedAcquisitionAttempts || 0),
+          0,
+        );
+    assert.equal(
+      result.requests.length,
+      0,
+      "Gameplay and rehearsal must not discover or start cameras.",
     );
     result.acquisitionAttempts = 0;
-    result.checks.push(
-      "Physical planning closes the popup and hides synthetic output; physical camera role choices remain separate from displayed identity, with no acquisition or maze readiness.",
-    );
+    result.gameplay = {
+      primaryScore: result.primaryScore,
+      secondaryScore: result.secondaryScore,
+      pointerInputOnly: true,
+      recordedBodyDrivesScore: false,
+    };
   }
   assert.deepEqual(result.errors, []);
   result.passed = true;

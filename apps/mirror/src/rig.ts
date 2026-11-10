@@ -12,7 +12,7 @@ import {
   type RigPoint,
 } from "./rig-state";
 import { renderRigSpace, renderRigView } from "./rig-renderer";
-import { createGameDisplay } from "./game-display";
+import { createRigGameplay } from "./rig-gameplay";
 import {
   parseDisplayedCameraPreference,
   resolveDisplayedCamera,
@@ -32,7 +32,6 @@ const markup = `
           <p class="eyebrow">01 / RECORDED SYNTHETIC SAMPLES</p><h2>Choose a situation</h2>
           <label class="field-label" for="rig-scenario">Scenario</label><select id="rig-scenario"></select><p id="rig-scenario-description" class="field-help"></p>
           <p id="rig-scenario-risk" class="rig-note"></p>
-          <label class="field-label" for="rig-displayed-camera">Displayed camera</label><select id="rig-displayed-camera" aria-describedby="rig-display-preference-note"></select><p id="rig-display-preference-note" class="field-help">Choose the output view independently of the primary and secondary roles. Saved on this browser.</p>
           <div class="rig-play-controls"><button type="button" id="rig-play" class="primary-button" aria-pressed="false">Play samples</button><button type="button" id="rig-reset" class="secondary-button">Reset</button></div>
           <label class="field-label" for="rig-frame">Recorded sample <output id="rig-frame-label" for="rig-frame">—</output></label><input id="rig-frame" type="range" min="0" max="0" step="1" value="0"><div class="rig-step-controls"><button type="button" id="rig-previous">← Previous</button><button type="button" id="rig-next">Next →</button></div>
           <p class="field-help">Playback steps through a bounded recording at 4 samples/s. It does not measure camera, inference or display FPS.</p>
@@ -40,13 +39,13 @@ const markup = `
           <p class="field-help">Anatomical left/right stays unchanged. View diagrams use canonical, unmirrored image pixels.</p>
         </aside>
         <div class="rig-observation-area">
-          <section class="rig-panel rig-output-panel" aria-label="Displayed camera output"><div class="rig-panel-heading"><h2>Displayed camera</h2><button type="button" id="rig-display-window" class="secondary-button" aria-expanded="false">Open display window</button></div><p id="rig-display-location" class="field-help" role="status" aria-live="polite">Output is shown here. Both diagnostic views remain below.</p><div id="rig-selected-stage" class="rig-selected-stage" tabindex="0" aria-label="Displayed synthetic camera. Arrow keys step samples; Space plays or pauses."><div class="rig-selected-heading"><div><p class="rig-selected-origin">Synthetic rehearsal · no camera footage</p><h3 id="rig-selected-title">Waiting for a recorded view</h3></div><span id="rig-selected-state" class="subtle-badge">Unavailable</span></div><div id="rig-selected-diagram" class="rig-selected-diagram"></div><p id="rig-selected-unavailable" class="rig-selected-unavailable" hidden></p><p id="rig-selected-context" class="rig-selected-context"></p><p id="rig-selected-warning" class="rig-selected-warning" role="status" aria-live="polite"></p><p class="rig-selected-limit">Physical XYZ unavailable · Maze input disabled. Display selection changes presentation only.</p></div></section>
-          <section class="rig-panel rig-space-panel" aria-label="Reconstructed rig coordinates"><div class="rig-panel-heading"><div><p class="eyebrow">02 / SHARED RIG SPACE</p><h2>Where is the participant?</h2></div><span id="rig-sample-state" class="subtle-badge">—</span></div><div class="rig-space-layout"><div><div id="rig-space" class="rig-space-diagram"></div><p class="rig-map-legend"><span><i class="rig-estimate-dot"></i>Reconstructed estimate</span><span><i class="rig-reference-dot"></i>Synthetic reference</span></p><p class="field-help">Plot: X −3 to 3 m, Z 0 to 6 m, including the display area. Synthetic gate volume: X −3 to 3 m, Y 0 to 2.6 m, Z 1 to 6 m. Camera markers show solver calibration; no physical volume is validated.</p></div><div class="rig-coordinate-panel"><h3>Hip midpoint · meters</h3><div class="rig-coordinate-table"><table><caption class="rig-visually-hidden">Reconstructed root compared with synthetic reference truth</caption><thead><tr><th scope="col">Axis</th><th scope="col">Estimate</th><th scope="col">Reference</th></tr></thead><tbody><tr><th scope="row">X</th><td id="rig-x">—</td><td id="rig-reference-x">—</td></tr><tr><th scope="row">Y</th><td id="rig-y">—</td><td id="rig-reference-y">—</td></tr><tr><th scope="row">Z</th><td id="rig-z">—</td><td id="rig-reference-z">—</td></tr></tbody></table></div><p id="rig-root-state" class="field-help"></p><p class="rig-difference">Reference difference <strong id="rig-reference-difference">—</strong></p><p class="field-help">Reference values exist only because this recording is synthetic. Small residuals cannot establish physical accuracy.</p><dl class="rig-source-facts"><div><dt>Accepted joints</dt><dd id="rig-joint-count">—</dd></div><div><dt>Rig association</dt><dd id="rig-track">—</dd></div><div><dt>Solver / reference baseline</dt><dd id="rig-baseline">—</dd></div></dl></div></div><div id="rig-quality" class="rig-quality" role="status" aria-live="polite"></div></section>
           <div class="rig-view-pair" id="rig-view-pair" tabindex="0" aria-label="Synthetic camera views. Left and right arrow keys step samples; Space plays or pauses.">
             <article class="rig-panel rig-view-card"><div class="rig-panel-heading"><h2>Primary · reference view</h2><span class="subtle-badge">Synthetic</span></div><div id="rig-reference-view" class="rig-view-diagram"></div><p id="rig-reference-context" class="field-help rig-view-context"></p></article>
             <article class="rig-panel rig-view-card"><div class="rig-panel-heading"><h2>Secondary · supporting view</h2><span class="subtle-badge">Synthetic</span></div><div id="rig-support-view" class="rig-view-diagram"></div><p id="rig-support-context" class="field-help rig-view-context"></p></article>
           </div>
+          <section class="rig-panel rig-space-panel" aria-label="Reconstructed rig coordinates"><div class="rig-panel-heading"><div><p class="eyebrow">02 / SHARED RIG SPACE</p><h2>Where is the participant?</h2></div><span id="rig-sample-state" class="subtle-badge">—</span></div><div class="rig-space-layout"><div><div id="rig-space" class="rig-space-diagram"></div><p class="rig-map-legend"><span><i class="rig-estimate-dot"></i>Reconstructed estimate</span><span><i class="rig-reference-dot"></i>Synthetic reference</span></p><p class="field-help">Plot: X −3 to 3 m, Z 0 to 6 m, including the display area. Synthetic gate volume: X −3 to 3 m, Y 0 to 2.6 m, Z 1 to 6 m. Camera markers show solver calibration; no physical volume is validated.</p></div><div class="rig-coordinate-panel"><h3>Hip midpoint · meters</h3><div class="rig-coordinate-table"><table><caption class="rig-visually-hidden">Reconstructed root compared with synthetic reference truth</caption><thead><tr><th scope="col">Axis</th><th scope="col">Estimate</th><th scope="col">Reference</th></tr></thead><tbody><tr><th scope="row">X</th><td id="rig-x">—</td><td id="rig-reference-x">—</td></tr><tr><th scope="row">Y</th><td id="rig-y">—</td><td id="rig-reference-y">—</td></tr><tr><th scope="row">Z</th><td id="rig-z">—</td><td id="rig-reference-z">—</td></tr></tbody></table></div><p id="rig-root-state" class="field-help"></p><p class="rig-difference">Reference difference <strong id="rig-reference-difference">—</strong></p><p class="field-help">Reference values exist only because this recording is synthetic. Small residuals cannot establish physical accuracy.</p><dl class="rig-source-facts"><div><dt>Accepted joints</dt><dd id="rig-joint-count">—</dd></div><div><dt>Rig association</dt><dd id="rig-track">—</dd></div><div><dt>Solver / reference baseline</dt><dd id="rig-baseline">—</dd></div></dl></div></div><div id="rig-quality" class="rig-quality" role="status" aria-live="polite"></div></section>
           <details id="rig-joint-details" class="rig-panel rig-joint-details" hidden><summary>Inspect named joint rejections</summary><ul id="rig-rejected-joints" tabindex="0" aria-label="Rejected anatomical joints"></ul></details>
+          <section class="rig-panel rig-gameplay-panel" aria-label="Player gameplay rehearsal"><div class="rig-panel-heading"><div><p class="eyebrow">03 / PLAYER GAMEPLAY</p><h2>Slap a Mole · selected camera scene</h2></div><span class="subtle-badge">Pointer / keyboard rehearsal</span></div><p class="field-help">Both camera observations stay above for the operator. The player sees one selected synthetic scene with real game targets and scoring. Recorded bodies and XYZ do not control hits.</p><div class="rig-gameplay-selection" id="rig-gameplay-selection"><div><label class="field-label" for="rig-displayed-camera">Player gameplay camera</label><select id="rig-displayed-camera" aria-describedby="rig-display-preference-note"></select><p id="rig-display-preference-note" class="field-help">Chooses the player’s scene without changing camera roles or XYZ. Saved on this browser.</p></div><div class="rig-gameplay-source" aria-label="Selected gameplay source"><strong id="rig-selected-title">Waiting for a recorded view</strong><span id="rig-selected-state" class="subtle-badge">Unavailable</span><p id="rig-selected-context" class="field-help"></p><p id="rig-selected-unavailable" class="rig-note" hidden></p><p id="rig-selected-warning" class="field-help" role="status" aria-live="polite"></p></div></div><div id="rig-gameplay-host"></div></section>
         </div>
       </div>
     </section>
@@ -99,20 +98,8 @@ export function createRigWorkspace(
   input: unknown = rawDataset,
 ) {
   root.innerHTML = markup;
-  // Cached references survive adoption into the popup, outside the operator root.
-  const cached = new Map<string, HTMLElement>();
   const get = <T extends HTMLElement = HTMLElement>(id: string) =>
-    (cached.get(id) ?? root.querySelector<T>(`#${id}`))! as T;
-  for (const id of [
-    "rig-selected-stage",
-    "rig-selected-title",
-    "rig-selected-diagram",
-    "rig-selected-context",
-    "rig-selected-state",
-    "rig-selected-unavailable",
-    "rig-selected-warning",
-  ])
-    cached.set(id, get(id));
+    root.querySelector<T>(`#${id}`)!;
   const events = new AbortController();
   const reference = new CameraChoice(root, "reference");
   const support = new CameraChoice(root, "support");
@@ -136,26 +123,8 @@ export function createRigWorkspace(
     const element = get(id);
     if (element.textContent !== value) element.textContent = value;
   };
-  const display = createGameDisplay(get("rig-selected-stage"), {
-    title: "Displayed camera · synthetic rehearsal",
-    windowLabel: "Camera display",
-    placeholderMessage:
-      "The selected camera output is in its own window. Camera selection, samples and both diagnostic views stay here.",
-    returnButtonLabel: "Return display here",
-    onStateChange(open) {
-      write(
-        "rig-display-window",
-        open ? "Return display here" : "Open display window",
-      );
-      get("rig-display-window").setAttribute("aria-expanded", String(open));
-      write(
-        "rig-display-location",
-        open
-          ? "Output is in a separate window. Camera selection and sample controls stay here."
-          : "Output is shown here. Both diagnostic views remain below.",
-      );
-    },
-  });
+  const gameplay = createRigGameplay(get("rig-gameplay-host"));
+  gameplay.setEnabled(false);
   function saveDisplayPreference() {
     if (!displayedCameraId) return;
     if (preferenceAvailable) {
@@ -168,8 +137,8 @@ export function createRigWorkspace(
     write(
       "rig-display-preference-note",
       preferenceAvailable
-        ? "Choose the output view independently of the primary and secondary roles. Saved on this browser."
-        : "Choose the output view independently of the camera roles. Browser storage is unavailable; the choice applies to this page only.",
+        ? "Chooses the player’s scene without changing camera roles or XYZ. Saved on this browser."
+        : "Chooses the player’s scene without changing camera roles or XYZ. Browser storage is unavailable; the choice applies to this page only.",
     );
   }
   function renderSelected(frame: RigFrame) {
@@ -205,8 +174,8 @@ export function createRigWorkspace(
     get<HTMLSelectElement>("rig-displayed-camera").value =
       displayedCameraId ?? "";
     const view = selected.view;
-    get("rig-selected-stage").dataset.cameraId = displayedCameraId ?? "";
-    get("rig-selected-stage").dataset.sourceStatus = selected.status;
+    get("rig-gameplay-selection").dataset.cameraId = displayedCameraId ?? "";
+    get("rig-gameplay-selection").dataset.sourceStatus = selected.status;
     write(
       "rig-selected-title",
       view
@@ -221,11 +190,7 @@ export function createRigWorkspace(
           ? "Partial recorded view"
           : "Displayed view unavailable",
     );
-    get("rig-selected-diagram").hidden = !selected.drawable;
     get("rig-selected-unavailable").hidden = selected.drawable;
-    if (selected.drawable && view)
-      renderRigView(get("rig-selected-diagram"), view);
-    else get("rig-selected-diagram").replaceChildren();
     const explanations = [...selected.reasons, ...selected.warnings].map(
       (reason) => reasonLabels[reason] || reason.replaceAll("_", " "),
     );
@@ -245,6 +210,7 @@ export function createRigWorkspace(
         "Recorded synthetic source only. Calibration, exposure timing and identity are not physically validated.",
     );
     if (!preferenceAvailable) saveDisplayPreference();
+    gameplay.setSource(frame, displayedCameraId);
   }
   function pause() {
     playing = false;
@@ -384,9 +350,7 @@ export function createRigWorkspace(
   }
   function setMode(mode: "rehearsal" | "planning") {
     pause();
-    const wasOpen = display.isOpen;
-    if (mode === "planning") display.close();
-    get("rig-selected-stage").hidden = mode === "planning";
+    gameplay.setEnabled(mode === "rehearsal" && dataset !== null);
     root.querySelectorAll<HTMLElement>(".rig-origin-badge").forEach((badge) => {
       badge.textContent =
         mode === "planning"
@@ -401,7 +365,7 @@ export function createRigWorkspace(
       );
       get(`rig-tab-${name}`).tabIndex = name === mode ? 0 : -1;
     }
-    if (mode === "planning" && wasOpen) get("rig-tab-planning").focus();
+    if (mode === "planning") get("rig-tab-planning").focus();
   }
   function validatePlan() {
     const first = reference.currentSelection(),
@@ -455,15 +419,6 @@ export function createRigWorkspace(
     saveDisplayPreference();
     render();
   });
-  listen(get("rig-display-window"), "click", () => {
-    if (get("rig-rehearsal").hidden || !dataset || disposed) return;
-    if (display.isOpen) display.close();
-    else if (!display.open())
-      write(
-        "rig-display-location",
-        "The display window was blocked. Allow popups for this local page or continue with the inline output.",
-      );
-  });
   listen(get("rig-reset"), "click", () => {
     pause();
     frameIndex = 0;
@@ -501,7 +456,6 @@ export function createRigWorkspace(
     }
   };
   listen(get("rig-view-pair"), "keydown", sampleKeys);
-  listen(get("rig-selected-stage"), "keydown", sampleKeys);
   for (const name of ["rehearsal", "planning"] as const) {
     listen(get(`rig-tab-${name}`), "click", () => setMode(name));
     listen(get(`rig-tab-${name}`), "keydown", (event) => {
@@ -539,7 +493,10 @@ export function createRigWorkspace(
       get<HTMLSelectElement>("rig-scenario").append(option);
     }
     render();
+    gameplay.setEnabled(true);
   } catch (error) {
+    dataset = null;
+    gameplay.setEnabled(false);
     write(
       "rig-load-error",
       `Rehearsal data unavailable. ${error instanceof Error ? error.message : String(error)} Reload the page after repairing the local dataset. Physical XYZ remains unavailable.`,
@@ -553,7 +510,6 @@ export function createRigWorkspace(
       "rig-next",
       "rig-scenario",
       "rig-displayed-camera",
-      "rig-display-window",
     ])
       get<HTMLButtonElement>(id).disabled = true;
   }
@@ -561,7 +517,7 @@ export function createRigWorkspace(
     if (disposed) return;
     pause();
     disposed = true;
-    display.dispose();
+    gameplay.dispose();
     events.abort();
     unsubscribe.forEach((stop) => stop());
     reference.dispose();

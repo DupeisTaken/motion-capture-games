@@ -1,34 +1,126 @@
 {
   "date": "2026-11-11",
-  "environment": "Windows; Node 24.21.0; pnpm 11.25.0; Python 3.12.16; installed Microsoft Edge via playwright-core; English only",
+  "environment": "Windows; pinned Node 24.21.0, pnpm 11.25.0 and Python 3.12.16; installed Microsoft Edge 157.0.4341.42 via playwright-core, headless touch-enabled context; English only",
   "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/41",
   "hosted": null,
-  "baselineNote": "Before screenshots use the rig entry, stylesheet and renderer from merged main commit 145195aa21d3ea4f5fa8ceb077d2ccec0814583b with current shared imports and the same recorded solver fixture. After screenshots use the current real Vite-served application. All observations and device names are synthetic; there is no camera footage.",
-  "browserSummary": "Real Vite-server browser verification passed all 144 display selections across 9 scenarios and 72 recorded samples: 120 usable, 8 partial and 16 unavailable outputs, with no failures or acquisition attempts. Desktop 1440 × 1050, mobile 390 × 844, narrow 320 × 740 and tablet 800 × 1000 layouts were checked; the popup was checked at the three main widths. Saved preference, missing/stale source recovery, source-specific geometry/context, unchanged XYZ/roles, planning isolation and popup return all passed. A screenshot review caught an oversized inline view; the final compact layout keeps all three desktop XYZ estimate cells within the initial viewport.",
+  "baselineNote": "Before captures use the rig entry, stylesheet and renderer from PR #41's prior commit cc8b13c99fb2af67a4cb7b6ed96c241958ac7b38, with current compatible shared imports and the same recorded solver fixture. They show the earlier third skeleton output. After captures use the corrected real Vite-served application: two primary operator diagnostics and a separate genuine game stage. All source scenes and controls are synthetic.",
+  "browserSummary": "Real browser gameplay verification passed all 144 selections across nine scenarios and 72 recorded samples. The gameplay gate produced 88 usable, 8 partial and 48 unavailable scenes; no source replay awarded hits. Genuine pointer hits scored with both camera backgrounds (100 then 210 points in the seeded run), and an actual touchscreen tap scored 100 in the mobile context. Source-head/limb geometry, independent contain/mirror target placement, inverse pointer mapping, score/target preservation, saved-source recovery, native mouse Resume, hidden-operator/visible-player behavior, source-quality pausing and physical-planning isolation passed. No acquisition attempts or browser errors occurred. Captures cover desktop 1440 × 1050, mobile 390 × 844, narrow 320 × 740, tablet 800 × 1000 and the player window at the three main widths. The 144 cases are source/render/readiness transitions, not 144 played rounds. Window visibility was checked through controlled document.hidden/visibilitychange events in the real browser, rather than OS minimization. The final run after keyboard-focus corrections passed at 2026-11-10T17:49:16.569Z.",
   "checks": [
-    { "name": "pnpm verify:displayed-camera --report-only", "result": "Passed", "detail": "Self-contained English report loaded all embedded images with no external rendering requests or console/page errors at desktop, mobile and 320px narrow widths. Tables scroll locally; a detected 320px grid overflow was fixed and reverified." },
-    { "name": "pnpm check", "result": "Passed", "detail": "65 tracked Markdown/report files; canonical binding drift; strict TypeScript and ESLint; 518 Vitest tests across 25 files; Prettier; Python types/lint/format; 208 pytest cases, rehearsal drift and byte compilation. Node 24.21.0, pnpm 11.25.0, Python 3.12.16." },
-    { "name": "pnpm build", "result": "Passed", "detail": "All four Vite entries and emitted asset references passed. Rig bundle: 368.92 kB minified / 71.45 kB gzip; no new dependencies or distributable package. Build size is not a latency or hardware performance measurement." },
-    { "name": "Focused displayed-source/UI/window tests", "result": "46 passed", "detail": "18 source-state cases, 21 operator UI cases and 7 shared-window cases. Includes stable identity, exact uncertainty/age/future boundaries, blocked storage/popups, source loss/recovery, matching geometry, role/XYZ invariance and lifecycle cleanup." },
-    { "name": "pnpm verify:displayed-camera", "result": "Passed", "detail": "144 selections over all recorded cases/samples; real-server screenshots and browser assertions at desktop/mobile/narrow/tablet widths, separate-window lifecycle, explicit unavailable output and zero acquisition. Latest successful capture: 2026-11-10T17:03:00.922Z." },
-    { "name": "pnpm verify:rig", "result": "Passed", "detail": "Existing rehearsal/planning regression verifier: scenarios, sample playback, explicit physical gates, independent metadata selectors, duplicate/disappearing devices and recovery; zero acquisition attempts. Run before the subsequent presentation-only density refinement." }
+    {
+      "name": "pnpm check",
+      "result": "Passed",
+      "detail": "66 tracked Markdown/report files; canonical binding drift; strict TypeScript and ESLint; 540 Vitest cases across 26 files; Prettier; Python types/lint/format; 208 pytest cases including rehearsal drift; byte compilation. Final Start/Resume focus, Resume held-touch and popup-visibility regressions included."
+    },
+    {
+      "name": "pnpm build",
+      "result": "Passed",
+      "detail": "All four Vite pages and emitted asset references passed. Rig JavaScript: 378.74 kB minified / 74.84 kB gzip, plus shared engine/art/window chunks. No new dependencies or distributable package. These are build sizes, not latency measurements."
+    },
+    {
+      "name": "Focused source/game/operator/window suite",
+      "result": "68 passed",
+      "detail": "Four files verify source identity/time, real engine hits and held-touch behavior, healthy display-switch invariance, alternate aspect/letterboxing, gate/recovery, shared home clock, actual playable-display visibility, popup lifecycle, pointer cancellation and keyboard focus."
+    },
+    {
+      "name": "pnpm verify:displayed-camera",
+      "result": "Passed",
+      "detail": "144 source transitions with independent backdrop head/limb coordinates and stricter gameplay-gate expectations; real pointer scores 100 then 210 under both views and a touchscreen score of 100; native Start/Resume paths, containment/mirroring, state retention, controlled visibility events and planning isolation. 35 screenshots; no browser errors or acquisition attempts. Final run 2026-11-10T17:49:16.569Z."
+    },
+    {
+      "name": "pnpm verify:rig",
+      "result": "Passed",
+      "detail": "Existing recorded-rehearsal and physical-planning regression, including metadata refresh, independent camera roles, duplicate/disconnected devices, scenarios, playback and source recovery. No acquisition. Completed 2026-11-10T17:47:59.098Z."
+    },
+    {
+      "name": "pnpm verify:displayed-camera --report-only",
+      "result": "Passed",
+      "detail": "Corrected report loaded all 14 embedded PNGs without external rendering requests, overflow or console/page errors at 1440/390/320px widths. Root visually inspected desktop and narrow report sections. Latest reviewed run 2026-11-10T17:50:53.267Z; final rating cards are rechecked before delivery."
+    }
   ],
   "reviews": [
-    { "name": "Independent source and reconstruction review", "score": 10, "scope": "Synthetic display selection and reconstruction boundaries", "evidence": "Reviewed stable-ID preference, source-specific geometry/timing/partial/stale states, unchanged XYZ/roles and popup lifecycle. Inspected desktop/tablet/narrow popup captures and the raw 144-selection results. Full checks, build and the final report browser pass closed all prior deductions. No outstanding actionable findings; physical validation and hosted CI remain separate gates." },
-    { "name": "Independent acceptance and evidence review", "score": 10, "scope": "Operator behavior, browser verification and report delivery", "evidence": "Reviewed the 144-selection matrix, exact source/context and XYZ invariance assertions, popup/layout checks, zero-acquisition evidence and final screenshots. Confirmed desktop density, 320px report overflow and table readability corrections. Verified the actual local check/build/report outcomes. No outstanding actionable findings within the agreed synthetic-only scope." },
-    { "name": "UI implementation and visual review", "score": 10, "scope": "Selected output, responsive layout and shared window compatibility", "evidence": "Inspected final desktop, mobile, tablet and narrow popup screenshots. Confirmed all desktop XYZ cells remain visible, both diagnostics remain available, source geometry is contained, shared window defaults are preserved and planning/disposal cleanup is covered. Hosted latest-head CI remains the merge gate." }
+    {
+      "name": "Independent acceptance and architecture review",
+      "score": 10,
+      "scope": "Corrected gameplay composition and evidence",
+      "evidence": "Read-only review identified clock, backdrop cache, SVG visibility, hidden-player-window, Resume navigation and touch/focus issues; fixes have unit regressions and native browser evidence. Reviewed actual scores under both scenes, mobile touch, 144 source transitions, final screenshots, 540 TypeScript/208 Python checks, build and offline report. No outstanding actionable findings within explicit synthetic scope; hosted CI remains separate."
+    },
+    {
+      "name": "Gameplay implementation and integration assessment",
+      "score": 10,
+      "scope": "Real engine ownership, pointer mapping and player lifecycle",
+      "evidence": "Verified existing MoleGame owns countdown, target, hit/score and held-touch behavior. Selected source changes only presentation and its quality gate; pointer player/epoch/space and home clock stay independent. Inspected paired operator, secondary gameplay and narrow player-window evidence plus passing full logs. Recorded bodies and XYZ never award scores or receive invented freshness."
+    }
   ],
   "images": [
-    { "file": "before-rig-desktop.png", "title": "Before · desktop", "caption": "The merged operator workspace shows both role-specific diagrams but has no independent displayed-camera output." },
-    { "file": "after-primary-desktop.png", "title": "After · primary selected", "caption": "A clearly identified selected output sits above the two diagnostic views. Camera roles and rig coordinates remain separate." },
-    { "file": "after-secondary-desktop.png", "title": "After · secondary selected", "caption": "The selected angle changes together with its own observations, image geometry, source time and track context. XYZ is unchanged by selection." },
-    { "file": "before-rig-mobile.png", "title": "Before · mobile", "caption": "The prior operator rehearsal at 390 × 844, served locally from the baseline snapshot." },
-    { "file": "after-secondary-mobile.png", "title": "After · mobile", "caption": "The same native display selector and selected secondary source are usable in the single-column mobile layout." },
-    { "file": "before-rig-narrow.png", "title": "Before · narrow", "caption": "The prior operator rehearsal at 320 × 740, with the same recorded dataset." },
-    { "file": "after-secondary-narrow.png", "title": "After · narrow", "caption": "The selected output remains contained at 320 pixels wide. Both diagnostic roles and XYZ remain available below." },
-    { "file": "selected-unavailable-desktop.png", "title": "Saved camera unavailable", "caption": "An absent saved camera stays selected and visibly unavailable. The workspace does not silently choose another source." },
-    { "file": "selected-stale-desktop.png", "title": "Stale selected input", "caption": "The selected source diagram is cleared when its recorded age exceeds the declared gate; retained operator diagnostics do not imply current usable input." },
-    { "file": "popup-desktop.png", "title": "Separate selected display", "caption": "The same selected stage follows camera and sample changes in its separate window. Returning restores it to the operator page." },
-    { "file": "planning-desktop.png", "title": "Physical planning", "caption": "Planning hides synthetic output and closes its display window. Metadata role assignments start no acquisition and cannot validate physical XYZ." }
+    {
+      "file": "before-rig-desktop.png",
+      "title": "Before · extra diagnostic output",
+      "caption": "The earlier PR used a single skeleton output as its main display and did not compose gameplay."
+    },
+    {
+      "file": "after-operator-desktop.png",
+      "title": "After · two operator views",
+      "caption": "Both camera diagnostics lead the operator page, followed by XYZ. The optional game preview starts collapsed."
+    },
+    {
+      "file": "before-rig-mobile.png",
+      "title": "Before · mobile",
+      "caption": "The prior selected-skeleton presentation at 390 × 844."
+    },
+    {
+      "file": "after-operator-mobile.png",
+      "title": "After · mobile operator",
+      "caption": "Both camera roles and XYZ remain available; gameplay camera selection controls the player output separately."
+    },
+    {
+      "file": "before-rig-narrow.png",
+      "title": "Before · narrow",
+      "caption": "The earlier selected-skeleton output at 320 × 740, served from the recorded baseline."
+    },
+    {
+      "file": "after-operator-narrow.png",
+      "title": "After · narrow operator",
+      "caption": "The corrected operator page keeps both source views and diagnostics in a contained single-column layout."
+    },
+    {
+      "file": "game-primary-desktop.png",
+      "title": "Real game · primary scene",
+      "caption": "The existing Slap a Mole engine supplies a target, cursor, phase and score over the selected primary synthetic scene. Pointer controls award hits."
+    },
+    {
+      "file": "game-secondary-desktop.png",
+      "title": "Real game · secondary scene",
+      "caption": "The alternate source supplies its own background and image geometry. Healthy presentation switches retain game state and operator diagnostics."
+    },
+    {
+      "file": "game-primary-mobile.png",
+      "title": "Real game · mobile",
+      "caption": "Actual game graphics and HUD remain usable in the inline preview at mobile width."
+    },
+    {
+      "file": "game-primary-narrow.png",
+      "title": "Real game · narrow",
+      "caption": "The same actual runtime and contain-fit game surface at 320 pixels wide."
+    },
+    {
+      "file": "popup-desktop.png",
+      "title": "Player window",
+      "caption": "The player receives one selected game scene and HUD. Camera diagrams, track context and XYZ stay with the operator."
+    },
+    {
+      "file": "popup-narrow.png",
+      "title": "Narrow player window",
+      "caption": "The same stage adapts to a tall narrow display. Pointer mapping accounts for letterboxing and mirroring."
+    },
+    {
+      "file": "selected-stale-desktop.png",
+      "title": "Stale selected source",
+      "caption": "Gameplay pauses and clears unusable presentation while retaining score and both forensic operator views. Recovery needs explicit Resume."
+    },
+    {
+      "file": "planning-desktop.png",
+      "title": "Physical planning isolation",
+      "caption": "Physical planning pauses the game, closes its player window and hides synthetic output. No acquisition or physical XYZ readiness is implied."
+    }
   ]
 }

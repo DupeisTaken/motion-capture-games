@@ -69,23 +69,29 @@ afterEach(() => {
 });
 
 describe("two-view operator workspace", () => {
-  it("switches the actual displayed camera without changing roles, source panels or XYZ", () => {
+  it("sends the player camera to the real game controller without changing either operator view or XYZ", () => {
     const primary = dataset.cases[0].frames[0].views[0].cameraId;
     const secondary = dataset.cases[0].frames[0].views[1].cameraId;
     expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(primary);
-    expect(get("rig-selected-diagram").innerHTML).toBe(
-      get("rig-reference-view").innerHTML,
-    );
+    expect(get("rig-game-stage").dataset.cameraId).toBe(primary);
+    expect(
+      document.querySelector('label[for="rig-displayed-camera"]')?.textContent,
+    ).toBe("Player gameplay camera");
+    expect(document.getElementById("rig-selected-diagram")).toBeNull();
+    expect(document.getElementById("rig-selected-stage")).toBeNull();
     const invariant = [
       get("rig-space").innerHTML,
       get("rig-x").textContent,
-      get("rig-reference-context").textContent,
-      get("rig-support-context").textContent,
+      get("rig-reference-view").innerHTML,
+      get("rig-support-view").innerHTML,
     ];
     change("rig-displayed-camera", secondary);
-    expect(get("rig-selected-diagram").innerHTML).toBe(
-      get("rig-support-view").innerHTML,
-    );
+    expect(get("rig-game-stage").dataset.cameraId).toBe(secondary);
+    expect(
+      get("rig-game-scene")
+        .querySelector('[data-game-layer="source"]')
+        ?.getAttribute("data-camera-id"),
+    ).toBe(secondary);
     expect(get("rig-selected-context").textContent).toContain(secondary);
     expect(get("rig-selected-context").textContent).toContain(
       "synthetic-exposure",
@@ -96,19 +102,19 @@ describe("two-view operator workspace", () => {
     expect([
       get("rig-space").innerHTML,
       get("rig-x").textContent,
-      get("rig-reference-context").textContent,
-      get("rig-support-context").textContent,
+      get("rig-reference-view").innerHTML,
+      get("rig-support-view").innerHTML,
     ]).toEqual(invariant);
     expect(window.localStorage.getItem(displayPreferenceKey)).toBe(secondary);
     selectCase("missing-hip");
     expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(
       secondary,
     );
-    expect(get("rig-selected-stage").dataset.sourceStatus).toBe("partial");
-    expect(get("rig-selected-diagram").hidden).toBe(false);
+    expect(get("rig-gameplay-selection").dataset.sourceStatus).toBe("partial");
+    expect(get("rig-game-stage").dataset.cameraId).toBe(secondary);
     physicalStaysUnavailable();
   });
-  it("restores a stable display preference on reload and preserves an unavailable choice until recovery", () => {
+  it("restores a stable gameplay preference and preserves an unavailable choice until explicit recovery", () => {
     const secondary = dataset.cases[0].frames[0].views[1].cameraId;
     change("rig-displayed-camera", secondary);
     workspace.dispose();
@@ -125,15 +131,14 @@ describe("two-view operator workspace", () => {
     expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(
       "saved-camera-not-in-recording",
     );
-    expect(get("rig-selected-diagram").children).toHaveLength(0);
     expect(get("rig-selected-unavailable").hidden).toBe(false);
     expect(get("rig-selected-context").textContent).toContain("not replaced");
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(true);
     change("rig-displayed-camera", secondary);
-    expect(get("rig-selected-diagram").innerHTML).toBe(
-      get("rig-support-view").innerHTML,
-    );
+    expect(get("rig-game-stage").dataset.cameraId).toBe(secondary);
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(false);
   });
-  it("keeps selection usable if browser preference storage is blocked", () => {
+  it("keeps gameplay selection usable if browser preference storage is blocked", () => {
     workspace.dispose();
     vi.spyOn(window.localStorage, "getItem").mockImplementation(() => {
       throw new Error("Storage blocked");
@@ -144,80 +149,90 @@ describe("two-view operator workspace", () => {
     workspace = createRigWorkspace(get("rig-test-root"));
     const secondary = dataset.cases[0].frames[0].views[1].cameraId;
     change("rig-displayed-camera", secondary);
-    expect(get("rig-selected-stage").dataset.cameraId).toBe(secondary);
+    expect(get("rig-gameplay-selection").dataset.cameraId).toBe(secondary);
+    expect(get("rig-game-stage").dataset.cameraId).toBe(secondary);
     expect(get("rig-display-preference-note").textContent).toContain(
       "this page only",
     );
-    expect(get("rig-selected-diagram").children).not.toHaveLength(0);
   });
-  it("clears stale displayed geometry while retaining the two diagnostic sources and recovers", () => {
+  it("forwards stale source state to gameplay while retaining both operator observations", () => {
     selectCase("stale-input");
-    expect(get("rig-selected-diagram").children).toHaveLength(0);
+    expect(get("rig-gameplay-selection").dataset.sourceStatus).toBe(
+      "unavailable",
+    );
     expect(get("rig-selected-unavailable").textContent).toContain("stale");
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(true);
     expect(get("rig-reference-view").querySelector("svg")).not.toBeNull();
     expect(get("rig-support-view").querySelector("svg")).not.toBeNull();
     selectCase("nominal");
-    expect(get("rig-selected-diagram").hidden).toBe(false);
     expect(get("rig-selected-unavailable").hidden).toBe(true);
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(false);
   });
-  it("moves one selected stage to a window and keeps choice and samples synchronized before safe return", () => {
+  it("updates the same real game stage in its window when the player camera or recorded sample changes", () => {
     const popup = new TestWindow({ url: location.href }) as unknown as Window;
     vi.spyOn(window, "open").mockReturnValue(popup);
     vi.spyOn(popup, "focus").mockImplementation(() => {});
     vi.spyOn(popup, "close").mockImplementation(() => {});
-    const stage = get("rig-selected-stage");
-    click("rig-display-window");
-    expect(popup.document.getElementById("rig-selected-stage")).toBe(stage);
-    expect(document.getElementById("rig-selected-stage")).toBeNull();
+    const stage = get("rig-game-stage");
+    click("rig-game-open");
+    expect(popup.document.getElementById("rig-game-stage")).toBe(stage);
+    expect(document.getElementById("rig-game-stage")).toBeNull();
     expect(get("rig-reference-view").querySelector("svg")).not.toBeNull();
     const secondary = dataset.cases[0].frames[0].views[1].cameraId;
     change("rig-displayed-camera", secondary);
+    const oldScene = popup.document.getElementById("rig-game-scene")?.innerHTML;
     click("rig-next");
-    expect(
-      popup.document.getElementById("rig-selected-stage")?.dataset.cameraId,
-    ).toBe(secondary);
-    expect(
-      popup.document.getElementById("rig-selected-diagram")?.innerHTML,
-    ).toBe(get("rig-support-view").innerHTML);
-    expect(
-      popup.document.getElementById("rig-selected-context")?.textContent,
-    ).toContain(`source frame ${dataset.cases[0].frames[1].views[1].frameId}`);
+    expect(stage.dataset.cameraId).toBe(secondary);
+    expect(popup.document.getElementById("rig-game-scene")?.innerHTML).not.toBe(
+      oldScene,
+    );
+    expect(get("rig-selected-context").textContent).toContain(
+      `source frame ${dataset.cases[0].frames[1].views[1].frameId}`,
+    );
     popup.dispatchEvent(new Event("pagehide"));
-    expect(get("rig-selected-stage")).toBe(stage);
-    expect(get("rig-display-window").textContent).toBe("Open display window");
+    expect(get("rig-game-stage")).toBe(stage);
     expect(window.open).toHaveBeenCalledOnce();
     physicalStaysUnavailable();
   });
-  it("retains inline output when a popup is blocked and closes it on physical planning or disposal", () => {
+  it("keeps inline gameplay when a popup is blocked and disables the one controller during planning", () => {
     const popup = new TestWindow({ url: location.href }) as unknown as Window;
     vi.spyOn(window, "open").mockReturnValueOnce(null).mockReturnValue(popup);
     vi.spyOn(popup, "focus").mockImplementation(() => {});
     vi.spyOn(popup, "close").mockImplementation(() => {});
-    const stage = get("rig-selected-stage");
-    click("rig-display-window");
-    expect(get("rig-selected-stage")).toBe(stage);
-    expect(get("rig-display-location").textContent).toContain("blocked");
-    click("rig-display-window");
+    const stage = get("rig-game-stage");
+    click("rig-game-open");
+    expect(get("rig-game-stage")).toBe(stage);
+    expect(get("rig-gameplay-host").textContent?.toLowerCase()).toMatch(
+      /blocked|allow.*pop/,
+    );
+    click("rig-game-open");
     click("rig-tab-planning");
     expect(popup.close).toHaveBeenCalledOnce();
-    expect(get("rig-selected-stage")).toBe(stage);
-    expect(stage.hidden).toBe(true);
+    expect(get("rig-game-stage")).toBe(stage);
+    expect(get("rig-rehearsal").hidden).toBe(true);
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(true);
     expect(document.activeElement).toBe(get("rig-tab-planning"));
-    const calls = vi.mocked(window.open).mock.calls.length;
-    get("rig-display-window").dispatchEvent(new Event("click"));
-    expect(window.open).toHaveBeenCalledTimes(calls);
     click("rig-tab-rehearsal");
-    expect(stage.hidden).toBe(false);
-    click("rig-display-window");
+    expect(get("rig-rehearsal").hidden).toBe(false);
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(false);
+    click("rig-game-open");
     workspace.dispose();
     expect(popup.close).toHaveBeenCalledTimes(2);
-    expect(get("rig-selected-stage")).toBe(stage);
+    expect(get("rig-game-stage")).toBeNull();
+    expect(get("rig-gameplay-host").children).toHaveLength(0);
     expect(vi.getTimerCount()).toBe(0);
   });
   it("starts with bounded synthetic samples and no device or capture request", () => {
-    expect(get("rig-space").closest("section")?.nextElementSibling?.id).toBe(
-      "rig-view-pair",
-    );
+    const operator = get("rig-view-pair");
+    expect(operator.parentElement?.firstElementChild).toBe(operator);
+    expect(
+      operator.nextElementSibling?.classList.contains("rig-space-panel"),
+    ).toBe(true);
+    expect(
+      get("rig-gameplay-host").closest("section")?.previousElementSibling?.id,
+    ).toBe("rig-joint-details");
+    expect(get<HTMLDetailsElement>("rig-game-inline").open).toBe(false);
+    expect(get("rig-gameplay-host").textContent).toContain("Slap a Mole");
     expect(fetchMock).not.toHaveBeenCalled();
     expect(get<HTMLSelectElement>("rig-scenario").options.length).toBe(
       dataset.cases.length,

@@ -39,6 +39,8 @@ Hit regions are circular in normalized image coordinates, so their displayed bou
 
 ## Framing and failure policy
 
+The [two-camera operator workspace](../two-camera-workspace.md#keep-operator-diagnostics-separate-from-gameplay) also composes this engine in fixed Practice/Touch mode. Both source diagnostics stay with the operator; one selected recorded source supplies the player's synthetic background. A separate current-time pointer/keyboard controller drives hits. Recorded bodies and rig XYZ do not become game inputs, and changing the background does not rebind the player or reset the round. This composition starts no capture and does not change the standalone camera/session policies below.
+
 Both feet must be confidently observed in frame. Otherwise show “Step back — keep both feet in view” and suspend scoring/timers. Foot loss alone does not establish camera distance: explain that the participant may also need camera adjustment or to clear an occlusion. Missing eligible contacts, stale/future/non-monotonic samples, ambiguous identity and unavailable push depth cannot score. Clear motion history across all such discontinuities. Spectators never inherit the slot or score. A tab becoming hidden pauses play.
 
 The game exposes a read-only `readiness(nowMs, frame)` query. Start stays available without a valid pose and arms a waiting round; End cancels that intent. A sole confident track is bound automatically. Multiple candidates produce a clear waiting message; advanced participant selection is optional and remains usable before the round starts. Pose movement or detection order does not recreate selector options.
