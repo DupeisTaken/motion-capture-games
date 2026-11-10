@@ -30,8 +30,8 @@
     ],
     [
       "Hosted OS checks",
-      "Current PR gate required",
-      "Windows, macOS and Ubuntu software jobs; hardware untested"
+      "Passed",
+      "All 8 jobs: repository conventions, TypeScript/build and Python on Windows/macOS/Ubuntu, plus software-checks gate. Run 42809615912."
     ],
     [
       "Report render and media",
@@ -51,5 +51,11 @@
     "dodgeball": false,
     "console": false
   },
-  "followup": "https://github.com/DupeisTaken/motion-capture-games/issues/26"
+  "followup": "https://github.com/DupeisTaken/motion-capture-games/issues/26",
+  "hosted": {
+    "url": "https://github.com/DupeisTaken/motion-capture-games/actions/runs/42809615912",
+    "head": "d7d8e3e4c1de472c5329a76ee5b6fc692376254d",
+    "conclusion": "success",
+    "jobs": 8
+  }
 }
