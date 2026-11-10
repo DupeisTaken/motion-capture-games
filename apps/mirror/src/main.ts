@@ -14,6 +14,7 @@ import {
 import { FrameRate } from "./frame-rate";
 import { drawFrame, drawStandby } from "./renderer";
 import { CameraSetup } from "./camera-setup";
+import { CameraReleases } from "./camera-release";
 import { PreviewDiagnostics, sourceWorkMs } from "./diagnostics";
 
 const icon = (name: "body" | "play" | "stop" | "expand" | "camera") => {
@@ -58,6 +59,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="range-label"><label for="confidence">Joint visibility threshold</label><output id="confidence-value" for="confidence">0.50</output></div><input id="confidence" type="range" min="0.1" max="0.9" step="0.05" value="0.5"><p class="field-help">Display filter only. Model scores are not probabilities.</p>
         </section>
         <div class="run-controls"><button id="start" class="primary-button">${icon("play")}<span>Start camera</span></button><button id="stop" class="secondary-button" disabled>${icon("stop")}<span>Stop</span></button></div>
+        <div id="camera-release" hidden><p id="camera-release-message" class="field-help" role="status"></p><button id="retry-camera-stop" class="secondary-button">Retry camera stop</button></div>
         <p class="privacy-note">Stop before changing source or pipeline.</p>
       </aside>
       <section class="viewer-panel" aria-label="Body skeleton viewport">
@@ -133,28 +135,43 @@ const stopButton = get<HTMLButtonElement>("stop");
 let source: "camera" | "demo" = "camera";
 let running = false;
 let generation = 0;
-let sockets: WebSocket[] = [];
+interface CaptureGeneration {
+  id: number;
+  epoch: string;
+  closed: boolean;
+  sockets: WebSocket[];
+  animation: number | null;
+  release: Promise<boolean> | null;
+}
+let capture: CaptureGeneration | null = null;
+// Cancellation clears local work, but startup must settle before replacing its owner.
+let pendingStart: CaptureGeneration | null = null;
+let unknownOwnership: string | null = null;
 let lastPreview: PreviewFrame | null = null;
-let animation: number | null = null;
 let poseReceivedAt = 0;
 const renderRate = new FrameRate();
 const poseRate = new FrameRate();
 let lastFrame: Observation | null = null;
 let lastImage: ImageBitmap | null = null;
 let lastUpdate = 0;
-let epoch = "";
 let hiddenStop = false;
 let peopleSignature = "";
 let lastDecodeMs = 0;
 let lastDrawMs = 0;
 let lastPreviewBytes = 0;
+let status = {
+  title: "Ready when you are",
+  message: "Choose an input source, then start the preview.",
+  state: "ready",
+};
 const diagnostics = new PreviewDiagnostics();
 const cameraChoice = new CameraChoice();
 const cameraSetup = new CameraSetup({
-  busyChanged: (busy) => {
-    startButton.disabled = running || busy;
-    sourceButtons.forEach((button) => (button.disabled = running || busy));
-  },
+  busyChanged: () => updateControls(),
+});
+const releases = new CameraReleases(fetch, () => {
+  updateControls();
+  renderStatus();
 });
 
 const renderOptions = () => ({
@@ -166,6 +183,29 @@ const renderOptions = () => ({
 });
 
 function setStatus(title: string, message: string, state = "ready") {
+  status = { title, message, state };
+  renderStatus();
+}
+function renderStatus() {
+  let { title, message, state } = status;
+  // Cleanup warnings outrank delayed setup, fullscreen and visibility callbacks.
+  const release = releases.state;
+  if (unknownOwnership) {
+    title = "Source ownership unknown";
+    message = unknownOwnership;
+    state = "error";
+  } else if (release.pendingCount) {
+    title = release.releasing
+      ? "Releasing the camera"
+      : "Camera release unconfirmed";
+    message = release.message!;
+    state = release.releasing ? "starting" : "error";
+  } else if (pendingStart?.closed) {
+    title = "Waiting for startup acknowledgement";
+    message =
+      "The preview is stopped locally. Waiting for the source epoch so its camera can be released safely.";
+    state = "starting";
+  }
   if (get("status-title").textContent !== title)
     get("status-title").textContent = title;
   if (get("status-message").textContent !== message)
@@ -234,16 +274,20 @@ function redraw() {
     lastDrawMs = performance.now() - drawStarted;
   } else drawStandby(canvas);
 }
-function animate(now: number) {
-  if (!running) {
-    animation = null;
-    return;
+function isCurrent(own: CaptureGeneration) {
+  return !own.closed && capture === own && own.id === generation;
+}
+function animate(own: CaptureGeneration, now: number) {
+  if (!isCurrent(own) || !running) return;
+  try {
+    if (lastPreview && lastImage && performance.now() - lastUpdate <= 1500) {
+      redraw();
+      renderRate.record(now);
+    }
+    own.animation = requestAnimationFrame((time) => animate(own, time));
+  } catch (error) {
+    void stop(errorMessage(error), "Preview could not continue", "error");
   }
-  if (lastPreview && lastImage && performance.now() - lastUpdate <= 1500) {
-    redraw();
-    renderRate.record(now);
-  }
-  animation = requestAnimationFrame(animate);
 }
 function updatePeople(frame: Observation) {
   const confidence = renderOptions().confidence;
@@ -308,70 +352,100 @@ function updatePeople(frame: Observation) {
     peopleSignature = signature;
   }
 }
-function setControls(active: boolean) {
-  running = active;
-  cameraSetup.setLocked(active);
-  cameraChoice.setLocked(active);
-  startButton.disabled = active || cameraSetup.busy;
-  stopButton.disabled = !active;
-  sourceButtons.forEach((button) => (button.disabled = active));
-  controls.forEach((id) => ((get(id) as HTMLInputElement).disabled = active));
+function controlsLocked() {
+  return (
+    running ||
+    !!pendingStart ||
+    releases.state.pendingCount > 0 ||
+    !!unknownOwnership
+  );
 }
-async function request(path: string, data?: unknown) {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: data === undefined ? undefined : JSON.stringify(data),
+function updateControls() {
+  const locked = controlsLocked();
+  const release = releases.state;
+  cameraSetup.setLocked(locked);
+  startButton.disabled = locked || cameraSetup.busy;
+  stopButton.disabled = !capture || capture.closed;
+  sourceButtons.forEach(
+    (button) => (button.disabled = locked || cameraSetup.busy),
+  );
+  controls.forEach((id) => ((get(id) as HTMLInputElement).disabled = locked));
+  cameraChoice.setLocked(locked);
+  get<HTMLSelectElement>("algorithm").disabled = locked || source === "demo";
+  get("camera-release").hidden =
+    !release.pendingCount && !unknownOwnership && !pendingStart?.closed;
+  write(
+    "camera-release-message",
+    unknownOwnership ||
+      release.message ||
+      (pendingStart?.closed
+        ? "Startup is still pending. A late acknowledgement will be released before another preview can start."
+        : ""),
+  );
+  get<HTMLButtonElement>("retry-camera-stop").hidden = !release.pendingCount;
+  get<HTMLButtonElement>("retry-camera-stop").disabled = release.releasing;
+}
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+function releaseCapture(own: CaptureGeneration) {
+  if (!own.epoch) return Promise.resolve(true);
+  return (own.release ??= releases.release(own.epoch));
+}
+function teardown(own: CaptureGeneration) {
+  if (own.closed) return;
+  own.closed = true;
+  // Detach both channels before closing either; stale callbacks never own new work.
+  own.sockets.forEach((socket) => {
+    socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null;
   });
-  const body = await response.json();
-  if (!response.ok)
-    throw new Error(
-      typeof body.detail === "string"
-        ? body.detail
-        : body.message || "The vision service could not complete this request.",
-    );
-  return body;
-}
-async function stop(
-  message = "The source is stopped. Start a preview to continue.",
-) {
-  generation++;
-  sockets.forEach((socket) => socket.close());
-  sockets = [];
-  if (animation !== null) cancelAnimationFrame(animation);
-  animation = null;
+  own.sockets.forEach((socket) => socket.close());
+  own.sockets = [];
+  if (own.animation !== null) cancelAnimationFrame(own.animation);
+  own.animation = null;
+  if (capture !== own) return;
+  capture = null;
+  running = false;
   renderRate.reset();
   poseRate.reset();
   lastPreview = null;
-  setControls(true);
-  stopButton.disabled = true;
   lastFrame = null;
   lastImage?.close();
   lastImage = null;
   lastUpdate = 0;
   clearTelemetry();
   clearObservations("No active detections.");
-  redraw();
   get("standby").hidden = false;
   get("source-badge").textContent = "Stopped";
   get("frame-state").textContent = "Source stopped";
   get("stage-source").textContent = "No source connected";
-  setStatus("Preview stopped", message);
+  // A native reset clears retained pixels even if the standby renderer fails.
+  const width = canvas.width;
+  canvas.width = width;
+  redraw();
+}
+async function stop(
+  message = "The source is stopped. Start a preview to continue.",
+  title = "Preview stopped",
+  state = "ready",
+) {
+  const own = capture;
+  generation++;
+  // Register scoped cleanup before any fallible display reset can interrupt it.
+  const released = own ? releaseCapture(own) : Promise.resolve(true);
   try {
-    await request("/api/stop", epoch ? { epoch } : undefined);
-  } catch {
-    setStatus(
-      "Service unavailable",
-      "The preview is stopped locally. Restart pnpm dev to reconnect to the vision service.",
-      "error",
-    );
-  } finally {
-    setControls(false);
-    get<HTMLSelectElement>("algorithm").disabled = source === "demo";
+    if (own) teardown(own);
+  } catch (error) {
+    title = "Preview display unavailable";
+    message = `Local preview cleanup encountered a display error: ${errorMessage(error)} Camera release is tracked separately.`;
+    state = "error";
   }
+  updateControls();
+  setStatus(title, message, state);
+  await released;
 }
 async function start() {
-  if (running || cameraSetup.busy) return;
+  if (controlsLocked() || cameraSetup.busy || document.hidden) return;
   let camera: CameraSelection = { cameraIndex: 0 };
   if (source === "camera") {
     try {
@@ -387,41 +461,77 @@ async function start() {
   }
   cameraSetup.release();
 
-  const ownGeneration = ++generation;
-  setControls(true);
+  const own: CaptureGeneration = {
+    id: ++generation,
+    epoch: "",
+    closed: false,
+    sockets: [],
+    animation: null,
+    release: null,
+  };
+  capture = own;
+  pendingStart = own;
+  updateControls();
   clearObservations("Waiting for the first detection.");
   setStatus(
     "Starting preview",
     "Opening the source and loading the local model…",
     "starting",
   );
-  epoch = "";
   const sequences = { preview: -1, observations: -1 };
+  let rejected = false;
   try {
-    const result = await request("/api/start", {
-      source,
-      algorithm: get<HTMLSelectElement>("algorithm").value,
-      tracker: get<HTMLSelectElement>("tracker").value,
-      ...camera,
-      maxPeople: Number(get<HTMLSelectElement>("capacity").value),
-      demoScenario: get<HTMLSelectElement>("demo-scenario").value,
+    const response = await fetch("/api/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source,
+        algorithm: get<HTMLSelectElement>("algorithm").value,
+        tracker: get<HTMLSelectElement>("tracker").value,
+        ...camera,
+        maxPeople: Number(get<HTMLSelectElement>("capacity").value),
+        demoScenario: get<HTMLSelectElement>("demo-scenario").value,
+      }),
     });
-    if (ownGeneration !== generation) return;
-    if (result.state === "error") throw new Error(result.message);
-    if (typeof result.epoch !== "string")
-      throw new Error("Missing source epoch.");
-    epoch = result.epoch;
-    animation = requestAnimationFrame(animate);
+    rejected = !response.ok;
+    const result = await response.json();
+    if (rejected)
+      throw new Error(
+        typeof result?.detail === "string"
+          ? result.detail
+          : result?.message || "The vision service rejected this request.",
+      );
+    // An accepted epoch owns cleanup even after cancellation or an error status.
+    if (typeof result?.epoch === "string" && result.epoch.trim())
+      own.epoch = result.epoch;
+    if (!own.epoch)
+      throw new Error("Missing source epoch in the startup acknowledgement.");
+    if (!isCurrent(own)) {
+      await releaseCapture(own);
+      return;
+    }
+    if (result.state === "error")
+      throw new Error(result.message || "Vision source failed.");
+    running = true;
+    own.animation = requestAnimationFrame((time) => animate(own, time));
     for (const kind of ["preview", "observations"] as const) {
       const ws = new WebSocket(
-        `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/${kind}?epoch=${encodeURIComponent(epoch)}`,
+        `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/${kind}?epoch=${encodeURIComponent(own.epoch)}`,
       );
       ws.binaryType = "arraybuffer";
-      sockets.push(ws);
+      own.sockets.push(ws);
       let decoding = false;
-      ws.onopen = () => ws.send(JSON.stringify({ type: "next" }));
+      const requestNext = () => {
+        if (!isCurrent(own) || ws.readyState !== WebSocket.OPEN) return;
+        try {
+          ws.send(JSON.stringify({ type: "next" }));
+        } catch (error) {
+          void stop(errorMessage(error), "Preview could not continue", "error");
+        }
+      };
+      ws.onopen = requestNext;
       ws.onmessage = async (event: MessageEvent<ArrayBuffer | string>) => {
-        if (ownGeneration !== generation || decoding) return;
+        if (!isCurrent(own) || decoding) return;
         decoding = true;
         try {
           if (typeof event.data === "string") {
@@ -441,7 +551,7 @@ async function start() {
               }
             } else if (kind === "observations") {
               const observation = parseObservation(message);
-              if (observation.epoch !== epoch)
+              if (observation.epoch !== own.epoch)
                 throw new Error(
                   "The source restarted. Start the preview again.",
                 );
@@ -465,13 +575,17 @@ async function start() {
               throw new Error("Unexpected binary observation.");
             const decodeStarted = performance.now();
             const { preview, jpeg } = decodePreviewPacket(event.data);
-            if (preview.epoch !== epoch)
+            if (preview.epoch !== own.epoch)
               throw new Error("The source restarted. Start the preview again.");
             if (preview.sequence <= sequences.preview)
               throw new Error("The source returned an outdated frame.");
             const image = await createImageBitmap(
               new Blob([new Uint8Array(jpeg)], { type: "image/jpeg" }),
             );
+            if (!isCurrent(own)) {
+              image.close();
+              return;
+            }
             if (
               image.width !== preview.image.width ||
               image.height !== preview.image.height
@@ -480,10 +594,6 @@ async function start() {
               throw new Error(
                 "Frame image dimensions do not match its observations.",
               );
-            }
-            if (ownGeneration !== generation) {
-              image.close();
-              return;
             }
             sequences.preview = preview.sequence;
             lastImage?.close();
@@ -497,36 +607,36 @@ async function start() {
               preview.source === "demo" ? "Synthetic" : "Live";
           }
         } catch (error) {
-          if (ownGeneration !== generation) return;
-          await stop();
-          setStatus(
+          if (!isCurrent(own)) return;
+          await stop(
+            errorMessage(error),
             "Preview could not continue",
-            error instanceof Error ? error.message : String(error),
             "error",
           );
         } finally {
           decoding = false;
-          if (ownGeneration === generation && ws.readyState === WebSocket.OPEN)
-            ws.send(JSON.stringify({ type: "next" }));
+          requestNext();
         }
       };
       ws.onerror = () => {
-        if (ownGeneration === generation)
+        if (isCurrent(own))
           void stop("The connection failed. Check the vision service.");
       };
       ws.onclose = () => {
-        if (ownGeneration === generation && running)
+        if (isCurrent(own))
           void stop("The connection closed. Start the preview to reconnect.");
       };
     }
   } catch (error) {
-    if (ownGeneration !== generation) return;
-    await stop();
-    setStatus(
-      "Unable to start",
-      error instanceof Error ? error.message : String(error),
-      "error",
-    );
+    if (!own.epoch && !rejected)
+      unknownOwnership = `Source ownership is unknown: startup could not be acknowledged. ${errorMessage(error)} The service may still own a source, but this page has no safe owner epoch. Restart the local vision service, then reload this page before starting again.`;
+    if (isCurrent(own))
+      await stop(errorMessage(error), "Unable to start", "error");
+    else await releaseCapture(own);
+  } finally {
+    if (pendingStart === own) pendingStart = null;
+    updateControls();
+    renderStatus();
   }
 }
 // Operator DOM updates run at 4 Hz, independently of camera, pose and display work.
@@ -636,6 +746,7 @@ window.setInterval(() => {
 }, 250);
 sourceButtons.forEach((button, index) =>
   button.addEventListener("click", () => {
+    if (controlsLocked() || cameraSetup.busy) return;
     source = index === 0 ? "camera" : "demo";
     cameraSetup.release();
     sourceButtons.forEach((item, position) =>
@@ -650,6 +761,7 @@ sourceButtons.forEach((button, index) =>
 );
 startButton.addEventListener("click", () => void start());
 stopButton.addEventListener("click", () => void stop());
+get("retry-camera-stop").addEventListener("click", () => void releases.retry());
 ["mirror", "show-video", "show-boxes", "show-tracking", "confidence"].forEach(
   (id) =>
     get(id).addEventListener("input", () => {
@@ -665,20 +777,22 @@ stopButton.addEventListener("click", () => void stop());
     }),
 );
 get("fullscreen").addEventListener("click", () => {
+  const ownGeneration = generation;
   if (document.fullscreenElement) void document.exitFullscreen();
   else
     void get("stage")
       .requestFullscreen()
-      .catch(() =>
-        setStatus(
-          "Full screen unavailable",
-          "Your browser does not support this full-screen view. You can continue in the current window.",
-        ),
-      );
+      .catch(() => {
+        if (ownGeneration === generation)
+          setStatus(
+            "Full screen unavailable",
+            "Your browser does not support this full-screen view. You can continue in the current window.",
+          );
+      });
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) cameraSetup.release();
-  if (document.hidden && running) {
+  if (document.hidden && capture) {
     hiddenStop = true;
     void stop(
       "The preview stopped while this tab was hidden. Restart when ready.",
@@ -693,14 +807,8 @@ document.addEventListener("visibilitychange", () => {
 });
 window.addEventListener("pagehide", () => {
   cameraSetup.release();
-  sockets.forEach((socket) => socket.close());
-  if (running && epoch)
-    void fetch("/api/stop", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ epoch }),
-      keepalive: true,
-    }).catch(() => {});
+  hiddenStop = true;
+  void stop("The page was hidden. Start the preview again when ready.");
 });
 window.setInterval(() => {
   if (running && lastUpdate > 0 && performance.now() - lastUpdate > 1500) {
@@ -727,18 +835,19 @@ void fetch("/api/status")
   .then(async (response) => {
     if (!response.ok) throw new Error("Unavailable");
     const status = await response.json();
-    if (status.state === "running")
+    if (generation === 0 && status.state === "running")
       setStatus(
         "A source is already running",
         "Start a preview to replace the existing diagnostic source.",
       );
   })
-  .catch(() =>
-    setStatus(
-      "Vision service offline",
-      "Run pnpm dev from the repository to start the local vision service and viewer.",
-      "error",
-    ),
-  );
+  .catch(() => {
+    if (generation === 0)
+      setStatus(
+        "Vision service offline",
+        "Run pnpm dev from the repository to start the local vision service and viewer.",
+        "error",
+      );
+  });
 
 void cameraChoice.refresh();

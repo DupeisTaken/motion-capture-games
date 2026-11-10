@@ -18,6 +18,16 @@ The server does not open a camera on startup. In the viewer, choose **Camera**, 
 
 Choose **Synthetic scene** to inspect rendering and the contract without a camera. The three-body, empty, and entering/leaving scenes generate observations directly: they do not measure either pose model's detection quality. They are clearly labeled in the UI and canonical payload.
 
+### Capture ownership and retry
+
+The console releases only source epochs acknowledged by its own Start request. A rejected start, including a named camera that disconnected, does not stop another tab's existing source. Stop, hiding the tab and `pagehide` immediately invalidate local work, close both streams, cancel animation and release image bitmaps. If startup is still pending, the console waits for its acknowledgment and releases that epoch without opening streams. Returning to the page requires an explicit Start.
+
+Local preview shutdown does not prove that the service or camera driver has released capture. **Retry camera stop** preserves the acknowledged epoch after HTTP 409 or a network failure and shows the service's recovery detail. Start, source selection and camera setup remain locked while startup is unresolved or release is unconfirmed; retry cannot stop a newer source owned by another tab. The same rule applies to synthetic sources.
+
+If the service accepts Start but its response is lost or cannot identify an epoch, the current protocol cannot safely recover ownership from global status: that status may belong to another tab. The console reports unknown ownership and keeps replacement blocked. Restart the local vision service, then reload this page to recover; this deliberately affects all tabs sharing that service. Closing the page before acknowledgment or failed keepalive delivery remains a best-effort cleanup limit, not confirmed release. A startup request token or lease would require a separate protocol change.
+
+[Issue #26](https://github.com/DupeisTaken/motion-capture-games/issues/26) and [the lifecycle report](../reports/diagnostic-capture-lifecycle.html) record the correction, synthetic regressions and actual verification. Physical camera/driver release and browser unload delivery remain unverified by these software checks.
+
 ## What appears on screen
 
 - A mirrored preview with named-joint bones, joint dots and optional person bounds. The image, boxes and joints share one aspect-preserving transform; anatomical left/right never changes.
@@ -71,6 +81,8 @@ pnpm benchmark:preview --duration 30000 --warmup 5000 --scale-factor 2
 `pnpm check` runs repository documentation/whitespace checks, schema drift, TypeScript/Python types, ESLint/Ruff, Vitest/pytest, formatting and Python byte compilation. `pnpm build` runs independent workspace build scripts and produces the frontend in `dist/mirror/`, verifying every configured HTML entry and its local bundles. [CI conventions](continuous-integration.md) define per-language commands, OS coverage and package requirements. Run `pnpm vision` in one terminal and `pnpm preview` in another to serve that build on port 4173. Start and stop commands use Node across Windows, macOS and Linux. `pnpm dev` manages its own two child processes.
 
 Tests use synthetic observations, fake captures and local HTTP/WebSocket clients. They check transforms, absent joints, bounded packets, ordering/restarts, counting, ambiguous association and capture/resource recovery. Model smoke checks and physical camera trials are separate evidence; consult the delivery report rather than assuming these passed from a unit-test result.
+
+`node scripts/verify-diagnostic-lifecycle.mjs` starts its own temporary Vite server and installed headless Chrome/Edge, then checks release failures, cross-tab rejection and late startup with synthetic HTTP/WebSocket boundaries. It opens no camera or vision service. Screenshots and results go under ignored `reports/local/diagnostic-capture-lifecycle/`; use `--chrome-executable` for a nonstandard browser path. `--baseline 0cc88f7` reproduces the pre-fix console behavior. `node scripts/diagnostic-lifecycle-report.mjs` embeds the screenshots and committed results into the offline report; `--report-only` on the verification script inspects that report at desktop/mobile widths. Browser cleanup and server shutdown are task-owned.
 
 The opt-in benchmarks run serially. `benchmark:runtime` compares reference/compiled validation on synthetic observations; `--models` also times fixed detector/pose tensors without accessing a camera. `benchmark:preview` opens an installed Chrome/Chromium, runs a generated three-body scene, records actual draw intervals and saves desktop/mobile screenshots plus JSON under ignored `reports/local/`. Keep the benchmark window foreground and avoid competing GPU workloads. Use `--chrome-executable` or `CHROME_PATH` if automatic executable discovery does not match the installation. No browser is downloaded automatically; `--headless` is a separate measurement mode, not proof of physical display cadence.
 

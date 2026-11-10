@@ -88,6 +88,32 @@ def test_disconnecting_an_old_viewer_does_not_stop_a_new_source():
         assert client.post("/api/stop", json={"epoch": new["epoch"]}).json()["state"] == "idle"
 
 
+def test_failed_named_camera_start_preserves_unrelated_synthetic_source(monkeypatch):
+    vision = VisionRuntime()
+    with TestClient(create_app(vision), base_url="http://127.0.0.1:8765") as client:
+        current = client.post("/api/start", json={"source": "demo"}).json()
+        stopped = []
+        original_stop = vision._stop
+
+        def record_stop():
+            stopped.append(True)
+            return original_stop()
+
+        def missing_camera(_camera_id):
+            raise RuntimeError("Selected camera was disconnected. Refresh and choose again.")
+
+        monkeypatch.setattr(vision, "_stop", record_stop)
+        monkeypatch.setattr("motion_vision.runtime.resolve_camera", missing_camera)
+        failed = client.post("/api/start", json={"source": "camera", "cameraId": "a" * 64})
+        assert failed.status_code == 409
+        assert "disconnected" in failed.json()["detail"]
+        assert stopped == [], "Camera resolution must precede replacing the existing source"
+        status = client.get("/api/status").json()
+        assert status["epoch"] == current["epoch"]
+        assert status["state"] in ("starting", "running")
+        assert status["source"] == "demo"
+
+
 def test_independent_streams_share_one_owner_and_only_final_disconnect_stops(monkeypatch):
     vision = VisionRuntime()
     released = Event()

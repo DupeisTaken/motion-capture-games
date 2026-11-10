@@ -400,6 +400,24 @@ input[type="range"] {
 .privacy-note {
   text-align: center;
 }
+#camera-release {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #d9aa55;
+  border-radius: 4px;
+  background: #fff7e8;
+  color: #694600;
+}
+#camera-release-message {
+  margin-top: 0;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+#retry-camera-stop {
+  min-height: 38px;
+  padding: 8px;
+  border-radius: 4px;
+}
 .viewer-toolbar {
   height: 40px;
   display: flex;
@@ -849,6 +867,7 @@ footer {
     padding: 0;
   }
   .run-controls,
+  #camera-release,
   .privacy-note {
     grid-column: 1 / -1;
   }

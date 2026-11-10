@@ -15,21 +15,39 @@ const bitmap = (
 const createBitmap = vi.fn(async () => bitmap());
 let acknowledgedEpoch: string;
 let startFailure: string | null;
-const fetchMock = vi.fn(
-  async (path: string, _options?: RequestInit): Promise<Response> => {
-    void _options;
-    const ok = !(path === "/api/start" && startFailure);
-    const body =
-      path === "/api/cameras"
-        ? { cameras: [{ id: "a".repeat(64), name: "Built-in camera" }] }
-        : path === "/api/start"
-          ? ok
-            ? { state: "running", epoch: acknowledgedEpoch }
-            : { detail: startFailure }
-          : { state: "idle" };
-    return { ok, json: async () => body } as Response;
-  },
-);
+const defaultFetch = async (
+  path: string,
+  _options?: RequestInit,
+): Promise<Response> => {
+  void _options;
+  const ok = !(path === "/api/start" && startFailure);
+  const body =
+    path === "/api/cameras"
+      ? { cameras: [{ id: "a".repeat(64), name: "Built-in camera" }] }
+      : path === "/api/start"
+        ? ok
+          ? { state: "running", epoch: acknowledgedEpoch }
+          : { detail: startFailure }
+        : { state: "idle" };
+  return { ok, status: ok ? 200 : 409, json: async () => body } as Response;
+};
+const fetchMock = vi.fn(defaultFetch);
+const response = (body: unknown, ok = true, status = ok ? 200 : 409) =>
+  ({ ok, status, json: async () => body }) as Response;
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
+  return { promise, resolve, reject };
+}
+const requests = (path: string) =>
+  fetchMock.mock.calls.filter(([url]) => url === path);
+const stopEpochs = () =>
+  requests("/api/stop").map(([, init]) => JSON.parse(String(init?.body)));
+let cleanupListeners = () => {};
 class FakeWebSocket {
   static readonly OPEN = 1;
   static instances: FakeWebSocket[] = [];
@@ -126,6 +144,8 @@ async function frame(
 beforeEach(async () => {
   vi.resetModules();
   vi.clearAllMocks();
+  renderer.drawFrame.mockReset();
+  renderer.drawStandby.mockReset();
   vi.useFakeTimers({
     toFake: [
       "setInterval",
@@ -137,8 +157,13 @@ beforeEach(async () => {
   });
   acknowledgedEpoch = "test-epoch";
   startFailure = null;
+  fetchMock.mockImplementation(defaultFetch);
   FakeWebSocket.instances = [];
   document.body.innerHTML = '<div id="app"></div>';
+  Object.defineProperty(document, "hidden", {
+    configurable: true,
+    value: false,
+  });
   createBitmap.mockImplementation(async () => bitmap());
   vi.stubGlobal("fetch", fetchMock);
   vi.stubGlobal("WebSocket", FakeWebSocket);
@@ -157,11 +182,23 @@ beforeEach(async () => {
       unobserve() {}
     },
   );
+  // Module reloads share happy-dom's window; dispose each instance's listeners.
+  const documentEvents = vi.spyOn(document, "addEventListener");
+  const windowEvents = vi.spyOn(window, "addEventListener");
+  cleanupListeners = () => {
+    for (const [type, listener, options] of documentEvents.mock.calls)
+      document.removeEventListener(type, listener, options);
+    for (const [type, listener, options] of windowEvents.mock.calls)
+      window.removeEventListener(type, listener, options);
+    documentEvents.mockRestore();
+    windowEvents.mockRestore();
+  };
   await import("../../apps/mirror/src/main");
   await flush();
   vi.advanceTimersByTime(1);
 });
 afterEach(() => {
+  cleanupListeners();
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllGlobals();
@@ -283,6 +320,7 @@ describe("independent diagnostic viewer", () => {
     expect(FakeWebSocket.instances).toHaveLength(0);
     expect(el("status-message").textContent).toBe(startFailure);
     expect(el<HTMLButtonElement>("start").disabled).toBe(false);
+    expect(requests("/api/stop")).toHaveLength(0);
   });
   it("labels synthetic input and disables model selection for generated scenes", async () => {
     const s = await start("demo");
@@ -376,4 +414,385 @@ describe("independent diagnostic viewer", () => {
     ])
       expect(el(id).textContent).toBe("—");
   });
+
+  it.each(["stop", "hidden", "pagehide"] as const)(
+    "waits for a canceled Start acknowledgment after %s and releases only its epoch",
+    async (cause) => {
+      const started = deferred<Response>();
+      const stopped = deferred<Response>();
+      fetchMock.mockImplementation((path, init) => {
+        if (path === "/api/start") return started.promise;
+        if (path === "/api/stop") return stopped.promise;
+        return defaultFetch(path, init);
+      });
+      el<HTMLButtonElement>("start").click();
+      await flush();
+      if (cause === "stop") el<HTMLButtonElement>("stop").click();
+      else if (cause === "hidden") {
+        Object.defineProperty(document, "hidden", { value: true });
+        document.dispatchEvent(new Event("visibilitychange"));
+      } else window.dispatchEvent(new Event("pagehide"));
+      await flush();
+      expect(requests("/api/stop")).toHaveLength(0);
+      expect(el<HTMLButtonElement>("start").disabled).toBe(true);
+      el("start").dispatchEvent(new Event("click"));
+      await flush();
+      expect(requests("/api/start")).toHaveLength(1);
+
+      started.resolve(response({ state: "running", epoch: "late-owner" }));
+      await flush();
+      expect(stopEpochs()).toEqual([{ epoch: "late-owner" }]);
+      expect(FakeWebSocket.instances).toHaveLength(0);
+      expect(el<HTMLButtonElement>("start").disabled).toBe(true);
+      stopped.resolve(response({ state: "idle" }));
+      await flush();
+      vi.advanceTimersByTime(1000);
+      expect(renderer.drawFrame).not.toHaveBeenCalled();
+    },
+  );
+
+  it("releases a late acknowledged error result after cancellation", async () => {
+    const started = deferred<Response>();
+    fetchMock.mockImplementation((path, init) =>
+      path === "/api/start" ? started.promise : defaultFetch(path, init),
+    );
+    el<HTMLButtonElement>("start").click();
+    el<HTMLButtonElement>("stop").click();
+    await flush();
+    expect(requests("/api/stop")).toHaveLength(0);
+    started.resolve(
+      response({
+        state: "error",
+        epoch: "failed-owner",
+        message: "Model failed",
+      }),
+    );
+    await flush();
+    expect(stopEpochs()).toEqual([{ epoch: "failed-owner" }]);
+    expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(el<HTMLButtonElement>("start").disabled).toBe(false);
+  });
+
+  it.each(["conflict", "network", "synchronous"] as const)(
+    "keeps %s stop failure actionable and retries the same owned epoch before restart",
+    async (failure) => {
+      const image = bitmap();
+      createBitmap.mockResolvedValueOnce(image);
+      const streams = await start();
+      await frame(streams);
+      fetchMock.mockImplementationOnce(() => {
+        if (failure === "conflict")
+          return Promise.resolve(
+            response({ detail: "Driver is still stopping" }, false),
+          );
+        if (failure === "network")
+          return Promise.reject(new Error("Stop connection lost"));
+        throw new Error("Stop transport failed");
+      });
+      el<HTMLButtonElement>("stop").click();
+      await flush();
+      expect(image.close).toHaveBeenCalledOnce();
+      expect(streams.image.close).toHaveBeenCalledOnce();
+      expect(streams.poses.close).toHaveBeenCalledOnce();
+      expect(el("person-count").textContent).toBe("0");
+      expect(el("camera-release").hidden).toBe(false);
+      expect(el("camera-release-message").textContent).toMatch(/unconfirmed/i);
+      expect(el<HTMLButtonElement>("retry-camera-stop").disabled).toBe(false);
+      for (const id of [
+        "start",
+        "camera-choice",
+        "refresh-cameras",
+        "discover-cameras",
+      ])
+        expect(el<HTMLButtonElement>(id).disabled).toBe(true);
+      el("start").dispatchEvent(new Event("click"));
+      await flush();
+      expect(requests("/api/start")).toHaveLength(1);
+      const draws = renderer.drawFrame.mock.calls.length;
+      vi.advanceTimersByTime(1000);
+      expect(renderer.drawFrame.mock.calls.length).toBe(draws);
+
+      el<HTMLButtonElement>("retry-camera-stop").click();
+      await flush();
+      expect(stopEpochs()).toEqual([
+        { epoch: acknowledgedEpoch },
+        { epoch: acknowledgedEpoch },
+      ]);
+      expect(el("camera-release").hidden).toBe(true);
+      expect(el<HTMLButtonElement>("start").disabled).toBe(false);
+      acknowledgedEpoch = "replacement";
+      const restarted = await start();
+      await frame(restarted, pose(1));
+      expect(el("person-count").textContent).toBe("1");
+    },
+  );
+
+  it("deduplicates repeated teardown and retry intents while release is pending", async () => {
+    const streams = await start();
+    const oldClose = streams.image.onclose;
+    const oldError = streams.poses.onerror;
+    streams.image.close.mockImplementation(() => {
+      streams.image.readyState = 3;
+      oldClose?.();
+    });
+    const stopped = deferred<Response>();
+    fetchMock.mockImplementationOnce(() => stopped.promise);
+    el<HTMLButtonElement>("stop").click();
+    await flush();
+    el("stop").dispatchEvent(new Event("click"));
+    el("retry-camera-stop").dispatchEvent(new Event("click"));
+    el("retry-camera-stop").dispatchEvent(new Event("click"));
+    oldClose?.();
+    oldError?.();
+    window.dispatchEvent(new Event("pagehide"));
+    await flush();
+    expect(stopEpochs()).toEqual([{ epoch: acknowledgedEpoch }]);
+    stopped.resolve(response({ state: "idle" }));
+    await flush();
+    expect(el("camera-release").hidden).toBe(true);
+  });
+
+  it.each(["confirmed", "unconfirmed"] as const)(
+    "preserves %s scoped release when both active and standby rendering throw",
+    async (release) => {
+      const image = bitmap();
+      createBitmap.mockResolvedValueOnce(image);
+      const streams = await start();
+      await frame(streams);
+      const unhandled = vi.fn();
+      window.addEventListener("error", unhandled);
+      window.addEventListener("unhandledrejection", unhandled);
+      renderer.drawFrame.mockClear().mockImplementation(() => {
+        throw new Error("Canvas draw failed");
+      });
+      renderer.drawStandby.mockClear().mockImplementation(() => {
+        throw new Error("Canvas standby failed");
+      });
+      if (release === "unconfirmed")
+        fetchMock.mockResolvedValueOnce(
+          response({ detail: "Camera driver is still stopping" }, false),
+        );
+
+      expect(() => vi.advanceTimersByTime(16)).not.toThrow();
+      await flush();
+      expect(renderer.drawFrame).toHaveBeenCalledOnce();
+      expect(renderer.drawStandby).toHaveBeenCalledOnce();
+      expect(image.close).toHaveBeenCalledOnce();
+      expect(streams.image.close).toHaveBeenCalledOnce();
+      expect(streams.poses.close).toHaveBeenCalledOnce();
+      expect(stopEpochs()).toEqual([{ epoch: acknowledgedEpoch }]);
+      expect(el("person-count").textContent).toBe("0");
+      expect(el("standby").hidden).toBe(false);
+      expect(el("source-badge").textContent).toBe("Stopped");
+      expect(el<HTMLButtonElement>("stop").disabled).toBe(true);
+      expect(el("status-title").textContent).toBe(
+        release === "confirmed"
+          ? "Preview display unavailable"
+          : "Camera release unconfirmed",
+      );
+      expect(el("camera-release").hidden).toBe(release === "confirmed");
+      expect(el<HTMLButtonElement>("start").disabled).toBe(
+        release === "unconfirmed",
+      );
+      vi.advanceTimersByTime(1000);
+      await flush();
+      expect(renderer.drawFrame).toHaveBeenCalledOnce();
+      expect(renderer.drawStandby).toHaveBeenCalledOnce();
+      expect(unhandled).not.toHaveBeenCalled();
+      if (release === "unconfirmed") {
+        expect(el("camera-release-message").textContent).toMatch(
+          /unconfirmed.*driver/i,
+        );
+        expect(el<HTMLButtonElement>("retry-camera-stop").disabled).toBe(false);
+        el<HTMLButtonElement>("retry-camera-stop").click();
+        await flush();
+        expect(stopEpochs()).toEqual([
+          { epoch: acknowledgedEpoch },
+          { epoch: acknowledgedEpoch },
+        ]);
+        expect(el("camera-release").hidden).toBe(true);
+        expect(el<HTMLButtonElement>("start").disabled).toBe(false);
+      }
+    },
+  );
+
+  it("releases its epoch and closes the first channel if opening the second fails", async () => {
+    vi.stubGlobal(
+      "WebSocket",
+      class extends FakeWebSocket {
+        constructor(url: string) {
+          if (url.includes("/observations"))
+            throw new Error("Socket constructor failed");
+          super(url);
+        }
+      },
+    );
+    el<HTMLButtonElement>("start").click();
+    await flush();
+    expect(FakeWebSocket.instances).toHaveLength(1);
+    expect(FakeWebSocket.instances[0].close).toHaveBeenCalledOnce();
+    expect(stopEpochs()).toEqual([{ epoch: acknowledgedEpoch }]);
+    expect(el<HTMLButtonElement>("start").disabled).toBe(false);
+  });
+
+  it.each(["open", "next"] as const)(
+    "closes both channels when sending the %s pull throws",
+    async (when) => {
+      const streams = await start();
+      streams.poses.send.mockImplementationOnce(() => {
+        throw new Error("Socket send failed");
+      });
+      if (when === "open") streams.poses.onopen?.();
+      else await streams.poses.receive(JSON.stringify(pose()));
+      await flush();
+      expect(streams.image.close).toHaveBeenCalledOnce();
+      expect(streams.poses.close).toHaveBeenCalledOnce();
+      expect(stopEpochs()).toEqual([{ epoch: acknowledgedEpoch }]);
+    },
+  );
+
+  it.each([
+    ["image", "onerror"],
+    ["image", "onclose"],
+    ["poses", "onerror"],
+    ["poses", "onclose"],
+  ] as const)(
+    "closes the stream pair when %s emits %s",
+    async (kind, event) => {
+      const streams = await start();
+      await frame(streams);
+      streams[kind][event]?.();
+      await flush();
+      expect(streams.image.close).toHaveBeenCalledOnce();
+      expect(streams.poses.close).toHaveBeenCalledOnce();
+      expect(stopEpochs()).toEqual([{ epoch: acknowledgedEpoch }]);
+      expect(el("person-count").textContent).toBe("0");
+      const draws = renderer.drawFrame.mock.calls.length;
+      vi.advanceTimersByTime(1000);
+      expect(renderer.drawFrame.mock.calls.length).toBe(draws);
+    },
+  );
+
+  it("closes the displayed bitmap and cancels animation on pagehide", async () => {
+    const image = bitmap();
+    createBitmap.mockResolvedValueOnce(image);
+    const streams = await start();
+    await frame(streams);
+    window.dispatchEvent(new Event("pagehide"));
+    await flush();
+    expect(image.close).toHaveBeenCalledOnce();
+    expect(streams.image.close).toHaveBeenCalledOnce();
+    expect(streams.poses.close).toHaveBeenCalledOnce();
+    expect(stopEpochs()).toEqual([{ epoch: acknowledgedEpoch }]);
+    const draws = renderer.drawFrame.mock.calls.length;
+    vi.advanceTimersByTime(1000);
+    expect(renderer.drawFrame.mock.calls.length).toBe(draws);
+    expect(el("person-count").textContent).toBe("0");
+  });
+
+  it.each(["stop", "pagehide"] as const)(
+    "disposes a bitmap decoded after %s without resuming drawing or stream pulls",
+    async (cause) => {
+      const decoded = deferred<ReturnType<typeof bitmap>>();
+      createBitmap.mockReturnValueOnce(decoded.promise);
+      const streams = await start();
+      const pending = streams.image.receive(preview(pose()));
+      await flush();
+      if (cause === "stop") el<HTMLButtonElement>("stop").click();
+      else window.dispatchEvent(new Event("pagehide"));
+      await flush();
+      const pulls = streams.image.send.mock.calls.length;
+      const image = bitmap();
+      decoded.resolve(image);
+      await pending;
+      vi.advanceTimersByTime(1000);
+      expect(image.close).toHaveBeenCalledOnce();
+      expect(renderer.drawFrame).not.toHaveBeenCalled();
+      expect(streams.image.send).toHaveBeenCalledTimes(pulls);
+      expect(el("standby").hidden).toBe(false);
+      expect(el("person-count").textContent).toBe("0");
+    },
+  );
+
+  it("ignores obsolete socket callbacks and closes late decoded images after restart", async () => {
+    const decoded = deferred<ReturnType<typeof bitmap>>();
+    createBitmap.mockReturnValueOnce(decoded.promise);
+    const old = await start();
+    const opened = old.image.onopen;
+    const closed = old.poses.onclose;
+    const failed = old.image.onerror;
+    const pending = old.image.receive(preview(pose()));
+    await flush();
+    el<HTMLButtonElement>("stop").click();
+    await flush();
+    acknowledgedEpoch = "new-generation";
+    const current = await start();
+    await frame(current, pose(1));
+    const oldPulls = old.image.send.mock.calls.length;
+    opened?.();
+    closed?.();
+    failed?.();
+    const lateImage = bitmap();
+    decoded.resolve(lateImage);
+    await pending;
+    await flush();
+    expect(lateImage.close).toHaveBeenCalledOnce();
+    expect(old.image.send).toHaveBeenCalledTimes(oldPulls);
+    expect(current.image.close).not.toHaveBeenCalled();
+    expect(current.poses.close).not.toHaveBeenCalled();
+    expect(el("person-count").textContent).toBe("1");
+    expect(stopEpochs()).toEqual([{ epoch: "test-epoch" }]);
+  });
+
+  it.each([
+    "network",
+    "malformed-json",
+    "missing-epoch",
+    "empty-epoch",
+  ] as const)(
+    "reports unknown ownership after a %s Start acknowledgment without adopting global status",
+    async (failure) => {
+      fetchMock.mockImplementation((path, init) => {
+        if (path === "/api/status")
+          return Promise.resolve(
+            response({ state: "running", epoch: "someone-elses-source" }),
+          );
+        if (path !== "/api/start") return defaultFetch(path, init);
+        if (failure === "network")
+          return Promise.reject(new Error("Start connection lost"));
+        if (failure === "malformed-json") {
+          const malformed = response(null);
+          malformed.json = async () => {
+            throw new SyntaxError("Invalid JSON");
+          };
+          return Promise.resolve(malformed);
+        }
+        return Promise.resolve(
+          response({
+            state: "running",
+            ...(failure === "empty-epoch" ? { epoch: "" } : {}),
+          }),
+        );
+      });
+      el<HTMLButtonElement>("start").click();
+      await flush();
+      expect(FakeWebSocket.instances).toHaveLength(0);
+      expect(requests("/api/stop")).toHaveLength(0);
+      expect(el("camera-release").hidden).toBe(false);
+      expect(el("camera-release-message").textContent).toMatch(
+        /unknown|unconfirmed|not confirmed/i,
+      );
+      expect(el("camera-release-message").textContent).toMatch(
+        /restart.*service|restart.*vision/i,
+      );
+      expect(el<HTMLButtonElement>("start").disabled).toBe(true);
+      expect(el<HTMLButtonElement>("camera-choice").disabled).toBe(true);
+      el("start").dispatchEvent(new Event("click"));
+      el("retry-camera-stop").dispatchEvent(new Event("click"));
+      window.dispatchEvent(new Event("pagehide"));
+      await flush();
+      expect(requests("/api/start")).toHaveLength(1);
+      expect(requests("/api/stop")).toHaveLength(0);
+    },
+  );
 });
