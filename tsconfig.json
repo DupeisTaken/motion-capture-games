@@ -15,7 +15,7 @@
     "apps/mirror/src",
     "packages/motion/src",
     "packages/session/src",
-    "games/mole-motion/src",
+    "games/*/src",
     "contracts/src",
     "contracts/generated",
     "tests/**/*.ts",

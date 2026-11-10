@@ -104,4 +104,4 @@ On Python 3.12/Windows, `monotonic_ns` can have 15.625 ms resolution. Capture an
 
 Person rows are retained while displayed identity, joint count and capacity stay unchanged. Positions still redraw the paired canvas on every received frame. The sample window and existing one-frame queues remain bounded.
 
-Mole Motion continues to consume the compatible exact-pair observation endpoint for game input; its camera model default is also RTMPose. The smooth independent preview policy applies to the tracking console and does not change game scoring or session identity rules.
+Mole Motion and Dodgeball continue to consume the compatible exact-pair observation endpoint for game input; their camera model default is also RTMPose. The smooth independent preview policy applies to the tracking console and does not change game scoring or session identity rules.

@@ -13,3 +13,5 @@ Future game composition supports camera-overlay games and the [motion runner's r
 Render, camera/source and pose FPS are measured separately. Telemetry/person-list DOM work is limited to 4 Hz; overlays outside the 150 ms source-time hold window are hidden. [ADR 0006](../../docs/decisions/0006-independent-preview.md) records the tradeoff.
 
 Operator telemetry updates at most four times per second, using a bounded 120-pose window. Person rows change only when displayed identity/joint-count/capacity information changes; the canvas draws on its independent display clock. Controls, stage timings and stream context share one responsive page. See [the console report](../../reports/diagnostic-console.html) for actual measurements and verification.
+
+`dodgeball.html` composes the experimental [Dodgeball game](../../docs/games/dodgeball.md). It adds full-body rehearsal/camera input, shared contain/mirror placement for visible collision shapes and ball warning rings, explicit joining and framing recovery. Run the same local server; rehearsal needs no camera service. The game owns collisions and score while this app owns transport and controls.

@@ -1,0 +1,405 @@
+@import "./mole.css";
+
+/* Both games share the arcade shell. This file owns Dodgeball's identity. */
+.mm-primary {
+  background: #be523b;
+  border-color: #be523b;
+}
+.mm-primary:hover:not(:disabled) {
+  background: #9e412e;
+}
+.score-item.primary-score strong {
+  color: #bd5036;
+}
+/* Shared arcade layout; Dodgeball uses coral for action and amber for warnings. */
+.heading-dot {
+  color: #bd5036;
+}
+.setup-tip {
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f5eee3;
+  border: 1px solid #e9ddcb;
+}
+.setup-tip > span {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: #7b4d2d;
+  font-weight: 700;
+}
+.setup-tip p {
+  font-size: 11px;
+  line-height: 1.65;
+  margin: 7px 0 0;
+  color: #6b6f5f;
+}
+.overlay-ball {
+  width: 94px;
+  height: 94px;
+  transform: rotate(-13deg);
+  margin-bottom: 10px;
+}
+.overlay-ball svg {
+  width: 100%;
+  height: 100%;
+}
+#overlay-kicker {
+  color: #efbc7d;
+}
+#warning-track[data-phase="danger"] {
+  color: #a5402c;
+  background: #fff1e9;
+}
+#warning-track[data-phase="warning"] {
+  color: #8c5e26;
+  background: #fffae9;
+}
+.target-track progress {
+  accent-color: #bc6a3b;
+}
+.target-track progress::-webkit-progress-value {
+  background: #bc6a3b;
+}
+.hit-feedback {
+  color: #ffcf95;
+  top: 23%;
+  font-size: 23px;
+}
+.hit-feedback[data-kind="hit"] {
+  color: #ffae9b;
+}
+.mm-header nav {
+  gap: 24px;
+}
+.mm-header {
+  gap: 55px;
+}
+.mm-settings select,
+.mm-settings input[type="number"] {
+  min-height: 44px;
+}
+.field-note {
+  font-size: 11px;
+  color: #657260;
+}
+.score-item > span {
+  color: #68765f;
+}
+.source-disclosure {
+  color: #69765f;
+  font-size: 10px;
+}
+#game-status {
+  color: #61725a;
+  font-size: 11px;
+}
+.mm-footer {
+  color: #61705c;
+}
+@media (max-width: 900px) {
+  .mm-header {
+    gap: 24px;
+  }
+  .mm-header nav {
+    gap: 20px;
+  }
+  .scoreboard {
+    gap: 20px;
+  }
+}
+@media (max-width: 680px) {
+  .mm-header {
+    gap: 12px;
+    padding: 0 14px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 64px;
+    justify-content: space-between;
+  }
+  .mm-header nav {
+    gap: 14px;
+    height: 44px;
+  }
+  .mm-header nav a {
+    font-size: 10px;
+  }
+  .mm-brand > span {
+    font-size: 15px;
+  }
+  .mm-brand {
+    font-size: 22px;
+  }
+  .mm-main {
+    padding-top: 24px;
+  }
+  .mm-heading {
+    gap: 10px;
+  }
+  .mm-heading h1 {
+    font-size: 40px;
+  }
+  .intro {
+    font-size: 12px;
+  }
+  .mm-layout {
+    gap: 16px;
+  }
+  .mm-game {
+    order: -1;
+  }
+  .mm-settings {
+    padding: 20px;
+  }
+  .setup-tip {
+    margin-top: 16px;
+  }
+  .scoreboard {
+    gap: 16px;
+    padding: 15px 14px;
+  }
+  .primary-score {
+    padding-right: 16px;
+  }
+  .mm-stage {
+    aspect-ratio: 1/1;
+    min-height: 290px;
+  }
+  .overlay-ball {
+    width: 68px;
+    height: 68px;
+    margin-bottom: 4px;
+  }
+  #overlay-title {
+    font-size: 30px;
+    max-width: 290px;
+  }
+  #overlay-copy {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .stage-label {
+    top: 15px;
+    left: 14px;
+    font-size: 6px;
+    letter-spacing: 0.06em;
+  }
+  .player-label {
+    font-size: 7px;
+    top: 10px;
+    right: 10px;
+  }
+  .player-label > span {
+    font-size: 6px;
+  }
+  .stage-bottom {
+    font-size: 7px;
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
+  .stage-bottom > span:first-child {
+    max-width: 185px;
+  }
+  .target-track {
+    padding: 13px 12px;
+    font-size: 9px;
+    flex-wrap: wrap;
+  }
+  .target-track > span:first-child {
+    min-width: 107px;
+  }
+  .target-track progress {
+    flex: 1;
+    max-width: none;
+  }
+  .target-track > span:last-child {
+    font-size: 8px;
+  }
+  .game-actions {
+    padding: 14px 12px 9px;
+  }
+  .source-disclosure {
+    padding: 0 12px 15px;
+  }
+  .mm-primary,
+  .mm-secondary,
+  .mm-text {
+    font-size: 12px;
+  }
+  .mm-settings .field-note {
+    font-size: 12px;
+  }
+  .how-grid h2 {
+    font-size: 14px;
+  }
+  .how-grid p {
+    font-size: 12px;
+  }
+}
+@media (max-width: 360px) {
+  .mm-main {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .mm-header {
+    padding: 8px 12px;
+    gap: 2px;
+  }
+  .mm-header nav {
+    width: 100%;
+    justify-content: space-between;
+    height: 35px;
+  }
+  .scoreboard {
+    gap: 12px;
+    padding: 14px 12px;
+  }
+  .primary-score {
+    padding-right: 12px;
+  }
+  .score-item {
+    min-width: 38px;
+  }
+  .score-item strong {
+    font-size: 23px;
+  }
+  .mm-heading h1 {
+    font-size: 36px;
+  }
+  .experiment {
+    padding: 6px;
+    font-size: 7px;
+  }
+  .mm-overlay {
+    padding: 34px 18px;
+  }
+  .overlay-ball {
+    width: 55px;
+    height: 55px;
+  }
+  #overlay-title {
+    font-size: 26px;
+    letter-spacing: -1px;
+  }
+  #overlay-copy {
+    font-size: 10px;
+  }
+  .stage-label {
+    font-size: 5px;
+  }
+  .target-track > span:last-child {
+    width: 100%;
+    margin: 0;
+  }
+  .stage-bottom > span:first-child {
+    max-width: 155px;
+  }
+}
+
+.mm-stage {
+  width: 100%;
+}
+
+/* Essential play and recovery instructions stay readable on narrow screens. */
+.stage-label,
+.player-label {
+  font-size: 10px;
+}
+.player-label > span {
+  font-size: 9px;
+}
+.stage-bottom {
+  font-size: 11px;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+.target-track {
+  font-size: 11px;
+}
+#overlay-copy {
+  font-size: 13px;
+  line-height: 1.65;
+}
+#overlay-kicker {
+  font-size: 10px;
+}
+#overlay-title {
+  max-width: 460px;
+}
+@media (max-width: 680px) {
+  .stage-label {
+    font-size: 9px;
+    max-width: 55%;
+    line-height: 1.5;
+    top: 15px;
+  }
+  .player-label {
+    font-size: 9px;
+  }
+  .player-label > span {
+    font-size: 8px;
+  }
+  .stage-bottom {
+    font-size: 11px;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+  }
+  .stage-bottom > span:first-child {
+    max-width: none;
+  }
+  .stage-bottom > span:last-child {
+    display: none;
+  }
+  .target-track {
+    font-size: 11px;
+  }
+  .target-track > span:last-child {
+    font-size: 10px;
+  }
+  #overlay-copy {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  #overlay-kicker {
+    font-size: 9px;
+  }
+  #overlay-title {
+    font-size: 28px;
+    max-width: 330px;
+  }
+  .mm-overlay {
+    padding: 48px 18px 45px;
+  }
+}
+@media (max-width: 360px) {
+  .stage-label {
+    font-size: 9px;
+  }
+  .stage-label i {
+    display: none;
+  }
+  #overlay-title {
+    font-size: 25px;
+    line-height: 1.12;
+    letter-spacing: -0.7px;
+  }
+  #overlay-copy {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .overlay-ball {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 0;
+  }
+  .target-track > span:first-child {
+    min-width: 110px;
+  }
+  .stage-bottom {
+    font-size: 10px;
+  }
+  .mm-overlay {
+    padding: 43px 16px 42px;
+  }
+}

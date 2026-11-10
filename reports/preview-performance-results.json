@@ -116,9 +116,11 @@
     "External latency, Windows, physical three-person crossings and hardware certification remain unverified."
   ],
   "verification": {
-    "vitestPassed": 234,
+    "vitestPassed": 342,
     "pytestPassed": 103,
-    "mainIntegrationBase": "af0ac95",
-    "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/21"
+    "mainIntegrationBase": "4f9c468110111a3f2b9ccbcf260be02ba5c28d70",
+    "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/21",
+    "documentCount": 54,
+    "localReferenceCount": 260
   }
 }

@@ -8,6 +8,7 @@ Model-independent TypeScript helpers for the diagnostic mirror. [src/index.ts](s
 - `decodeFramePacket(bytes)`, which returns validated observation metadata and the paired JPEG preview from a bounded packet.
 - `ObservationOrder`, which rejects duplicate/out-of-order sequences and unexpected epochs. Call `reset(newEpoch)` after an acknowledged source change; a late packet must not revive an old stream.
 - `MotionContact` / `GameMotionFrame` and observed-contact adapters in `game-input.ts`: canonical wrist/ankle proxies and hips, strict observed/in-frame eligibility and explicit feet/depth capability. Estimated diagnostic joints cannot score. Session membership and source timing are applied by `packages/session`; game-specific collisions stay in the game.
+- `DodgeMotionFrame`, `observationToDodgeFrame` and `syntheticBody` in `dodgeball-input.ts`: named full-body joint evidence for the [dodgeball game](../../docs/games/dodgeball.md), validated observed coordinates and a labeled synthetic rehearsal pose. Collision shapes and scoring remain in the game module.
 
 The shared types are generated from [the canonical schema](../../contracts/schemas/observation.schema.json). Live, synthetic and future replay observations enter through the same parser. Diagnostic drawing eligibility is not permission to score: identity/freshness, session membership and game-specific rules still gate authoritative input.
 
