@@ -22,6 +22,8 @@ The milestone IDs below are stable local references. Each milestone may become s
 
 **Console iteration:** [Issue #15](https://github.com/DupeisTaken/motion-capture-games/issues/15) adds a compact single-page test console, explicit browser discovery/identification with manual native-index verification, bounded stage diagnostics, less DOM churn, high-resolution host timing and synthetic pacing fixes. [The console report](../reports/diagnostic-console.html) owns actual checks and synthetic measurements. Physical M1 gates and [independent high-rate preview #10](https://github.com/DupeisTaken/motion-capture-games/issues/10) remain open.
 
+**Identity stability follow-up:** [Issue #11](https://github.com/DupeisTaken/motion-capture-games/issues/11) and [PR #13](https://github.com/DupeisTaken/motion-capture-games/pull/13) cover elapsed-time-aware velocity updates and independent last-observed/predicted assignment comparison in [camera-local tracking](tracking-algorithms.md). Competing feasible associations suspend affected local IDs instead of letting prediction transfer them to a neighboring person; abrupt approaches/reversals may require new tentative IDs. The [tracking stability report](../reports/tracking-stability.html) owns executed verification. Real disturbance/crossing trials, provider truncation/ranking churn at capacity, indistinguishable replacements and explicit player enrollment/recovery remain M1/M2 work; this focused fix does not close those gates.
+
 **Owns:** Vision capture/inference adapters, the first mirror slice, draft protocol schemas, diagnostic presentation, and an initial installation/performance profile. Depends on M0.
 
 **Acceptance criteria:**
