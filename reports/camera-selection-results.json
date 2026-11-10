@@ -43,5 +43,6 @@
     "No simultaneous multi-camera capture or calibrated fusion",
     "No certified 4K/60 sensor mode or end-to-end latency result",
     "Native indexed opening has a small hot-plug race; reconnect and Refresh after errors"
-  ]
+  ],
+  "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/24"
 }
