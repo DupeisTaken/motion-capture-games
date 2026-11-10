@@ -102,20 +102,56 @@
   ],
   "visualEvidenceProvenance": "The final rail desktop, gold mobile and extra-player mobile screenshots were recaptured from the isolated delivery checkout's real Vite server at http://127.0.0.1:5174/runner.html and independently inspected. Earlier accepted action, narrow-layout and reference images remain supporting evidence for the same feature; they are not represented as new captures.",
   "acceptedVisualEvidence": [
-    { "file": "reports/local/motion-runner/final-rail-desktop.jpg", "observation": "Isolated delivery server: Nova in the left rail lane, score 79, zero coins, 79 meters, visible HUD and in-stage Pause." },
-    { "file": "reports/local/motion-runner/07-jump-paused-desktop.jpg", "observation": "Actual mid-jump simulation paused with visible lift and JUMPING label." },
-    { "file": "reports/local/motion-runner/08-roll-paused-desktop.jpg", "observation": "Held native Down action produced a compact rolling silhouette and ROLLING label." },
-    { "file": "reports/local/motion-runner/09-gold-moss-desktop.jpg", "observation": "Gold world with palms, warm buildings and Moss skin." },
-    { "file": "reports/local/motion-runner/final-gold-mobile.jpg", "observation": "Isolated delivery server: 390x844 viewport, Ember in the right lane, score 84, zero coins, 84 meters, all touch controls and Pause visible together." },
-    { "file": "reports/local/motion-runner/final-extra-player-mobile.jpg", "observation": "Isolated delivery server: score 87, zero coins, 87 meters, another-player status and explanatory whole-world pause overlay." },
-    { "file": "reports/local/motion-runner/final-extra-player-320.jpg", "observation": "Narrow paused layout with readable message, recovery controls and wrapped rehearsal buttons." }
+    {
+      "file": "reports/local/motion-runner/final-rail-desktop.jpg",
+      "observation": "Previously accepted current-task capture: Nova in the left lane, score182, five coins and57m; Slap a Mole navigation agrees with newly merged upstream PR43. Game geometry/HUD unchanged."
+    },
+    {
+      "file": "reports/local/motion-runner/07-jump-paused-desktop.jpg",
+      "observation": "Actual mid-jump simulation paused with visible lift and JUMPING label."
+    },
+    {
+      "file": "reports/local/motion-runner/08-roll-paused-desktop.jpg",
+      "observation": "Held native Down action produced a compact rolling silhouette and ROLLING label."
+    },
+    {
+      "file": "reports/local/motion-runner/09-gold-moss-desktop.jpg",
+      "observation": "Gold world with palms, warm buildings and Moss skin."
+    },
+    {
+      "file": "reports/local/motion-runner/final-gold-mobile.jpg",
+      "observation": "Isolated delivery server: 390x844 viewport, Ember in the right lane, score 84, zero coins, 84 meters, all touch controls and Pause visible together."
+    },
+    {
+      "file": "reports/local/motion-runner/final-extra-player-mobile.jpg",
+      "observation": "Isolated delivery server: score 87, zero coins, 87 meters, another-player status and explanatory whole-world pause overlay."
+    },
+    {
+      "file": "reports/local/motion-runner/final-extra-player-320.jpg",
+      "observation": "Narrow paused layout with readable message, recovery controls and wrapped rehearsal buttons."
+    }
   ],
   "rejectedVisualEvidence": [
-    { "file": "reports/local/motion-runner/02-rail-playing-desktop.jpg", "reason": "Still showed the Start overlay, score0 and distance0; not playing evidence." },
-    { "file": "reports/local/motion-runner/04-jump-desktop.jpg", "reason": "Action had already ended; STANDING label and grounded model did not prove a jump." },
-    { "file": "reports/local/motion-runner/05-jump-active-desktop.jpg", "reason": "Showed STANDING and a train hit; not accepted as jump evidence." },
-    { "file": "reports/local/motion-runner/ref-subway-23s.png", "reason": "Blurred trailer transition rather than readable gameplay." },
-    { "file": "reports/local/motion-runner/ref-gold-19s.png", "reason": "Character cutscene rather than gameplay." }
+    {
+      "file": "reports/local/motion-runner/02-rail-playing-desktop.jpg",
+      "reason": "Still showed the Start overlay, score0 and distance0; not playing evidence."
+    },
+    {
+      "file": "reports/local/motion-runner/04-jump-desktop.jpg",
+      "reason": "Action had already ended; STANDING label and grounded model did not prove a jump."
+    },
+    {
+      "file": "reports/local/motion-runner/05-jump-active-desktop.jpg",
+      "reason": "Showed STANDING and a train hit; not accepted as jump evidence."
+    },
+    {
+      "file": "reports/local/motion-runner/ref-subway-23s.png",
+      "reason": "Blurred trailer transition rather than readable gameplay."
+    },
+    {
+      "file": "reports/local/motion-runner/ref-gold-19s.png",
+      "reason": "Character cutscene rather than gameplay."
+    }
   ],
   "referenceFootage": [
     {
@@ -129,17 +165,32 @@
       "title": "10 years of running, jumping and dodging! Talking Tom Gold Run Gameplay Trailer",
       "url": "https://www.youtube.com/watch?v=31TH0htM6I0",
       "publisher": "Verified Talking Tom channel; linked by Outfit7's 2026-07-30 announcement",
-      "acceptedFrames": ["reports/local/motion-runner/ref-gold-14s-gameplay.jpg", "reports/local/motion-runner/ref-gold-29s-gameplay.jpg"],
+      "acceptedFrames": [
+        "reports/local/motion-runner/ref-gold-14s-gameplay.jpg",
+        "reports/local/motion-runner/ref-gold-29s-gameplay.jpg"
+      ],
       "observations": "Portrait three-lane road, gold-bar trails, vehicle and planter hazards, paired low barriers, colorful side scenery and alternate character outfits."
     }
   ],
   "reviewerExecutedChecks": [
-    { "command": "pnpm exec vitest run tests/viewer/runner-renderer.test.ts --maxWorkers=1", "result": "5 tests passed; real Three geometry and transforms with a mocked GPU renderer, not a GPU benchmark." }
+    {
+      "command": "pnpm exec vitest run tests/viewer/runner-renderer.test.ts --maxWorkers=1",
+      "result": "5 tests passed; real Three geometry and transforms with a mocked GPU renderer, not a GPU benchmark."
+    }
   ],
   "completedLocalChecksReportedByLead": [
-    { "command": "pnpm check", "result": "Passed on the final isolated delivery tree: 537 TypeScript tests and 208 Python tests, plus the repository's required types, lint, format and convention checks." },
-    { "command": "pnpm build", "result": "Passed: five application entries built and emitted assets verified. Vite reported a 545 KB chunk-size warning; this is not a measured browser performance result." },
-    { "command": "pnpm benchmark:runner", "result": "Passed all 24 declared synthetic simulation cases on the isolated delivery tree." }
+    {
+      "command": "pnpm check",
+      "result": "Passed on the final isolated delivery tree: 537 TypeScript tests and 208 Python tests, plus the repository's required types, lint, format and convention checks."
+    },
+    {
+      "command": "pnpm build",
+      "result": "Passed: five application entries built and emitted assets verified. Vite reported a 545 KB chunk-size warning; this is not a measured browser performance result."
+    },
+    {
+      "command": "pnpm benchmark:runner",
+      "result": "Passed all 24 declared synthetic simulation cases on the isolated delivery tree."
+    }
   ],
   "simulationEvidence": {
     "file": "reports/motion-runner-results.json",

@@ -76,7 +76,8 @@
   },
   "isolatedDelivery": {
     "path": "E:\\.codex\\worktrees\\motion-runner-delivery\\motion-capture-games",
-    "reason": "Exclude concurrent Mole Motion to Slap a Mole rename edits. Task-owned files copied into a clean origin/main worktree; source checkout left intact."
+    "reason": "Exclude concurrent Mole Motion to Slap a Mole rename edits. Task-owned files copied into a clean origin/main worktree; source checkout left intact.",
+    "upstreamIntegration": "Merged origin/main at999fb92, retaining Slap a Mole rename from PR43. Runner PR diff remains focused."
   },
   "browserPauseInvariant": {
     "score": 87,

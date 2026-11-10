@@ -28,7 +28,7 @@ export function mountRunnerGame(
   const now = deps.now ?? (() => performance.now());
   root.innerHTML = `
   <a class="skip" href="#game-stage">Skip to game</a>
-  <header class="mm-header"><a class="mm-brand" href="/"><span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/">Tracking console</a><a href="/mole.html">Mole Motion</a><a href="/dodgeball.html">Dodgeball</a><a href="/runner.html" class="current" aria-current="page">Runner</a></nav><span class="local-pill"><i></i> Local & private</span></header>
+  <header class="mm-header"><a class="mm-brand" href="/"><span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/">Tracking console</a><a href="/mole.html">Slap a Mole</a><a href="/dodgeball.html">Dodgeball</a><a href="/runner.html" class="current" aria-current="page">Runner</a></nav><span class="local-pill"><i></i> Local & private</span></header>
   <main class="runner-main"><div class="runner-heading"><div><p class="eyebrow">THE MOTION ARCADE <span>/</span> GAME 03</p><h1>Find your flow<span>.</span></h1><p>Three lanes. Two worlds. Your next great escape.</p></div><span class="runner-tag">1 PLAYER <span>EXPERIMENTAL</span></span></div>
   <div class="runner-layout"><section class="runner-play" aria-label="Motion runner">
     <div class="runner-stage" id="game-stage" tabindex="0" role="region" aria-label="Runner play area. Left, center and right choose lanes. Up or Space jumps. Hold Down to roll.">

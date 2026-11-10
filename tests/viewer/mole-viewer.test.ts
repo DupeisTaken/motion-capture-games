@@ -122,7 +122,7 @@ async function startCamera(): Promise<FakeWebSocket> {
 
 function element<T extends HTMLElement = HTMLElement>(id: string): T {
   const value = document.getElementById(id);
-  if (!value) throw new Error(`Missing Mole Motion element: ${id}`);
+  if (!value) throw new Error(`Missing Slap a Mole element: ${id}`);
   return value as T;
 }
 
@@ -241,7 +241,7 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("Mole Motion operator integration", () => {
+describe("Slap a Mole operator integration", () => {
   it("defaults to camera setup and discovers devices without starting capture", async () => {
     await flushPromises();
     expect(element<HTMLSelectElement>("source-select").value).toBe("camera");

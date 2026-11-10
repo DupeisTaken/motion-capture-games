@@ -104,7 +104,7 @@ The responsive single-page console places input/pipeline controls, preview, dete
 
 ### Camera choice and permission
 
-The console, Mole Motion and Dodgeball share **Choose camera** and **Refresh** controls. Native camera names come from the vision service's `/api/cameras` metadata endpoint; enumeration does not acquire a camera, request microphone access or read images. Games discover only after Camera input is selected, so camera-free rehearsal still works without the service.
+The console, Slap a Mole and Dodgeball share **Choose camera** and **Refresh** controls. Native camera names come from the vision service's `/api/cameras` metadata endpoint; enumeration does not acquire a camera, request microphone access or read images. Games discover only after Camera input is selected, so camera-free rehearsal still works without the service.
 
 1. Connect your USB camera and choose **Refresh**. Select a named camera; with several available, no device is chosen automatically. An initially single available camera is preselected, but capture still requires **Start camera**.
 2. Choose **Start camera**. The selected OS device identity is resolved again before replacing the source and after model loading, using the native capture backend's current order. A missing device fails rather than falling back to another camera. Selection and Refresh are locked during active capture; stop before switching.
@@ -128,10 +128,10 @@ On Python 3.12/Windows, `monotonic_ns` can have 15.625 ms resolution. Capture an
 
 Person rows are retained while displayed identity, joint count and capacity stay unchanged. The independent animation loop draws the latest fresh image with compatible pose geometry. The sample window and existing one-frame queues remain bounded.
 
-Mole Motion and Dodgeball continue to consume the compatible exact-pair observation endpoint for game input; their camera model default is also RTMPose. The smooth independent preview policy applies to the tracking console and does not change game scoring or session identity rules.
+Slap a Mole and Dodgeball continue to consume the compatible exact-pair observation endpoint for game input; their camera model default is also RTMPose. The smooth independent preview policy applies to the tracking console and does not change game scoring or session identity rules.
 
 ## Raw camera and separate game display
 
-Camera pictures are untinted. The console keeps its diagnostic overlay by default; **Tracking overlay** turns it off without changing inference, counting or game input. Mole Motion and Dodgeball default to raw camera pictures with tracking graphics hidden. Their operator **Show tracking diagnostics** option exposes setup geometry only in the inline view. **Open game window** moves the existing stage and game HUD to a separate window and always hides tracking graphics there; it creates no second camera, decoder or game. Return/close restores the stage and focus. Keep the operator page open. Popup blocking leaves the inline game usable; some mobile browsers open a tab.
+Camera pictures are untinted. The console keeps its diagnostic overlay by default; **Tracking overlay** turns it off without changing inference, counting or game input. Slap a Mole and Dodgeball default to raw camera pictures with tracking graphics hidden. Their operator **Show tracking diagnostics** option exposes setup geometry only in the inline view. **Open game window** moves the existing stage and game HUD to a separate window and always hides tracking graphics there; it creates no second camera, decoder or game. Return/close restores the stage and focus. Keep the operator page open. Popup blocking leaves the inline game usable; some mobile browsers open a tab.
 
 Start in each game records participation intent and waits for stable input, without a mandatory Select/Join sequence. Confident same-owner framing/joint loss pauses score and time, then automatically counts down to recovery. Explicit missing/uncertain identity, changed source/geometry and long gaps require a single new-round action; another track cannot inherit the score. The paired game transport still follows inference cadence; removing the tint does not make it uncompressed sensor output or the console’s independent high-rate video path. See [the camera gameplay report](../reports/raw-game-display.html).

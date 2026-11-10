@@ -1,6 +1,6 @@
 # Session runtime
 
-`src/index.ts` implements one explicitly joined anonymous `player-1` slot for the experimental [Mole Motion slice](../../docs/games/mole-motion.md). `SinglePlayerSession.join` binds one selected confident track; `ingest` validates that binding and maps source timing with bigint deltas; `release` leaves. Detection order and screen position never enroll anyone. Lost/uncertain membership or changed source geometry requires explicit rejoin. A different track changes the association revision, so the game requires a new round rather than transferring an old score.
+`src/index.ts` implements one explicitly joined anonymous `player-1` slot for the experimental [Slap a Mole slice](../../docs/games/mole-motion.md). `SinglePlayerSession.join` binds one selected confident track; `ingest` validates that binding and maps source timing with bigint deltas; `release` leaves. Detection order and screen position never enroll anyone. Lost/uncertain membership or changed source geometry requires explicit rejoin. A different track changes the association revision, so the game requires a new round rather than transferring an old score.
 
 Keep per-player input quality separate from global session state. Check game/profile capabilities and player admission limits. Preserve scores through uncertain tracks, and bind a recovered track to a slot only under a justified policy. Game-specific scoring stays with the game.
 
