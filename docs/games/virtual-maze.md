@@ -1,0 +1,91 @@
+# Virtual maze
+
+## Scope and current capability
+
+Virtual Maze is a single-player game: an operator sees a maze and the player's position and facing direction; the participant receives a buzzer intensity display and sound, without seeing the maze. The operator generates Easy, Medium or Hard layouts and chooses whether to include internal loops. Width and depth are independent predetermined dimensions, each from 5 to 10 meters; they do not come from the apparent size of cones in a photograph.
+
+The first runtime is a **camera-free rehearsal** at `/maze.html`. It consumes synthetic position and independent head/torso headings. It opens no cameras, runs no cone detector and claims no physically validated location or orientation. The [two-camera workspace](../two-camera-workspace.md) and [XYZ experiment](../player-xyz-experiment.md) remain separate diagnostics. Their physical calibration, synchronization, identity and accuracy gates must close before their observations can control a physical maze round.
+
+This early M7 software slice is tracked by [issue #40](https://github.com/DupeisTaken/motion-capture-games/issues/40), not closure of M1 or physical M7. [The delivery report](../../reports/virtual-maze.html) records actual tests, browser screenshots, hosting links and remaining limitations.
+
+## Operator and participant experience
+
+The operator chooses dimensions, difficulty, seed, internal loops and **Torso** or **Head** facing input. Torso is the default; changing the selected source must never silently substitute the other source. Default dimensions are 8 × 8 m, difficulty Medium and loops enabled. A new generation resets the rehearsal position and round. Start, Pause and Reset remain explicit operator controls.
+
+The operator's metric map shows walls, start, goal, position and selected heading. Rehearsal controls move position through X/Z sliders, the pointer/map and arrow keys; independent sliders let the operator turn the head while the torso stays still, and vice versa. These are synthetic controls, not recognition from a person's video. Invalid-input fixtures explain why a round cannot advance.
+
+The participant view contains the normalized buzzer intensity and its state, without the maze, player coordinates, heading or route. It can be shown inline or in a separate participant window. The operator page remains the control surface. A blocked popup leaves the inline option available. Both views share the same game state; opening a participant window must not start another input source or camera.
+
+Sound requires the operator's explicit **Enable sound** action because browsers gate audio behind interaction. The application scales browser audio gain from the game intensity with a master gain cap of 0.12. This is a normalized software gain, not a measured acoustic level or a hardware safety certification. The intensity display remains useful when sound is disabled or the device/browser cannot play it. Pause, invalid input and unavailable presentation silence the buzzer. No map is shown to the participant when a round finishes or input is lost.
+
+## Position, facing and game boundary
+
+The game engine consumes a maze-local metric X/Z position and a selected heading angle. The motion boundary validates model-independent rig position and the selected forward vector; its separate registration helpers can transform these into maze coordinates. Rig axes remain X participant-screen-right, Y up and Z into the play area, in meters. The current rehearsal uses a synthetic aligned rig/maze frame and does not call the manual corner registration API. A future trusted adapter must integrate that separately tested transform. Anatomical left/right and input coordinates are unaffected by a mirrored camera preview.
+
+Position and orientation are different capabilities. A hip midpoint supplies a possible root position; it does not supply facing. Velocity cannot tell whether someone is walking backward. A future input adapter must explicitly provide qualified head and torso forward vectors, their provenance, source time/clock, track/epoch, calibration revision and identity state. Head orientation is not eye gaze. A participant can turn their eyes without turning their head, and head and torso may disagree legitimately.
+
+The selected direction is projected onto the floor plane and normalized only when that projection is valid. Missing, stale, nonfinite, low-confidence or nearly vertical direction data makes that source unavailable. Head selection with missing head input cannot use torso input as a fallback. A future body/face orientation estimator needs a defined anatomical forward convention, neutral-facing calibration, front/back disambiguation, error and coverage measurements, and explicit occlusion handling. Shoulder width or a 2D nose point alone does not establish unambiguous metric yaw.
+
+The motion package owns registration, canonical input validation and readiness; the game owns maze geometry, directional wall clearance, collision/goal outcomes and seeded generation. The app owns controls, lifecycle, rendering and browser audio. The game imports no inference libraries or model-specific landmark indices and never opens a camera. Future live input belongs behind the versioned canonical contract, rather than copying a static rehearsal format into a transport protocol.
+
+The rehearsal's local `MazePoseSample` carries position, nullable head/torso vectors, overall confidence, confirmed identity/timing, synthetic/physical origin and explicit track/slot/epoch/calibration/clock context. Its confidence must cover both position and selected facing; it is not a calibrated probability and this slice has no separate per-source confidence fields. Source time and `now` must already share a verified mapped source clock; uncertainty participates in freshness. Duplicate/reordered sequence or time is rejected. The current adapter always rejects physical-origin samples even if their fields claim readiness. No browser checkbox can lift that boundary. A future trusted adapter must bind registration to the rig calibration revision and explicitly reset its accepted-input cursor after incompatible session, identity, clock or calibration changes.
+
+The UI declares `synthetic-browser-clock` and owns a strictly increasing synthetic timeline derived from browser monotonic time, advancing by at least 0.001 ms per generated sample even when repeated browser reads are equal. Both synthetic source time and the assessor's `now` use that same timeline. This is rehearsal ordering, not measured source FPS, camera exposure time or a physical clock mapping. Synthetic identity/timing flags demonstrate policy only.
+
+Identity uncertainty, stale input, clock/epoch changes and calibration changes invalidate authoritative gameplay. Recovery must revalidate the same session owner; it cannot guess ownership from left-to-right order. Invalid input cannot count as clear space or as a goal. The rehearsal demonstrates these states without claiming that their physical upstream evidence exists.
+
+## Directional buzzer and walls
+
+Intensity describes the nearest intersection with a maze wall in a narrow forward fan: three rays at the selected heading and ±15°. A nearby wall produces stronger output; facing a longer open corridor produces weaker output. Walls behind the player do not dominate this directional measurement. The result is a directional virtual-wall signal, not a shortest-route hint or physical obstacle detector. Turning in place changes the signal even when position does not change.
+
+The engine performs metric ray/wall intersection against the generated layout and exposes normalized intensity `max(0, 1 - distance / 2.4 m)` in 0..1. The renderer and audio consume that same output; audio further squares intensity when applying gain. The engine separately computes all-around nearest-wall distance: wall contact means at most 0.20 m from any wall, regardless of heading, or outside the rectangle. Outside positions produce maximum warning, never a goal. Goal attainment requires an inside position within 0.28 m of the goal and no wall contact. These are rehearsal tuning values, not validated body clearance, human perception or physical stopping distances. A future physical adapter must not clamp an out-of-bounds measurement into a valid corridor or report a rejected position as current.
+
+`sampleMaze` evaluates the current endpoint only. Dragging or moving controls across a wall does not test the intervening path, block movement or add a collision penalty. A clear endpoint can reach the goal after such a move. This slice has no scoring, traversal-history or command-replay API; deterministic checks repeat generation configurations and endpoint queries at the same code revision. Physical movement requires a separately specified and validated traversal policy.
+
+Virtual walls do not physically constrain a participant. Physical acceptance needs independent room-boundary, cone-placement and operator-stop checks, participant/position uncertainty measured against corridor width, supported input coverage and a supervised recovery protocol.
+
+## Generation, difficulty and internal loops
+
+Generation is seeded and deterministic at the same code revision. Width/depth scale the metric layout; difficulty controls its grid complexity independently of room dimensions. A 5 × 10 m room must remain rectangular in both geometry and display, without stretching one meter differently along the two axes. Changing dimensions must not silently resize the physical installation.
+
+For each dimension independently, Easy uses `max(5, ceil(dimension / 1.5 m))` cells, Medium uses `max(6, ceil(dimension / 1.1 m))`, and Hard uses `max(7, ceil(dimension / 0.85 m))`. This increases grid density; it is not evidence that every generated Hard maze is more difficult for every person. Narrow physical corridors require separate body-clearance validation.
+
+With loops disabled the generator creates a connected perfect maze: one graph path connects each pair of cells. With loops enabled, it adds cycles and chooses an interior goal under an explicit software check: a breadth-first search reaches the goal, while both canonical left-hand and right-hand cell followers from the declared start and initial heading fail to reach it and repeat a `(cell, heading)` state.
+
+The canonical follower starts in cell 0 facing +Z (heading 0) along a one-exit corridor. It tries left/straight/right/back for the left-hand rule and right/straight/left/back for the right-hand rule, taking the first open passage and preserving its new heading. Repeated-state detection terminates after at most four states per cell. This guarantee is scoped to those exact deterministic algorithms and that initial state. Merely adding cycles is insufficient: some looped mazes are still solved by a hand rule. It does not promise that a person using memory, a different initial heading, arbitrary wall attachment or a general search cannot solve the maze. The operator sees the generation evidence; the participant does not receive that route information.
+
+The generator tries at most 64 seeded loop candidates, with passage-addition probabilities 0.12/0.18/0.24 for Easy/Medium/Hard. It selects the farthest BFS interior goal that neither follower visits. If none qualifies, a connected central 3 × 3 chamber with exterior trees provides a bounded fallback whose goal is verified by the same tests. Loops-off uses a randomized depth-first tree and the farthest interior BFS goal. The public result exposes cycle count `E - V + 1`, follower reachability/steps, passages and a BFS solution; these remain operator/debug data.
+
+## Four corners and a possible cone workflow
+
+The installation has four explicitly named ground corners: `nearLeft`, `nearRight`, `farRight`, `farLeft`. An operator may label them manually; cone colors are not known requirements and need not be assumed distinct. The manual metric registration API consumes already-calibrated rig-ground X/Z points and the configured maze dimensions. Maze origin is near-left, +X reaches near-right at `(width, 0)`, and +Z reaches far-left at `(0, depth)`.
+
+Registration fits rotation and translation only; it cannot silently correct scale, reflect the map or guess corner order. Every convex labelled turn must have positive orientation, each side must agree with its configured length within 2%, and maximum fitted corner residual must be at most 0.10 m. These are provisional engineering rejection screens, not physically validated accuracy. Duplicate, reversed/degenerate and inconsistent geometry is rejected. A symmetric rectangle cannot prove that the operator's physical near/left labels are correct. Valid typed coordinates exercise math; they do not establish that a camera measured those coordinates correctly. Registration itself has no calibration ID; a future adapter must invalidate and rebind it when rig calibration changes.
+
+The rehearsal also permits a local planning photo with four named image annotations. Those normalized image points record human correspondence only. A photograph, manual photo clicks, rectangular appearance, chosen room dimensions and a confirmation button do not certify camera intrinsics, floor mapping or metric accuracy. Local photo pixels must remain local and must not enter fixtures, source control or the shareable report. No automatic cone recognition or photo-derived calibration is implemented in this slice.
+
+A future cone experiment can start with these bounded alternatives, without adding a model-training toolchain:
+
+1. Sample each actual cone under the installation lighting and camera exposure/white balance. Segment a calibrated HSV color range with `inRange`; colors can wrap around hue and similar clothes/backgrounds can remain ambiguous. OpenCV documents the color-threshold primitive, not robustness on this room's cones. [OpenCV HSV thresholding](https://docs.opencv.org/4.x/da/d97/tutorial_threshold_inRange.html)
+2. Apply measured-size morphological opening/closing to remove isolated mask noise and fill small holes, then find contours and screen candidate area/shape. The kernel can also erase small distant cones or merge touching objects; validate rather than assume it helps. [OpenCV morphology](https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html), [OpenCV contours](https://docs.opencv.org/4.x/dd/d49/tutorial_py_contour_features.html)
+3. Locate each cone's **floor contact point**, not its silhouette centroid or tip. Human labels or genuinely distinct observed markers establish corner correspondence; image left-to-right order must not silently assign corner identity. Undistort at the calibrated image geometry before metric mapping. A verified floor homography can map floor contact points; it does not map a hip or a head above that plane correctly. Two-view reconstruction is an alternative when calibrated/timed correspondences support it. [OpenCV camera calibration](https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html), [OpenCV planar homography](https://docs.opencv.org/4.x/d9/dab/tutorial_homography.html)
+4. Publish confidence/ambiguity and missing/occluded corners explicitly. Test changed lighting, cones matching clothing, duplicate colors, clipping, moving cones/cameras, perspective and partial occlusion. Require independent known-distance checks and a new registration/calibration revision after movement. Never let a plausible colored blob turn an unverified physical gate green.
+
+These are researched implementation candidates, not deployed algorithms or measured performance. A color label identifies a candidate; it does not by itself establish scale, position, synchronized views, participant identity or head/torso orientation.
+
+## Verification and physical acceptance
+
+Use the existing local environment:
+
+```text
+pnpm dev
+pnpm verify:maze
+pnpm check
+pnpm build
+```
+
+`verify:maze` exercises the real local route using synthetic controls and records English desktop/mobile evidence. The report owns the exact commands and results actually run; the command list alone is not a passing claim. Source-only game and motion modules are checked through their tests/types and the consuming app build.
+
+Software scenarios include independent 5..10 m dimension bounds, seeded generation, connectivity, the exact hand-rule test, metric rays, heading selection and invalidity, registration rejection, collision/goal outcomes, identity/time/revision changes, participant map privacy, audio enable/silence, popup cleanup and responsive keyboard/touch controls. [Testing](../testing.md#virtual-maze-acceptance-scenarios) owns the scenario matrix.
+
+Physical acceptance additionally requires simultaneous live acquisition, held-out metric calibration, verified exposure time/clock mapping, cross-view identity, root and selected-orientation accuracy/coverage, cone-corner evidence, known-distance registration checks, usable update rate and external motion-to-buzzer latency on the declared rig. Test head-only/torso-only turns, backward walking, stationary turns, occlusion and boundary approaches. Record angular error and directional-clearance error as well as root XYZ error. M1 and M7 stay open until that evidence and supervised participant trials exist.
