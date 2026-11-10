@@ -1,5 +1,7 @@
 # Cross-component verification
 
+The two-camera workspace adds `viewer/rig-state.test.ts` and `viewer/rig-viewer.test.ts` for recorded-sample validation, missing/rejected XYZ, mode isolation, keyboard playback and planning-only behavior. Independent prefixed camera-selector regressions protect existing consumers. Python `test_rig_rehearsal.py` checks the committed static fixture against the actual XYZ solver with explicit numerical drift tolerance. `pnpm verify:rig` supplies real Vite-server English desktop/mobile/narrow evidence using synthetic device metadata; see [the report](../reports/two-camera-workspace.html).
+
 XYZ cases live in `services/vision/tests/test_xyz.py`: three methods, quality/provenance rejection and per-joint degeneracy. `pnpm verify:vision` separately checks the real synthetic-service HTTP/WebSocket path and responsive English screenshots. [The #3/#4 report](../reports/vision-issues.html) records actual checks and physical limits.
 
 Run `pnpm test` for Vitest contract/motion/viewer tests followed by pytest vision tests. `pnpm check` adds repository documentation/whitespace, schema drift, types, lint and formatting. [CI conventions](../docs/continuous-integration.md) define the Ubuntu/Windows/macOS lanes, build coverage and stable merge gate. `pnpm build` runs declared workspace builds and verifies all emitted Vite entries/assets.

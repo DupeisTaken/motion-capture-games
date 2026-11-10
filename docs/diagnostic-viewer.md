@@ -30,6 +30,8 @@ If the service accepts Start but its response is lost or cannot identify an epoc
 
 ## What appears on screen
 
+For coordinating two camera roles and inspecting synthetic rig-meter XYZ, open [the operator workspace](two-camera-workspace.md) at `/rig.html`. It separates paired rehearsal and physical planning from this single-source console. Rehearsal and operator notes do not enable live XYZ or certify physical input.
+
 - A mirrored preview with named-joint bones, joint dots and optional person bounds. The image, boxes and joints share one aspect-preserving transform; anatomical left/right never changes.
 - Automatic count from the latest fresh pose observation, which may lag the independent camera image. Retained/lost tracks do not add people. A detection is not an enrolled game player.
 - At most the configured 1–6 detections. If the model returns the configured maximum, the UI warns that more people may exist. This is a processing cap, not a measurement of total room population or certified game-player capacity.

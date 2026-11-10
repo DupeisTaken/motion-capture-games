@@ -123,6 +123,10 @@ if (command === "setup") {
     models: ["-m", "motion_vision.models", ...process.argv.slice(3)],
     benchmark: ["-m", "motion_vision.benchmark", ...process.argv.slice(3)],
     xyz: ["services/vision/tools/xyz_benchmark.py", ...process.argv.slice(3)],
+    "rig-rehearsal": [
+      "services/vision/tools/rig_rehearsal.py",
+      ...process.argv.slice(3),
+    ],
     vision: ["-m", "motion_vision"],
     "python-test": ["-m", "pytest", "-q"],
     "python-lint": ["-m", "ruff", "check", "services/vision"],

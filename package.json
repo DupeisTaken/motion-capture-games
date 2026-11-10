@@ -35,7 +35,10 @@
     "check:python": "node scripts/tasks.mjs python-check",
     "benchmark:preview": "node scripts/benchmark-preview.mjs",
     "benchmark:xyz": "node scripts/tasks.mjs xyz",
-    "verify:vision": "node scripts/verify-vision-issues.mjs"
+    "verify:vision": "node scripts/verify-vision-issues.mjs",
+    "rig:generate": "node scripts/tasks.mjs rig-rehearsal && prettier --write apps/mirror/src/rig-rehearsal.json",
+    "rig:check": "node scripts/tasks.mjs rig-rehearsal --check",
+    "verify:rig": "node scripts/verify-rig-workspace.mjs"
   },
   "dependencies": {
     "ajv": "8.20.0"
