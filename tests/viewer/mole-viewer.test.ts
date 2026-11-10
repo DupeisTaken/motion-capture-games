@@ -270,11 +270,13 @@ describe("Mole Motion operator integration", () => {
     framing.dispatchEvent(new Event("change", { bubbles: true }));
     app.tick();
     expect(element("overlay-title").textContent).toMatch(/step back|feet/i);
+    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
     const time = element("time-value").textContent;
     const score = element("score-value").textContent;
     advance(5000);
     expect(element("time-value").textContent).toBe(time);
     expect(element("score-value").textContent).toBe(score);
+    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
     framing.checked = true;
     framing.dispatchEvent(new Event("change", { bubbles: true }));
     app.tick();
@@ -368,16 +370,186 @@ describe("Mole Motion operator integration", () => {
       }),
     );
     expect(Number(element("score-value").textContent)).toBe(100);
-    element("game-stage").dispatchEvent(
-      new KeyboardEvent("keydown", {
-        key: " ",
-        repeat: true,
-        bubbles: true,
-      }),
-    );
+    const repeatedSpace = new KeyboardEvent("keydown", {
+      key: " ",
+      repeat: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    element("game-stage").dispatchEvent(repeatedSpace);
+    expect(repeatedSpace.defaultPrevented).toBe(true);
     advance(100);
     expect(element("hits-value").textContent).toBe("1");
   });
+
+  it("blocks start while known feet are missing and enables it after framing recovery", () => {
+    const framing = element<HTMLInputElement>("demo-framing");
+    framing.checked = false;
+    element<HTMLButtonElement>("join-player").click();
+    expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
+    expect(element("game-status").textContent).toMatch(/feet/i);
+    framing.checked = true;
+    framing.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
+  });
+
+  it("keeps camera track options stable and displays the actual bound owner", async () => {
+    const socket = await startCamera();
+    const first = observation();
+    const spectator = {
+      ...structuredClone(first.people[0]),
+      trackId: "camera-track-2",
+    };
+    first.people.push(spectator);
+    first.detectedCount = 2;
+    await socket.receive(packet(first));
+    choose("player-track", "camera-track-1");
+    const control = element<HTMLSelectElement>("player-track");
+    const options = [...control.options];
+    const next = observation(2);
+    next.people.push(spectator);
+    next.people.reverse();
+    next.detectedCount = 2;
+    now += 50;
+    await socket.receive(packet(next));
+    expect([...control.options]).toEqual(options);
+    for (let index = 0; index < options.length; index++)
+      expect(control.options[index]).toBe(options[index]);
+    expect(control.value).toBe("camera-track-1");
+    element<HTMLButtonElement>("join-player").click();
+    expect(control.disabled).toBe(true);
+    expect(element("player-binding").textContent).toMatch(
+      /player 1.*camera-track-1/i,
+    );
+    const later = observation(3);
+    later.people.push(spectator);
+    later.detectedCount = 2;
+    now += 50;
+    await socket.receive(packet(later));
+    expect(control.disabled).toBe(true);
+    expect(control.value).toBe("camera-track-1");
+  });
+
+  it("blocks start for stale joined camera input without spending round time", async () => {
+    const socket = await startCamera();
+    await socket.receive(packet(observation()));
+    choose("player-track", "camera-track-1");
+    element<HTMLButtonElement>("join-player").click();
+    advance(400);
+    expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
+    expect(element("game-status").textContent).toMatch(/stale/i);
+    expect(element("time-value").textContent).toBe("1:00");
+  });
+
+  it("blocks stale camera resume and preserves time until fresh input and explicit recovery", async () => {
+    const socket = await startCamera();
+    await socket.receive(packet(observation()));
+    choose("player-track", "camera-track-1");
+    element<HTMLButtonElement>("join-player").click();
+    element<HTMLButtonElement>("start-round").click();
+    for (let sequence = 2; sequence <= 65; sequence++) {
+      now += 50;
+      await socket.receive(packet(observation(sequence)));
+    }
+    element<HTMLButtonElement>("pause-round").click();
+    const time = element("time-value").textContent;
+    advance(400);
+    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
+    expect(element("game-status").textContent).toMatch(/stale/i);
+    expect(element("time-value").textContent).toBe(time);
+    // The gap invalidates membership too; fresh poses alone cannot grant control.
+    now += 50;
+    await socket.receive(packet(observation(74)));
+    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(true);
+    choose("player-track", "camera-track-1");
+    element<HTMLButtonElement>("join-player").click();
+    expect(element<HTMLButtonElement>("resume-round").disabled).toBe(false);
+    expect(element("time-value").textContent).toBe(time);
+  });
+
+  it("keeps a failed late-start release available after switching to rehearsal", async () => {
+    choose("source-select", "camera");
+    let finishStart!: (value: object) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishStart = resolve;
+        }),
+    );
+    element<HTMLButtonElement>("source-connect").click();
+    await flushPromises();
+    choose("source-select", "demo");
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ detail: "Driver still stopping" }),
+    });
+    finishStart({
+      ok: true,
+      json: async () => ({ state: "running", epoch: "late-epoch" }),
+    });
+    await flushPromises();
+    expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(element("camera-release").hidden).toBe(false);
+    expect(element("camera-release-message").textContent).toMatch(
+      /unconfirmed.*driver/i,
+    );
+    element<HTMLButtonElement>("retry-camera-stop").click();
+    await flushPromises();
+    expect(element("camera-release").hidden).toBe(true);
+    const stops = fetchMock.mock.calls.filter(([path]) => path === "/api/stop");
+    expect(
+      stops.map(([, init]) => JSON.parse(String(init.body)).epoch),
+    ).toEqual(["late-epoch", "late-epoch"]);
+  });
+
+  it.each(["409", "network"])(
+    "keeps a failed %s camera release visible and retryable in rehearsal",
+    async (failure) => {
+      await startCamera();
+      fetchMock.mockImplementationOnce(async () => {
+        if (failure === "network") throw new Error("Service offline");
+        return {
+          ok: false,
+          status: 409,
+          json: async () => ({
+            detail: "Camera driver still stopping; ownership retained.",
+          }),
+        };
+      });
+      element<HTMLButtonElement>("source-stop").click();
+      await flushPromises();
+      expect(element("camera-release").hidden).toBe(false);
+      expect(element("camera-release-message").textContent).toMatch(
+        /release unconfirmed/i,
+      );
+      expect(element<HTMLButtonElement>("source-connect").disabled).toBe(true);
+      expect(element<HTMLButtonElement>("retry-camera-stop").disabled).toBe(
+        false,
+      );
+      // A source selection does not conceal the unresolved release. Keep the retry
+      // failing once more so it is still offered after switching to rehearsal.
+      fetchMock.mockRejectedValueOnce(new Error("Service offline"));
+      choose("source-select", "demo");
+      await flushPromises();
+      expect(element("camera-release").hidden).toBe(false);
+      expect(element("player-status").textContent).toMatch(
+        /join player 1.*rehearsal/i,
+      );
+      element<HTMLButtonElement>("retry-camera-stop").click();
+      await flushPromises();
+      expect(element("camera-release").hidden).toBe(true);
+      const stops = fetchMock.mock.calls.filter(
+        ([path]) => path === "/api/stop",
+      );
+      expect(stops).toHaveLength(3);
+      expect(
+        stops.every(
+          ([, init]) => JSON.parse(String(init.body)).epoch === "camera-test",
+        ),
+      ).toBe(true);
+    },
+  );
 
   it("renders camera preview before admission and releases only its acknowledged epoch", async () => {
     const socket = await startCamera();

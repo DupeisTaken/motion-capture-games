@@ -12,6 +12,7 @@ import {
   type Observation,
 } from "../../../packages/motion/src/index";
 import { drawMoleScene } from "./mole-renderer";
+import { CameraReleases } from "./camera-release";
 
 const moleArt = `<svg viewBox="0 0 120 110" aria-hidden="true"><ellipse cx="60" cy="96" rx="52" ry="11" fill="#071d1a"/><path d="M19 88V55a41 41 0 0 1 82 0v33" fill="#ce9364"/><circle cx="25" cy="37" r="14" fill="#ce9364"/><circle cx="95" cy="37" r="14" fill="#ce9364"/><circle cx="25" cy="37" r="8" fill="#a7654c"/><circle cx="95" cy="37" r="8" fill="#a7654c"/><path d="M19 88V57a41 41 0 0 1 82 0v31" fill="#ce9364"/><ellipse cx="60" cy="72" rx="23" ry="18" fill="#f4cc9c"/><ellipse cx="60" cy="62" rx="10" ry="7" fill="#492e2b"/><circle cx="43" cy="50" r="4" fill="#272d29"/><circle cx="78" cy="50" r="4" fill="#272d29"/><path d="m51 80 9 5 9-5" fill="none" stroke="#734a3b" stroke-width="3" stroke-linecap="round"/><path d="M13 94h94" stroke="#74aa81" stroke-width="5" stroke-linecap="round"/></svg>`;
 
@@ -37,9 +38,10 @@ export function mountMoleGame(
     <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · room to warm up</option><option value="normal" selected>Normal · find your rhythm</option><option value="hard">Hard · stretch your reach</option></select><p class="field-note">Hard favors moles farther from your available contact points, within the play area.</p>
     <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies.</p>
     <hr><label for="source-select">Input source</label><select id="source-select"><option value="demo">Rehearsal · no camera</option><option value="camera">Camera · body tracking</option></select>
+    <div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
     <div id="demo-controls"><label for="demo-contact">Rehearsal contact</label><select id="demo-contact"><option value="left_wrist">Left wrist / hand</option><option value="right_wrist">Right wrist / hand</option><option value="left_hip">Left hip</option><option value="right_hip">Right hip</option><option value="left_foot">Left foot</option><option value="right_foot">Right foot</option></select><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
     <div id="camera-controls" hidden><label for="camera-index">Native camera index</label><input id="camera-index" type="number" min="0" max="9" step="1" value="0"><p class="field-note">Start only when ready. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="source-stop" class="mm-text" disabled>Stop camera</button><label for="player-track">Player track</label><select id="player-track"><option value="">Start camera to see tracks</option></select></div>
-    <button id="join-player" class="mm-secondary join">Join player 1</button><p id="player-status" class="field-note" role="status">Join explicitly, then start your round.</p>
+    <p id="player-binding" class="field-note" hidden></p><button id="join-player" class="mm-secondary join">Join player 1</button><p id="player-status" class="field-note" role="status">Join explicitly, then start your round.</p>
   </aside>
   <section class="mm-game" aria-label="Mole Motion game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>HITS</span><strong id="hits-value">0</strong></div><div class="score-item"><span>BEST STREAK</span><strong id="streak-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
     <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Game play area. Rehearsal: move pointer or arrow keys to aim; Space to push."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored game view, body contacts and bounded play area"></canvas><div class="stage-label"><i></i><span id="stage-mode">TOUCH TO WHACK</span></div><div class="player-label">P1 <span id="stage-player">NOT JOINED</span></div><div id="mole-target" class="mole-target" hidden>${moleArt}</div><div id="hit-feedback" class="hit-feedback" aria-hidden="true"></div><div class="mm-overlay" id="game-overlay"><div class="overlay-mole">${moleArt}</div><p id="overlay-kicker">READY, SET, REACH</p><h2 id="overlay-title">Small moles.<br>Big moves.</h2><p id="overlay-copy">Join a player and make your first move.<br>Keep your whole body inside the camera view.</p></div><div class="stage-bottom"><span id="stage-help">Rehearsal · move your cursor or use arrow keys</span><span>MIRRORED VIEW</span></div></div>
@@ -74,12 +76,14 @@ export function mountMoleGame(
     generation = 0,
     epoch = "",
     connecting = false;
+  let cameraMessage = "Start the camera and choose the participant's track.";
   let disposed = false,
     pushUntil = -1,
     pointer = { x: 0.28, y: 0.5 };
   let lastHits = 0,
     hitUntil = 0,
     demoTime = -Infinity;
+  const releases = new CameraReleases(fetch, updateReleaseControls);
   const isDemo = () => select("source-select").value === "demo";
   const isJoined = () => (isDemo() ? demoJoined : !!session.binding);
   const active = () =>
@@ -92,6 +96,54 @@ export function mountMoleGame(
   function setMessage(message: string) {
     if (get("game-status").textContent !== message)
       get("game-status").textContent = message;
+  }
+  function setPlayerStatus(message: string) {
+    if (get("player-status").textContent !== message)
+      get("player-status").textContent = message;
+  }
+  function updateReleaseControls() {
+    if (disposed) return;
+    const release = releases.state;
+    get("camera-release").hidden = release.pendingCount === 0;
+    const message = get("camera-release-message");
+    if (message.textContent !== release.message)
+      message.textContent = release.message;
+    get<HTMLButtonElement>("retry-camera-stop").disabled = release.releasing;
+    get<HTMLButtonElement>("source-connect").disabled =
+      connecting || release.pendingCount > 0;
+    get<HTMLButtonElement>("source-stop").disabled = !epoch && !connecting;
+    if (!isDemo() && !epoch) setMessage(release.message || cameraMessage);
+  }
+  function updateTrackChoices() {
+    const control = select("player-track");
+    const binding = session.binding;
+    const tracks = (observation?.people ?? [])
+      .filter(
+        (person) =>
+          person.trackId &&
+          person.identity === "confident" &&
+          observation!.people.filter(
+            (other) => other.trackId === person.trackId,
+          ).length === 1,
+      )
+      .map((person) => person.trackId!)
+      .sort();
+    const choices = [...control.options].map((option) => option.value);
+    // Preserve native selector focus and the open menu when only poses moved.
+    if (JSON.stringify(choices) !== JSON.stringify(["", ...tracks])) {
+      const previous = binding?.trackId ?? control.value;
+      control.replaceChildren(
+        new Option("Choose the participant's track", ""),
+        ...tracks.map((track) => new Option(track, track)),
+      );
+      if (tracks.includes(previous)) control.value = previous;
+    }
+    control.disabled = !!binding || tracks.length === 0;
+    if (binding) control.value = binding.trackId;
+    get("player-binding").hidden = isDemo() || !binding;
+    get("player-binding").textContent = binding
+      ? `Player 1 is joined to ${binding.trackId}.`
+      : "";
   }
   function resetGame() {
     game = new MoleGame(config(), nextSeed());
@@ -168,8 +220,9 @@ export function mountMoleGame(
   function render() {
     const state = game.state;
     const t = now();
-    const fresh = frame && t - frame.atMs <= 350 && t >= frame.atMs;
-    const previewFresh = observation && t - receivedAt <= 350;
+    const readiness = game.readiness(t, frame);
+    const fresh = frame && t - frame.atMs <= TUNING.staleMs && t >= frame.atMs;
+    const previewFresh = observation && t - receivedAt <= TUNING.staleMs;
     const rect = drawMoleScene(
       get<HTMLCanvasElement>("game-canvas"),
       previewFresh ? observation : null,
@@ -222,7 +275,10 @@ export function mountMoleGame(
     get<HTMLButtonElement>("interaction-touch").disabled = locked;
     get<HTMLButtonElement>("interaction-push").disabled = locked || !isDemo();
     get<HTMLButtonElement>("start-round").disabled =
-      !isJoined() || state.phase !== "ready";
+      !isJoined() ||
+      !readiness.ready ||
+      document.hidden ||
+      state.phase !== "ready";
     get("start-round").hidden = state.phase !== "ready";
     get<HTMLButtonElement>("pause-round").disabled = ![
       "playing",
@@ -230,15 +286,17 @@ export function mountMoleGame(
     ].includes(state.phase);
     get("pause-round").hidden = ["paused", "results"].includes(state.phase);
     const needsNewRound =
-      state.phase === "paused" && !!state.reason?.includes("Start a new round");
+      state.phase === "paused" && readiness.requiresNewRound;
     get("resume-round").hidden = state.phase !== "paused" || needsNewRound;
-    get<HTMLButtonElement>("resume-round").disabled = !isJoined();
+    get<HTMLButtonElement>("resume-round").disabled =
+      !isJoined() || !readiness.ready || document.hidden;
     get<HTMLButtonElement>("end-round").disabled = !locked;
     get("restart-round").hidden = state.phase !== "results" && !needsNewRound;
     get("restart-round").textContent = needsNewRound
       ? "Set up new round ↗"
       : "Play again ↗";
     get<HTMLButtonElement>("join-player").disabled = isJoined() || connecting;
+    updateReleaseControls();
     const overlay = get("game-overlay");
     overlay.hidden =
       state.phase === "playing" ||
@@ -265,12 +323,20 @@ export function mountMoleGame(
       copy.textContent = feet
         ? "Keep both feet in view. Check camera framing or clear an occlusion. Your time and score are safe."
         : needsNewRound
-          ? `${state.reason} Set up a new round to keep score ownership clear.`
-          : `${state.reason || "Check tracking and rejoin if needed."} Resume when ready; the countdown gives you time.`;
+          ? `${readiness.reason} Set up a new round to keep score ownership clear.`
+          : !isJoined()
+            ? "Join the participant explicitly before resuming. Your round stays paused."
+            : !readiness.ready
+              ? readiness.reason
+              : "Ready to resume. Your time and score are safe; choose Resume for a countdown.";
       setMessage(
         feet
           ? "Both feet must be in view before resuming."
-          : state.reason || "Paused",
+          : !isJoined()
+            ? "Rejoin the participant before resuming."
+            : !readiness.ready
+              ? readiness.reason || "Check tracking before resuming."
+              : "Ready to resume. Choose Resume when you are ready.",
       );
     } else if (state.phase === "results") {
       title.textContent =
@@ -288,6 +354,12 @@ export function mountMoleGame(
       copy.textContent = isJoined()
         ? modeCopy[state.options.mode]
         : "Join a player and make your first move. Keep your whole body inside the camera view.";
+      if (isJoined())
+        setMessage(
+          readiness.ready
+            ? "Player 1 ready. Start your round."
+            : readiness.reason || "Check tracking before starting.",
+        );
     }
     if (state.hits > lastHits) {
       hitUntil = t + 550;
@@ -304,8 +376,10 @@ export function mountMoleGame(
     if (isDemo()) frame = demoFrame(t);
     game.update(t, frame);
     if (!isDemo() && !session.binding)
-      get("player-status").textContent =
-        session.reason || "Choose your track and join explicitly.";
+      setPlayerStatus(
+        session.reason || "Choose your track and join explicitly.",
+      );
+    updateTrackChoices();
     render();
   }
   async function stopCamera(
@@ -313,7 +387,8 @@ export function mountMoleGame(
   ) {
     generation++;
     connecting = false;
-    const ownedEpoch = epoch;
+    cameraMessage = message;
+    releases.retain(epoch);
     epoch = "";
     socket?.close();
     socket = null;
@@ -323,36 +398,36 @@ export function mountMoleGame(
     image?.close();
     image = null;
     if (active()) game.pause(message);
-    get<HTMLButtonElement>("source-connect").disabled = false;
-    get<HTMLButtonElement>("source-stop").disabled = true;
     select("player-track").replaceChildren(
       new Option("Start camera to see tracks", ""),
     );
-    get("player-status").textContent = message;
+    setPlayerStatus(message);
     setMessage(message);
-    if (ownedEpoch) {
-      try {
-        await fetch("/api/stop", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ epoch: ownedEpoch }),
-          keepalive: true,
-        });
-      } catch {
-        /* The socket close also releases this owned epoch on the service. */
-      }
-    }
+    updateTrackChoices();
+    updateReleaseControls();
+    const released = await releases.retry();
     if (!disposed) render();
+    return released;
   }
   async function startCamera() {
+    if (connecting || releases.state.pendingCount > 0) return;
     const index = Number(get<HTMLInputElement>("camera-index").value);
     if (!Number.isInteger(index) || index < 0 || index > 9) {
       setMessage("Choose a camera index from 0 to 9.");
       return;
     }
-    await stopCamera("Starting local camera…");
-    if (disposed || isDemo()) return;
+    const stopping = stopCamera("Starting local camera…");
+    const preparing = generation;
     connecting = true;
+    updateReleaseControls();
+    const released = await stopping;
+    if (!released || disposed || isDemo() || preparing !== generation) {
+      if (preparing === generation) {
+        connecting = false;
+        updateReleaseControls();
+      }
+      return;
+    }
     const own = ++generation;
     get<HTMLButtonElement>("source-connect").disabled = true;
     get<HTMLButtonElement>("source-stop").disabled = false;
@@ -377,11 +452,7 @@ export function mountMoleGame(
         );
       if (own !== generation || disposed) {
         if (typeof result.epoch === "string")
-          await fetch("/api/stop", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ epoch: result.epoch }),
-          });
+          await releases.release(result.epoch);
         return;
       }
       if (typeof result.epoch !== "string" || !result.epoch)
@@ -448,24 +519,12 @@ export function mountMoleGame(
             receivedAt = arrival;
             connecting = false;
             frame = session.ingest(observation, receivedAt);
-            const trackSelect = select("player-track");
-            const previous = trackSelect.value;
-            trackSelect.replaceChildren(
-              new Option("Choose the participant's track", ""),
-            );
-            for (const person of observation.people)
-              if (person.trackId && person.identity === "confident")
-                trackSelect.add(new Option(person.trackId, person.trackId));
-            if (
-              [...trackSelect.options].some(
-                (option) => option.value === previous,
-              )
-            )
-              trackSelect.value = previous;
+            updateTrackChoices();
             if (!session.binding)
-              get("player-status").textContent =
+              setPlayerStatus(
                 session.reason ||
-                "Choose the participant's track, then join player 1.";
+                  "Choose the participant's track, then join player 1.",
+              );
           }
           tick();
         } catch (error) {
@@ -501,6 +560,7 @@ export function mountMoleGame(
   }
   listen(get("source-connect"), "click", () => void startCamera());
   listen(get("source-stop"), "click", () => void stopCamera());
+  listen(get("retry-camera-stop"), "click", () => void releases.retry());
   listen(select("source-select"), "change", () => {
     void stopCamera();
     demoJoined = false;
@@ -508,6 +568,11 @@ export function mountMoleGame(
     interaction = "touch";
     resetGame();
     updateSettings();
+    setPlayerStatus(
+      isDemo()
+        ? "Join player 1 explicitly, then start your rehearsal."
+        : "Start the camera, choose the participant's track, then join.",
+    );
     setMessage("Choose your input and join a player.");
     tick();
   });
@@ -536,8 +601,7 @@ export function mountMoleGame(
         receivedAt,
       );
     if (isJoined()) {
-      get("player-status").textContent =
-        "Player 1 joined. Keep both feet visible.";
+      setPlayerStatus("Player 1 joined. Keep both feet visible.");
       setMessage("Player 1 ready. Start your round.");
     } else
       setMessage(
@@ -547,7 +611,7 @@ export function mountMoleGame(
     tick();
   });
   listen(get("start-round"), "click", () => {
-    if (isJoined()) {
+    if (isJoined() && !document.hidden && game.readiness(now(), frame).ready) {
       game.start(now());
       tick();
     }
@@ -557,7 +621,7 @@ export function mountMoleGame(
     tick();
   });
   listen(get("resume-round"), "click", () => {
-    if (isJoined()) {
+    if (isJoined() && !document.hidden && game.readiness(now(), frame).ready) {
       game.resume(now());
       tick();
     }
@@ -606,8 +670,9 @@ export function mountMoleGame(
       ArrowUp: [0, -0.035],
       ArrowDown: [0, 0.035],
     };
-    if (key.key === " " && !key.repeat) pushUntil = now() + 180;
-    else if (directions[key.key]) {
+    if (key.key === " ") {
+      if (!key.repeat) pushUntil = now() + 180;
+    } else if (directions[key.key]) {
       const [x, y] = directions[key.key];
       pointer = {
         x: Math.max(0, Math.min(1, pointer.x + x)),

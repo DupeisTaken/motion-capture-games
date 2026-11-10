@@ -22,6 +22,8 @@ Open **http://127.0.0.1:5173/mole.html** (also linked from the tracking console)
 
 For body tracking choose Camera, explicitly start it, choose the labeled participant track and join. Touch uses observed wrist/ankle proxies. Existing camera adapters have no calibrated depth, so camera Push is unavailable; rehearsal is not a physical push measurement. Both feet must remain visible; missing feet, stale/uncertain input or a hidden tab suspend the round with explicit countdown recovery. Camera loss requires explicit rejoin; a changed track/source/calibration requires a new round. End a round to change settings. See the [game design and tuning](docs/games/mole-motion.md) and [delivery report](reports/mole-motion.html).
 
+Start and Resume remain disabled while required input is unavailable. The joined camera track is labeled and locked during membership. If camera release cannot be confirmed, the local preview stops and **Retry camera stop** stays available, even in rehearsal; retry before starting another camera source. This reports driver/network failures without claiming capture has been released.
+
 ## Agreed scope
 
 - A digital mirror: live camera video with graphics and sound for camera-overlay games; a rendered world for the motion runner.
