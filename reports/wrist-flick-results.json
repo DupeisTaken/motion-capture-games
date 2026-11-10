@@ -1,0 +1,41 @@
+{
+  "pullRequest": null,
+  "environment": "Local Windows; Node 24.16.0, pnpm 11.25.0; repository-local Python 3.12.14. Headless Edge/Chromium 156.0.4314.50. Repository pins unchanged; English only. The local full gate includes preserved pending camera-default edits, which are excluded from the feature commit.",
+  "checks": [
+    [
+      "Focused feature verification",
+      "Passed: 133 tests",
+      "Isolated staged game/viewer sources: existing Mole Motion behavior plus 24 flick cases and 3 viewer integration cases."
+    ],
+    [
+      "Real-server browser verification",
+      "Passed",
+      "Baseline and isolated staged UI at 1440×1000, 390×844 and 320×740; camera flap scored 100 once, held wrist did not repeat; separate display retained score; no page errors or horizontal overflow."
+    ],
+    [
+      "pnpm check",
+      "Passed: 444 TypeScript + 120 Python tests",
+      "Repository links/whitespace, generated contracts, strict TypeScript/Python types, lint, behavior tests and formatting."
+    ],
+    [
+      "pnpm build",
+      "Passed",
+      "All three Vite application entries built; emitted asset references verified. Source-only game requires no independent package build."
+    ],
+    [
+      "Offline HTML report",
+      "Passed",
+      "Served locally at desktop/mobile sizes: seven embedded screenshots loaded, no horizontal overflow; visual inspection completed."
+    ],
+    [
+      "Physical camera/playtesting",
+      "Not run",
+      "Wrist sensitivity, noise, physical accuracy and latency require hardware trials."
+    ],
+    [
+      "Hosted software-checks",
+      "Pending at report generation",
+      "Latest PR commit must pass before merge; PR remains unmerged."
+    ]
+  ]
+}

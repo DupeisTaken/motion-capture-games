@@ -47,7 +47,7 @@ export function mountMoleGame(
     <div class="settings-title"><h2>Make it your game</h2><span>01</span></div>
     <label for="mode-select">Play mode</label><select id="mode-select"><option value="timed">◷  Timed · 60 seconds</option><option value="challenge">◎  Challenge · 15 moles</option><option value="survival">♡  Survival · 3 misses</option><option value="practice">∞  Practice · no pressure</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p>
     <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · room to warm up</option><option value="normal" selected>Normal · find your rhythm</option><option value="hard">Hard · stretch your reach</option></select><p class="field-note">Hard favors moles farther from your available contact points, within the play area.</p>
-    <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies.</p>
+    <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-flick" aria-pressed="false">Flick</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies.</p>
     <hr><label for="source-select">Input source</label><select id="source-select"><option value="demo">Rehearsal · no camera</option><option value="camera">Camera · body tracking</option></select>
     <div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
     <div id="demo-controls"><label for="demo-contact">Rehearsal contact</label><select id="demo-contact"><option value="left_wrist">Left wrist / hand</option><option value="right_wrist">Right wrist / hand</option><option value="left_hip">Left hip</option><option value="right_hip">Right hip</option><option value="left_foot">Left foot</option><option value="right_foot">Right foot</option></select><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
@@ -60,7 +60,7 @@ export function mountMoleGame(
     <div class="game-actions"><button id="start-round" class="mm-primary">Start round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="resume-round" class="mm-primary" hidden>Resume · countdown</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start round. Input checks happen automatically.</span></div>
     <p class="source-disclosure" id="source-disclosure">Synthetic controls, including simulated depth. This rehearsal does not measure camera or push accuracy.</p>
   </section></div>
-  <section class="how-grid" aria-label="How to play"><article><span class="how-number">01</span><div><h2>Meet your mole</h2><p>Touch with a hand or foot. Push uses hips, hands or wrists with depth input.</p></div></article><article><span class="how-number">02</span><div><h2>Move, reset, repeat</h2><p>Each mole counts once. Move away or bring your push back before the next hit.</p></div></article><article><span class="how-number">03</span><div><h2>Stay in the picture</h2><p>Missing feet? Step back, check framing or clear an occlusion. Play pauses fairly.</p></div></article></section>
+  <section class="how-grid" aria-label="How to play"><article><span class="how-number">01</span><div><h2>Meet your mole</h2><p>Touch with a hand or foot, or choose Flick and flap your wrist near a mole. Push needs depth input.</p></div></article><article><span class="how-number">02</span><div><h2>Move, reset, repeat</h2><p>Each mole counts once. Move away after a touch, settle your hand after a flick, or bring your push back.</p></div></article><article><span class="how-number">03</span><div><h2>Stay in the picture</h2><p>Missing feet? Step back, check framing or clear an occlusion. Play pauses fairly.</p></div></article></section>
   <footer class="mm-footer"><span>Built for movement. Played in your space.</span><span>One player · English · M2 software preview</span></footer></main>`;
 
   // Cache references before the stage moves to its separate display document.
@@ -215,16 +215,26 @@ export function mountMoleGame(
       "aria-pressed",
       String(interaction === "push"),
     );
-    get("interaction-note").textContent = !demo
-      ? "Camera supplies 2D only: hands/feet use wrist/ankle proxies. Push needs calibrated depth and is unavailable here."
-      : interaction === "touch"
-        ? "Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies."
-        : "Line up a hip, hand or wrist, then push toward the screen. Rehearsal simulates depth: tap or press Space.";
+    get("interaction-flick").setAttribute(
+      "aria-pressed",
+      String(interaction === "flick"),
+    );
+    get("interaction-note").textContent =
+      interaction === "flick"
+        ? demo
+          ? "Aim near a mole, pause briefly, then flick the cursor or press an arrow key. Settle briefly before the next flick."
+          : "Hold your wrist near a mole, then give a quick flap. Settle briefly to rearm. Your wrist must visibly move; finger-only flaps are not tracked."
+        : !demo
+          ? "Camera supplies 2D only: hands/feet use wrist/ankle proxies. Push needs calibrated depth and is unavailable here."
+          : interaction === "touch"
+            ? "Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies."
+            : "Line up a hip, hand or wrist, then push toward the screen. Rehearsal simulates depth: tap or press Space.";
     for (const option of select("demo-contact").options)
       option.disabled =
-        interaction === "touch"
-          ? option.value.includes("hip")
-          : option.value.includes("foot");
+        interaction === "push"
+          ? option.value.includes("foot")
+          : option.value.includes("hip") ||
+            (interaction === "flick" && option.value.includes("foot"));
     if (select("demo-contact").selectedOptions[0]?.disabled)
       select("demo-contact").value = "left_wrist";
     get("mode-description").textContent = modeCopy[select("mode-select").value];
@@ -232,15 +242,23 @@ export function mountMoleGame(
       ? "SYNTHETIC REHEARSAL"
       : "LOCAL CAMERA · 2D";
     get("stage-mode").textContent =
-      interaction === "touch" ? "TOUCH TO WHACK" : "PUSH TO WHACK";
+      interaction === "flick"
+        ? "FLICK TO WHACK"
+        : interaction === "touch"
+          ? "TOUCH TO WHACK"
+          : "PUSH TO WHACK";
     get("source-disclosure").textContent = demo
       ? "Synthetic controls, including simulated depth. This rehearsal does not measure camera or push accuracy."
       : "Experimental camera contact play. Wrist/ankle proxies; physical accuracy, reach and latency need hardware trials. No recording.";
     get("stage-help").textContent = demo
-      ? interaction === "touch"
-        ? "Rehearsal · move your cursor or use arrow keys"
-        : "Rehearsal · aim, then tap or press Space to push"
-      : "Keep hands and both feet visible · stay inside the play area";
+      ? interaction === "flick"
+        ? "Rehearsal · aim, settle, flick or tap ← →"
+        : interaction === "touch"
+          ? "Rehearsal · move your cursor or use arrow keys"
+          : "Rehearsal · aim, then tap or press Space to push"
+      : interaction === "flick"
+        ? "Flick near a mole · settle between flaps"
+        : "Keep hands and both feet visible · stay inside the play area";
   }
   function demoFrame(t: number): GameMotionFrame | null {
     if (!demoJoined) return null;
@@ -334,6 +352,7 @@ export function mountMoleGame(
     ])
       get<HTMLSelectElement>(id).disabled = locked;
     get<HTMLButtonElement>("interaction-touch").disabled = locked;
+    get<HTMLButtonElement>("interaction-flick").disabled = locked;
     get<HTMLButtonElement>("interaction-push").disabled = locked || !isDemo();
     get<HTMLButtonElement>("start-round").disabled =
       state.phase !== "ready" || requested;
@@ -406,9 +425,11 @@ export function mountMoleGame(
       setMessage("Round complete. Play again or change your setup.");
     } else if (state.phase === "playing") {
       setMessage(
-        interaction === "touch"
-          ? "Round in play. Meet a mole, then move away to reset."
-          : "Round in play. Aim, push, then return to reset.",
+        interaction === "flick"
+          ? "Round in play. Flick near a mole, then settle your hand to reset."
+          : interaction === "touch"
+            ? "Round in play. Meet a mole, then move away to reset."
+            : "Round in play. Aim, push, then return to reset.",
       );
     } else if (state.phase === "ready") {
       title.textContent = requested
@@ -733,7 +754,7 @@ export function mountMoleGame(
       updateSettings();
       tick();
     });
-  for (const value of ["touch", "push"] as const)
+  for (const value of ["touch", "flick", "push"] as const)
     listen(get(`interaction-${value}`), "click", () => {
       if (active() || (value === "push" && !isDemo())) return;
       interaction = value;
