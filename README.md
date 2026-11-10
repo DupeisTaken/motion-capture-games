@@ -2,7 +2,7 @@
 
 A collection of local games played through body movement, with immediate on-screen feedback in a mirrored camera view or a rendered game world.
 
-**Status: runnable skeleton diagnostic slice.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. MediaPipe and RTMDet/RTMPose adapters, two association modes and labeled synthetic input are implemented. Production model selection, game scoring, multi-view reconstruction and hardware certification remain open.
+**Status: diagnostic viewer plus experimental Mole Motion game.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Mole Motion](docs/games/mole-motion.md) adds single-player touch play, depth-ready push rehearsal, four round modes and fair pause/recovery. Production model selection, calibrated push input, multiplayer games, multi-view reconstruction and hardware certification remain open.
 
 ## Run the diagnostic viewer
 
@@ -15,6 +15,12 @@ pnpm dev
 ```
 
 Open **http://127.0.0.1:5173**. Choose **Camera** and **Start camera**, or choose **Synthetic scene** to inspect generated bodies without camera access. Setup downloads pinned Python tools and verified model artifacts locally; preview inference works offline afterward. Nothing opens a camera until explicitly started. See [the viewer guide](docs/diagnostic-viewer.md) for controls, commands and limitations.
+
+## Play Mole Motion
+
+Open **http://127.0.0.1:5173/mole.html** (also linked from the tracking console). Choose Timed, Challenge, Survival or Practice; set difficulty and Touch or Push; then **Join player 1** and **Start round**. Rehearsal works without a camera or Python service: move the pointer or use arrow keys in the stage; tap or press Space for a simulated push. Select a wrist, hip (push only) or foot (touch only) to rehearse it.
+
+For body tracking choose Camera, explicitly start it, choose the labeled participant track and join. Touch uses observed wrist/ankle proxies. Existing camera adapters have no calibrated depth, so camera Push is unavailable; rehearsal is not a physical push measurement. Both feet must remain visible; missing feet, stale/uncertain input or a hidden tab suspend the round with explicit countdown recovery. Camera loss requires explicit rejoin; a changed track/source/calibration requires a new round. End a round to change settings. See the [game design and tuning](docs/games/mole-motion.md) and [delivery report](reports/mole-motion.html).
 
 ## Agreed scope
 
@@ -32,6 +38,7 @@ Open **http://127.0.0.1:5173**. Choose **Camera** and **Start camera**, or choos
 | --- | --- |
 | [Product scope](docs/product-scope.md) | Requirements, game sequence, and exclusions |
 | [Motion runner brief](docs/games/motion-runner.md) | Single-player lanes, jump/duck controls, recovery and validation |
+| [Mole Motion](docs/games/mole-motion.md) | Play modes, touch/push rules, session safety, tuning and remaining gates |
 | [Architecture](docs/architecture.md) | Runtime boundaries, ownership, and provisional stack |
 | [Diagnostic viewer](docs/diagnostic-viewer.md) | Setup, skeleton rendering, automatic counts, algorithms and recovery |
 | [Tracking algorithms](docs/tracking-algorithms.md) | Box/motion and pose-assisted matching, uncertainty and counting |
@@ -66,11 +73,11 @@ docs/                       Owning design documents and decisions
 reports/                    Shareable, self-contained change reports
 ```
 
-The diagnostic slice now implements vision, contracts, motion presentation and the mirror viewer. Session and game directories remain ownership notes until their milestones begin.
+The diagnostic slice implements vision, contracts, motion presentation and the mirror viewer. The experimental Mole Motion slice implements game-ready contacts, one explicitly joined session slot and a deterministic game runtime. Other game directories remain ownership notes until their milestones begin.
 
 ## Next milestone
 
-Continue the [M1 diagnostic mirror experiment](docs/roadmap.md#m1-diagnostic-mirror-and-hardware-experiment) before polishing a game. The single-view skeleton viewer is implemented; actual camera formats, the production video path, three-player crossings and physical latency still require evidence. Run `pnpm check` and `pnpm build` for the current software checks.
+Continue the [M1 diagnostic mirror experiment](docs/roadmap.md#m1-diagnostic-mirror-and-hardware-experiment) alongside experimental M2 software development. Mole Motion starts early at the user's request; it does not close M1. Actual camera formats, the production video path, three-player crossings, calibrated pushes and physical latency still require evidence. Run `pnpm check` and `pnpm build` for the software checks.
 
 ## Repository hosting
 

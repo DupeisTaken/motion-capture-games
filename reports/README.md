@@ -15,3 +15,5 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Skeleton diagnostics](skeleton-diagnostics.html) records the runnable viewer, model smoke tests and desktop and mobile browser evidence from generated scenes.
 
 [Pull request integration](pr-integration.html) records merge order, documentation conflict resolution, combined software checks and remaining hardware gates.
+
+[Mole Motion](mole-motion.html) records the experimental game slice, rule/session/UI tests, real-server desktop/mobile synthetic screenshots and the remaining depth/hardware gates.
