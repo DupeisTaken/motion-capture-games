@@ -1,6 +1,6 @@
 # Dodgeball
 
-Dodgeball is an experimental single-player camera-overlay game tracked by [issue #18](https://github.com/DupeisTaken/motion-capture-games/issues/18) and [PR #19](https://github.com/DupeisTaken/motion-capture-games/pull/19). It starts an early M4 software slice at the user's request, building on [Mole Motion](mole-motion.md) and its score-ownership and recovery conventions. M1 physical-camera, identity, capacity and latency gates remain open; this slice does not certify M4 participant playtests.
+Dodgeball is an experimental single-player camera-overlay game tracked by [issue #18](https://github.com/DupeisTaken/motion-capture-games/issues/18) and [PR #19](https://github.com/DupeisTaken/motion-capture-games/pull/19). It starts an early M4 software slice at the user's request, building on [Slap a Mole](mole-motion.md) and its score-ownership and recovery conventions. M1 physical-camera, identity, capacity and latency gates remain open; this slice does not certify M4 participant playtests.
 
 ## Rules and experience
 
@@ -41,7 +41,7 @@ The app controls the existing local vision service and bounded paired JPEG/obser
 
 Start records intent; the engine's current, nonmutating readiness assessment still gates the countdown and all scoring. Resume stays unavailable until valid input returns. The operator status names the pinned owner without drawing track labels over ordinary camera play. **Open game window** moves the existing stage into a separate browser window with a compact score/time/dodge HUD. The setup menu, Pause/Resume and camera controls stay on the operator page. Closing the game window restores the same stage and round. It shares one camera owner, socket, bitmap and game runtime; it never opens a second camera. The simulation timer follows the game window, and hiding the operator tab alone does not pause a visible game display. Popup blocking is reported with an actionable message.
 
-Camera release uses the shared epoch-scoped `CameraReleases` controller introduced by the Mole Motion review. Failed or rejected stop requests retain their acknowledged epoch and expose **Retry camera stop**, even after switching to rehearsal. Starting another camera remains blocked until release is confirmed; a stopped local preview alone does not prove camera capture has ended.
+Camera release uses the shared epoch-scoped `CameraReleases` controller introduced by the Slap a Mole review. Failed or rejected stop requests retain their acknowledged epoch and expose **Retry camera stop**, even after switching to rehearsal. Starting another camera remains blocked until release is confirmed; a stopped local preview alone does not prove camera capture has ended.
 
 ## Verification and remaining gates
 

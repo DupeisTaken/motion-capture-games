@@ -24,4 +24,4 @@ The [performance report](../../reports/preview-performance.html) owns measured d
 
 ## Integration with later milestones
 
-Retain the compact tracking console, explicit browser camera discovery, bounded stage diagnostics, high-resolution shared host clock, drift-free synthetic pacing, tracking stability fixes, Mole Motion and Dodgeball from main. Both games keep the legacy exact-pair camera endpoint and adopt the RTMPose default. Capture FPS uses an aggregate count/time window so short driver bursts cannot inflate it.
+Retain the compact tracking console, explicit browser camera discovery, bounded stage diagnostics, high-resolution shared host clock, drift-free synthetic pacing, tracking stability fixes, Slap a Mole and Dodgeball from main. Both games keep the legacy exact-pair camera endpoint and adopt the RTMPose default. Capture FPS uses an aggregate count/time window so short driver bursts cannot inflate it.
