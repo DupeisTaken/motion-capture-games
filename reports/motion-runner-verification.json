@@ -22,6 +22,10 @@
     {
       "command": "Self-contained HTML visual and asset verification",
       "result": "PASS: desktop 1440 × 1000 and mobile 390 × 844; all 10 embedded images loaded; no document overflow; static report rendering-assets check passed."
+    },
+    {
+      "command": "Visible-browser renderer timing harness",
+      "result": "Four qualified serial cases, 5s warm-up and 15s sample each; 2599–2619 samples/case, all playing, no hidden events or simulation interruptions. CPU state-copy + submission p95: 1.4–1.9ms. Scheduler timings are not verified display FPS."
     }
   ],
   "review": {
@@ -84,5 +88,6 @@
     "coins": 0,
     "distanceM": 87,
     "repeatedObservationsEqual": true
-  }
+  },
+  "renderTiming": "reports/motion-runner-render-results.json"
 }

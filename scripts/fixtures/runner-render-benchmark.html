@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Runner render benchmark · synthetic only</title>
+    <style>
+      body {
+        margin: 20px;
+        font: 14px system-ui;
+        color: #e9f5ed;
+        background: #15343d;
+      }
+      button {
+        padding: 12px 20px;
+        font: inherit;
+      }
+      canvas {
+        display: block;
+        margin-top: 15px;
+        max-width: 100%;
+      }
+      pre {
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Runner rendering · synthetic controls only</h1>
+    <p>
+      No camera or inference. Keep this tab visible. Four cases, 5-second
+      warm-up and 15-second sample each.
+    </p>
+    <button id="run">Run all four cases</button>
+    <p id="progress" role="status">Ready</p>
+    <canvas
+      id="world"
+      aria-label="Synthetic runner rendering benchmark"
+    ></canvas>
+    <pre id="results">No results yet.</pre>
+    <script type="module">
+      import { RunnerGame } from "../../games/motion-runner/src/index.ts";
+      import { createRunnerRenderer } from "../../apps/mirror/src/runner-renderer.ts";
+
+      const canvas = document.querySelector("#world");
+      const button = document.querySelector("#run");
+      const progress = document.querySelector("#progress");
+      const output = document.querySelector("#results");
+      const cases = [
+        { variant: "rail", width: 1066, height: 720 },
+        { variant: "gold", width: 1066, height: 720 },
+        { variant: "rail", width: 362, height: 510 },
+        { variant: "gold", width: 362, height: 510 },
+      ];
+      const percentile = (values, p) => {
+        const sorted = [...values].sort((a, b) => a - b);
+        return sorted[
+          Math.min(sorted.length - 1, Math.floor(sorted.length * p))
+        ];
+      };
+      const summary = (values) => ({
+        p50: percentile(values, 0.5),
+        p95: percentile(values, 0.95),
+        p99: percentile(values, 0.99),
+        max: Math.max(...values),
+      });
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        const renderer = createRunnerRenderer(canvas);
+        const results = [];
+        let hiddenEvents = 0;
+        const hidden = () => {
+          if (document.hidden) hiddenEvents++;
+        };
+        document.addEventListener("visibilitychange", hidden);
+        try {
+          for (const config of cases) {
+            canvas.style.width = `${config.width}px`;
+            canvas.style.height = `${config.height}px`;
+            const game = new RunnerGame(
+              { variant: config.variant, practice: true },
+              42,
+            );
+            let sequence = 0;
+            const input = (atMs) => ({
+              atMs,
+              sequence: ++sequence,
+              epoch: "synthetic-render-benchmark-v1",
+              spaceRevision: "anonymous-player-1",
+              identity: "confident",
+              participantCount: 1,
+              lane: 0,
+              jump: false,
+              duck: false,
+              standing: true,
+              valid: true,
+            });
+            game.start(0, input(0));
+            for (let time = 20; time <= 3000; time += 20)
+              game.step(time, input(time));
+            const intervals = [],
+              submissions = [];
+            let first = null,
+              previous = null,
+              firstSample = null,
+              lastSample = null;
+            let interruptions = 0,
+              warmupInterruptions = 0,
+              previousJump = 0;
+            const samplePhases = {};
+            await new Promise((resolve) => {
+              function frame(now) {
+                first ??= now;
+                const elapsed = now - first;
+                const controls = input(3001 + elapsed);
+                const state = game.state;
+                if (state.phase === "playing") {
+                  controls.lane = [-1, 0, 1][Math.floor(elapsed / 3000) % 3];
+                  const jumpIndex = Math.floor(elapsed / 4300);
+                  controls.jump = jumpIndex > previousJump;
+                  previousJump = jumpIndex;
+                  controls.duck =
+                    !controls.jump &&
+                    elapsed % 6000 > 2000 &&
+                    elapsed % 6000 < 2700;
+                  controls.standing =
+                    !controls.jump && !controls.duck && state.jumpHeight === 0;
+                }
+                game.step(controls.atMs, controls);
+                if (game.state.phase === "paused") {
+                  if (elapsed < 5000) warmupInterruptions++;
+                  else if (elapsed < 20000) interruptions++;
+                  game.resume(controls.atMs, {
+                    ...controls,
+                    jump: false,
+                    duck: false,
+                    standing: true,
+                  });
+                }
+                const start = performance.now();
+                renderer.render(game.state, config.variant, "nova");
+                const submitted = performance.now() - start;
+                // Both ends of an interval must be inside the post-warm-up window.
+                if (
+                  elapsed >= 5000 &&
+                  elapsed < 20000 &&
+                  previous !== null &&
+                  previous - first >= 5000
+                ) {
+                  const phase = game.state.phase;
+                  samplePhases[phase] = (samplePhases[phase] || 0) + 1;
+                  intervals.push(now - previous);
+                  submissions.push(submitted);
+                  firstSample ??= previous;
+                  lastSample = now;
+                }
+                previous = now;
+                progress.textContent = `${config.variant} ${config.width} × ${config.height}: ${Math.floor(elapsed / 1000)} / 20 seconds`;
+                if (elapsed >= 20000) resolve();
+                else requestAnimationFrame(frame);
+              }
+              requestAnimationFrame(frame);
+            });
+            results.push({
+              ...config,
+              samples: intervals.length,
+              measuredSeconds: (lastSample - firstSample) / 1000,
+              averageCallbackHz:
+                (intervals.length * 1000) / (lastSample - firstSample),
+              frameIntervalMs: summary(intervals),
+              renderSubmissionMs: summary(submissions),
+              framesOver33_4ms: intervals.filter((value) => value > 33.4)
+                .length,
+              interruptions,
+              warmupInterruptions,
+              samplePhases,
+              canvasCss: {
+                width: canvas.getBoundingClientRect().width,
+                height: canvas.getBoundingClientRect().height,
+              },
+              canvasPixels: { width: canvas.width, height: canvas.height },
+            });
+            output.textContent = JSON.stringify(
+              { version: 1, complete: false, results },
+              null,
+              2,
+            );
+          }
+          output.textContent = JSON.stringify(
+            {
+              version: 1,
+              date: "2026-11-11",
+              complete: true,
+              method:
+                "Visible browser rAF scheduling and CPU render-submission timing; original Three.js renderer and seeded synthetic game. Four serial cases; 5s warm-up and 15s sampling each. Both interval endpoints must be post-warm-up.",
+              browser:
+                navigator.userAgent.match(/Chrome\/[\d.]+/)?.[0] ||
+                "In-app Chromium",
+              devicePixelRatio,
+              rendererPixelRatioCap: 1.5,
+              visibility: document.visibilityState,
+              hiddenEvents,
+              limits:
+                "Short renderer-only harness; excludes full GUI, cameras and inference. rAF scheduling is not verified display presentation or physical action-to-display latency. Concurrent desktop workloads and the in-app browser can affect results. CPU submission timing includes the immutable game-state copy evaluated inside the timed call.",
+              results,
+            },
+            null,
+            2,
+          );
+          progress.textContent = "Complete";
+        } catch (error) {
+          output.textContent = JSON.stringify({
+            complete: false,
+            error: String(error),
+          });
+          progress.textContent = "Failed";
+        } finally {
+          document.removeEventListener("visibilitychange", hidden);
+          renderer.dispose();
+          button.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

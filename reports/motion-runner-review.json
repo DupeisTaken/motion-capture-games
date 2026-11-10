@@ -198,6 +198,34 @@
     "observedResults": "Zero hits in every declared case; exact distance/score/game-time freeze during the alternate-player condition; matching score and coin totals across rates for each seed; maximum 33-34 world obstacles.",
     "limits": "An oracle establishes solvability for these seeds, not human difficulty, physical recognition, commercial parity or browser rendering speed."
   },
+  "renderTimingEvidence": {
+    "file": "reports/motion-runner-render-results.json",
+    "reviewStatus": "Accepted as qualified short renderer scheduling and CPU submission evidence; not accepted as verified display FPS, sustained GPU performance or physical latency evidence.",
+    "method": "Read-only review of the renderer harness and completed output: four serial rail/gold cases at actual CSS and buffer sizes of 1066x720 and 362x510, device pixel ratio 1, a five-second warm-up and approximately 15 seconds of sampling per case. Both interval endpoints are required to be after warm-up.",
+    "qualificationsVerified": [
+      "All four cases completed with 2599-2619 samples and measured durations of 14.9914-14.9968 seconds.",
+      "Every sampled phase was playing; sampled and warm-up interruption counts were zero in every case.",
+      "The tab ended visible and recorded zero hidden events.",
+      "Actual CSS dimensions and drawing-buffer dimensions match the declared case dimensions at device pixel ratio 1.",
+      "The preliminary pass is retained separately and disclosed as rejected because it included a warm-up-crossing interval and startup scheduling gaps."
+    ],
+    "observedResults": {
+      "schedulerCallbackRatePerSecondRange": [
+        173.351,
+        174.637
+      ],
+      "schedulerIntervalP95Ms": 6.1,
+      "cpuStateCopyAndRenderSubmissionP95MsRange": [
+        1.4,
+        1.9
+      ],
+      "schedulerIntervalsOver33_4Ms": 1,
+      "largestObservedSchedulerIntervalMs": 33.6,
+      "largestIntervalCase": "Gold, 1066x720"
+    },
+    "sourceFieldQualification": "The artifact's averageCallbackHz field measures requestAnimationFrame callback scheduling frequency. Its approximately 174 callbacks/second must not be presented as verified display frames/second.",
+    "limits": "One accepted short repeat after warm-up, using the original renderer and synthetic seeded practice runtime. It excludes the full GUI, cameras and inference. CPU submission includes the immutable state copy and does not measure GPU completion. GPU hardware, monitor refresh and verified pixel presentation are unknown. Startup behavior, sustained rendering performance, integrated-graphics capacity and physical action-to-display latency remain unverified. No participant data or camera imagery is collected."
+  },
   "remainingDeliveryGates": [
     "Latest PR commit must pass the repository software-checks gate before merge.",
     "Physical M1/M6 certification remains open; no perfect physical score is claimed."
