@@ -33,3 +33,5 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Mole Motion](mole-motion.html) records the experimental game slice, rule/session/UI tests, real-server desktop/mobile synthetic screenshots and the remaining depth/hardware gates.
 
 [Camera selection](camera-selection.html) documents the shared native selector, refresh/recovery behavior, actual checks and remaining hardware limits.
+
+[Pre-game settings](pre-game-settings.html) records the shared video/game setup menu, confirmation and camera-release behavior, synthetic before/after browser evidence and actual checks.

@@ -1,0 +1,84 @@
+{
+  "checks": [
+    [
+      "Focused integration and menu lifecycle",
+      "79 tests passed"
+    ],
+    [
+      "pnpm check",
+      "Passed: 416 TypeScript tests across 21 files; 120 Python tests; generated contracts, types, lint, formatting, repository links/whitespace/report assets and Python byte compilation."
+    ],
+    [
+      "pnpm build",
+      "Passed: 103 Vite modules, all 3 application entries and emitted asset references. Source-only package phase has no independent build output."
+    ],
+    [
+      "Real-server browser checks",
+      "Passed for both games at 1440×1000, 390×844 and 320×740 (English). Initial setup, no automatic capture, camera selection, Escape/focus, retained choices, Start/replay confirmation, locked active settings, pause/resume and no overflow/page errors. Separate live game windows and return verified at desktop."
+    ],
+    [
+      "Report rendering",
+      "Pending final report inspection."
+    ]
+  ],
+  "environment": "Windows; Node v24.16.0; pnpm 11.25.0; CPython 3.12.14; Chromium; English only",
+  "hosted": "Hosted checks have not run yet.",
+  "pr": null,
+  "browser": [
+    {
+      "game": "mole",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "baseline": false,
+      "pageErrors": 0
+    },
+    {
+      "game": "dodgeball",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "baseline": false,
+      "pageErrors": 0
+    },
+    {
+      "game": "mole",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "baseline": false,
+      "pageErrors": 0
+    },
+    {
+      "game": "dodgeball",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "baseline": false,
+      "pageErrors": 0
+    },
+    {
+      "game": "mole",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "baseline": false,
+      "pageErrors": 0
+    },
+    {
+      "game": "dodgeball",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "baseline": false,
+      "pageErrors": 0
+    }
+  ],
+  "baseline": "15a56dc"
+}

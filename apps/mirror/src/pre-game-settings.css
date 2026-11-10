@@ -1,0 +1,130 @@
+.mm-layout.play-layout {
+  display: block;
+}
+.round-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.round-toolbar p {
+  margin: 0;
+}
+.round-toolbar #player-status {
+  flex: 1 1 240px;
+}
+.pre-game-settings {
+  width: min(960px, calc(100% - 40px));
+  max-height: calc(100dvh - 40px);
+  padding: 0;
+  color: #223b35;
+  overscroll-behavior: contain;
+}
+.pre-game-settings::backdrop {
+  background: rgb(12 30 26 / 70%);
+}
+.pre-game-settings[open] {
+  display: flex;
+  flex-direction: column;
+}
+body:has(.pre-game-settings[open]) {
+  overflow: hidden;
+}
+.setup-heading {
+  flex-shrink: 0;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 28px;
+  border-bottom: 1px solid #dddfd4;
+}
+.setup-heading h2 {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 30px);
+  letter-spacing: -0.8px;
+}
+.setup-heading p:last-child {
+  color: var(--mm-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 10px 0 0;
+}
+.setup-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: auto;
+  min-height: 0;
+  scroll-padding: 20px;
+}
+.setup-section {
+  min-width: 0;
+  padding: 24px 28px;
+}
+.setup-section + .setup-section {
+  border-left: 1px solid #dddfd4;
+  background: #f7f8f1;
+}
+.setup-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 22px;
+  font-size: 16px;
+}
+.setup-section h3 span {
+  font-size: 11px;
+  color: var(--mm-muted);
+}
+.setup-actions {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 28px;
+  border-top: 1px solid #dddfd4;
+  background: #fdfcf7;
+}
+.setup-actions p {
+  max-width: 360px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--mm-muted);
+}
+.setup-actions button {
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .pre-game-settings {
+    width: calc(100% - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+  .setup-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .setup-heading,
+  .setup-section {
+    padding: 20px;
+  }
+  .setup-section + .setup-section {
+    border-left: 0;
+    border-top: 1px solid #dddfd4;
+  }
+  .setup-actions {
+    padding: 14px 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .setup-actions p {
+    font-size: 11px;
+  }
+  .setup-actions button {
+    width: 100%;
+  }
+  .round-toolbar > button {
+    width: 100%;
+  }
+}
