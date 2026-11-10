@@ -40,3 +40,7 @@ One capture thread opens/reads/releases the selected camera, replacing a single 
 Unit/integration tests use synthetic inputs and fake failures; they cover mapping/crop/color semantics, counts including zero, latest packets, restart epochs, missing models, origins, command bounds and final-viewer cleanup. Actual provider smoke tests can load both models on an empty synthetic image. Those checks establish compatibility and absence of a crash, not body-detection accuracy or performance certification.
 
 Camera models/formats, physical camera permissions, exposure timing, three-player crossings, occlusion recovery, multi-view fusion, offline distribution rights, Windows behavior and external motion-to-visible latency still need M1 evidence. Camera indices are operator-selected diagnostic handles, not stable installation identities. No secondary-view input or calibrated3D is implemented.
+
+## Diagnostic timing and setup ownership
+
+Capture timestamps, freshness and stage durations share the high-resolution monotonic `perf_counter_ns` host clock. This avoids coarse Python 3.12 Windows `monotonic_ns` measurements. Synthetic pacing uses fixed 20 Hz deadlines and skips missed ticks; sleep overshoot does not accumulate. These are diagnostic measurements, not verified exposure or physical latency. The browser may open a temporary camera only for explicit setup identification, releasing it before this service starts capture; its device IDs are not native indices. See [the console report](../../reports/diagnostic-console.html).
