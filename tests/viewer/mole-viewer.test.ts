@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountMoleGame } from "../../apps/mirror/src/mole-viewer";
 import type { Observation } from "../../contracts/generated/observation";
 import fixture from "../../contracts/examples/synthetic-observation.json";
+import { mapJoint, type MotionContact } from "../../packages/motion/src/index";
 
 const renderer = vi.hoisted(() => ({
   drawMoleScene: vi.fn<(...args: unknown[]) => object>(() => ({
@@ -241,6 +242,74 @@ afterEach(() => {
 });
 
 describe("Mole Motion operator integration", () => {
+  it("defaults to camera setup and discovers devices without starting capture", async () => {
+    await flushPromises();
+    expect(element<HTMLSelectElement>("source-select").value).toBe("camera");
+    expect(element("camera-controls").hidden).toBe(false);
+    expect(element("demo-controls").hidden).toBe(true);
+    expect(
+      element<HTMLSelectElement>("camera-choice").selectedOptions[0]
+        ?.textContent,
+    ).toBe("USB camera");
+    expect(element("source-label").textContent).toBe("LOCAL CAMERA · 2D");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(FakeWebSocket.instances).toHaveLength(0);
+  });
+
+  it.each([false, true])(
+    "keeps camera movement screen-left in the mirrored display (detached: %s)",
+    async (detached) => {
+      display.isOpen = detached;
+      const socket = await startCamera();
+      await socket.receive(packet(observation()));
+      const before = (
+        renderer.drawMoleScene.mock.calls.at(-1)?.[3] as MotionContact[]
+      ).find((contact) => contact.name === "left_wrist")!;
+      const moved = observation(2);
+      for (const joint of Object.values(moved.people[0].joints)) {
+        if (joint.x !== null) joint.x += 0.1;
+      }
+      now += 50;
+      await socket.receive(packet(moved));
+      const args = renderer.drawMoleScene.mock.calls.at(-1)!;
+      const after = (args[3] as MotionContact[]).find(
+        (contact) => contact.name === "left_wrist",
+      )!;
+      const rect = { x: 20, y: 40, width: 800, height: 500 };
+      expect(args[4]).toBe(true);
+      expect(mapJoint(after, rect).x).toBeLessThan(mapJoint(before, rect).x);
+      expect(after.name).toBe(before.name);
+      expect(after.y).toBe(before.y);
+    },
+  );
+
+  it.each(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"])(
+    "moves rehearsal %s in the viewer's direction",
+    (key) => {
+      startDemo();
+      movePointer(480, 300);
+      const rect = { x: 0, y: 0, width: 960, height: 600 };
+      const before = mapJoint(
+        (renderer.drawMoleScene.mock.calls.at(-1)?.[3] as MotionContact[])[0],
+        rect,
+      );
+      now += 50;
+      element("game-stage").dispatchEvent(
+        new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }),
+      );
+      const after = mapJoint(
+        (renderer.drawMoleScene.mock.calls.at(-1)?.[3] as MotionContact[])[0],
+        rect,
+      );
+      expect(Math.sign(after.x - before.x)).toBe(
+        key === "ArrowLeft" ? -1 : key === "ArrowRight" ? 1 : 0,
+      );
+      expect(Math.sign(after.y - before.y)).toBe(
+        key === "ArrowUp" ? -1 : key === "ArrowDown" ? 1 : 0,
+      );
+    },
+  );
+
   it("opens unified setup on load without starting input or a round", () => {
     const setup = element<HTMLDialogElement>("pre-game-settings");
     expect(setup.open).toBe(true);
@@ -257,6 +326,7 @@ describe("Mole Motion operator integration", () => {
   });
 
   it("retains choices and requires confirmation after closing and reopening setup", () => {
+    choose("source-select", "demo");
     choose("mode-select", "practice");
     choose("difficulty-select", "hard");
     element<HTMLButtonElement>("close-settings").click();
@@ -491,6 +561,7 @@ describe("Mole Motion operator integration", () => {
   );
 
   it("uses a hip push in rehearsal and keeps feet out of push controls", () => {
+    choose("source-select", "demo");
     element<HTMLButtonElement>("interaction-push").click();
     const contact = element<HTMLSelectElement>("demo-contact");
     expect(
@@ -666,6 +737,8 @@ describe("Mole Motion operator integration", () => {
   });
 
   it("starts rehearsal after setup without a join step or camera access", () => {
+    choose("source-select", "demo");
+    app.tick();
     expect(document.getElementById("join-player")).toBeNull();
     expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
     element<HTMLButtonElement>("start-round").click();
@@ -678,6 +751,7 @@ describe("Mole Motion operator integration", () => {
   });
 
   it("accepts Start with incomplete framing and waits without spending round time", () => {
+    choose("source-select", "demo");
     const framing = element<HTMLInputElement>("demo-framing");
     framing.checked = false;
     element<HTMLButtonElement>("start-round").click();

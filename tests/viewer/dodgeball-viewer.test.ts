@@ -4,6 +4,7 @@ import { mountDodgeballGame } from "../../apps/mirror/src/dodgeball-viewer";
 import type { Observation } from "../../contracts/generated/observation";
 import {
   syntheticBody,
+  mapJoint,
   SYNTHETIC_BODY_BOUNDS,
   type BodyPoint,
 } from "../../packages/motion/src/index";
@@ -252,6 +253,69 @@ afterEach(() => {
 });
 
 describe("Dodgeball operator integration", () => {
+  it("defaults to camera setup and discovers devices without starting capture", async () => {
+    await flushPromises();
+    expect(element<HTMLSelectElement>("source-select").value).toBe("camera");
+    expect(element("camera-controls").hidden).toBe(false);
+    expect(element("demo-controls").hidden).toBe(true);
+    expect(
+      element<HTMLSelectElement>("camera-choice").selectedOptions[0]
+        ?.textContent,
+    ).toBe("USB camera");
+    expect(element("source-label").textContent).toBe("LOCAL CAMERA · 2D");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(FakeWebSocket.instances).toHaveLength(0);
+  });
+
+  it.each([false, true])(
+    "keeps camera movement screen-left in the mirrored display (detached: %s)",
+    async (detached) => {
+      display.isOpen = detached;
+      const socket = await startCamera();
+      await socket.receive(packet(observation()));
+      const before = drawnBody().find((point) => point.name === "left_wrist")!;
+      const moved = observation(2);
+      for (const joint of Object.values(moved.people[0].joints)) {
+        if (joint.x !== null) joint.x += 0.1;
+      }
+      now += 50;
+      await socket.receive(packet(moved));
+      const after = drawnBody().find((point) => point.name === "left_wrist")!;
+      const rect = { x: 20, y: 40, width: 800, height: 500 };
+      expect(renderer.drawDodgeScene.mock.calls.at(-1)?.[5]).toBe(true);
+      expect(mapJoint(after, rect).x).toBeLessThan(mapJoint(before, rect).x);
+      expect(after.name).toBe(before.name);
+      expect(after.y).toBe(before.y);
+    },
+  );
+
+  it.each(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"])(
+    "moves rehearsal %s in the viewer's direction",
+    (key) => {
+      startDemo();
+      movePointer(480, 300);
+      const rect = { x: 0, y: 0, width: 960, height: 600 };
+      const before = mapJoint(
+        drawnBody().find((point) => point.name === "nose")!,
+        rect,
+      );
+      now += 50;
+      element("game-stage").dispatchEvent(
+        new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }),
+      );
+      const after = mapJoint(
+        drawnBody().find((point) => point.name === "nose")!,
+        rect,
+      );
+      expect(Math.sign(after.x - before.x)).toBe(
+        key === "ArrowLeft" ? -1 : key === "ArrowRight" ? 1 : 0,
+      );
+      expect(Math.sign(after.y - before.y)).toBe(
+        key === "ArrowUp" ? -1 : key === "ArrowDown" ? 1 : 0,
+      );
+    },
+  );
+
   it("opens unified setup on load without starting input or a round", () => {
     const setup = element<HTMLDialogElement>("pre-game-settings");
     expect(setup.open).toBe(true);
@@ -268,6 +332,7 @@ describe("Dodgeball operator integration", () => {
   });
 
   it("retains choices and requires confirmation after closing and reopening setup", () => {
+    choose("source-select", "demo");
     choose("mode-select", "practice");
     choose("difficulty-select", "hard");
     element<HTMLButtonElement>("close-settings").click();
@@ -328,6 +393,8 @@ describe("Dodgeball operator integration", () => {
     expect(connect.disabled).toBe(false);
   });
   it("starts rehearsal after setup confirmation and leaves camera access explicit", () => {
+    choose("source-select", "demo");
+    app.tick();
     expect(fetchMock).not.toHaveBeenCalled();
     expect(document.getElementById("join-player")).toBeNull();
     expect(document.getElementById("player-track")).toBeNull();
@@ -337,6 +404,7 @@ describe("Dodgeball operator integration", () => {
     expect(drawnBall()).not.toBeNull();
   });
   it("queues Start through missing feet and begins only when tracking is ready", () => {
+    choose("source-select", "demo");
     const framing = element<HTMLInputElement>("demo-framing");
     framing.checked = false;
     framing.dispatchEvent(new Event("change"));

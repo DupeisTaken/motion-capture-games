@@ -12,6 +12,8 @@ Explain the problem, final change and rationale. Include relevant before/after s
 
 Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.local/`.
 
+[Camera defaults and mirrored movement](camera-default.html) records camera-first setup, the explicit viewer-left mapping, software checks and embedded synthetic desktop/mobile browser evidence.
+
 [Diagnostic capture lifecycle](diagnostic-capture-lifecycle.html) records epoch-scoped console cleanup, cancelled-start recovery, retryable release failures, synthetic before/after browser evidence and actual software checks.
 
 [Camera gameplay](raw-game-display.html) records raw mirrored views, the separate game display, resilient single-action Start/recovery, portable camera choice and actual review/check evidence.

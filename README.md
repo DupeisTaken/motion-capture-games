@@ -34,6 +34,8 @@ For body tracking choose Camera, select a named device and **Start camera**, the
 
 ## Play the experimental arcade
 
+Both games default to **Camera** and list connected devices on load. Choose a device and press **Start camera** to begin capture. Facing the screen, moving to your left moves your mirrored image left; rehearsal pointer and arrow controls follow the same screen directions. Select **Rehearsal** for camera-free controls. [The camera-default report](reports/camera-default.html) records the verification.
+
 Open [Mole Motion](http://127.0.0.1:5173/mole.html) or [Dodgeball](http://127.0.0.1:5173/dodgeball.html) after starting the local server. Both offer camera-free rehearsal and a combined video/game setup menu before every new round. Its Start confirmation waits for usable input. Dodgeball previews each virtual ball with a warning ring: move your body clear before impact. Missing feet, joints or uncertain tracking pause the round fairly. See [the dodgeball design](docs/games/dodgeball.md) and [delivery report](reports/dodgeball.html).
 
 These are early experimental game slices. Physical framing/collision accuracy, participant height and movement tuning, hardware capacity and latency still require M1/M4 evidence.
