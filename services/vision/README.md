@@ -15,6 +15,8 @@ Model setup verifies pinned SHA256 values from [diagnostic-models.json](../../mo
 
 The service listens at `127.0.0.1:8765`. Starting it does not open a camera. The operator chooses a source and starts it explicitly. Stop, service shutdown or the final stream viewer for the current epoch disconnect releases capture. Connect the stream after the start acknowledgement; an old viewer cannot stop a newer source. Browser UI origins are restricted to localhost/127.0.0.1 ports5173,4173,8765. It is a local development service, not a network API.
 
+The smooth viewer also pulls `/api/preview` image packets and `/api/observations` JSON poses independently. One extra bounded preview worker uses the same capture owner, allowing camera delivery during slow inference. The legacy paired endpoint remains compatible. RTMPose is the development default. See [ADR 0006](../../docs/decisions/0006-independent-preview.md) for timing limits and measurements.
+
 ## Algorithms
 
 - **MediaPipe:** Pose Landmarker Lite, CPU Tasks VIDEO mode, up to the configured pose capacity. Map its33 landmarks to named COCO17 joints. Estimated hip-relative depth is not exported as room coordinates.
@@ -46,3 +48,5 @@ Camera models/formats, physical camera permissions, exposure timing, three-playe
 ## Diagnostic timing and setup ownership
 
 Capture timestamps, freshness and stage durations share the high-resolution monotonic `perf_counter_ns` host clock. This avoids coarse Python 3.12 Windows `monotonic_ns` measurements. Synthetic pacing uses fixed 20 Hz deadlines and skips missed ticks; sleep overshoot does not accumulate. These are diagnostic measurements, not verified exposure or physical latency. The browser may open a temporary camera only for explicit setup identification, releasing it before this service starts capture; its device IDs are not native indices. See [the console report](../../reports/diagnostic-console.html).
+
+`GET /api/cameras` lists bounded native camera metadata without opening capture. `POST /api/start` accepts the selected opaque `cameraId` and re-resolves it before capture; the explicit `cameraIndex` fallback remains available. See [camera choice and permission](../../docs/diagnostic-viewer.md#camera-choice-and-permission).

@@ -121,6 +121,7 @@ if (command === "setup") {
 } else {
   const args = {
     models: ["-m", "motion_vision.models", ...process.argv.slice(3)],
+    benchmark: ["-m", "motion_vision.benchmark", ...process.argv.slice(3)],
     vision: ["-m", "motion_vision"],
     "python-test": ["-m", "pytest", "-q"],
     "python-lint": ["-m", "ruff", "check", "services/vision"],

@@ -4,7 +4,9 @@
 
 The accepted boundary is a local modular platform with model-independent game input. Python vision and a TypeScript/PixiJS mirror application are the provisional stack. Local WebRTC video delivery, the pose model, acceleration providers, and final desktop packaging remain proposals until the diagnostic experiment produces evidence. See [the decision index](decisions/README.md).
 
-The first [diagnostic slice](diagnostic-viewer.md) implements Python/OpenCV capture/inference and TypeScript Canvas2D skeleton rendering. Its paired JPEG/observation transport deliberately follows inference cadence for directly inspectable alignment. [ADR 0005](decisions/0005-diagnostic-skeleton-slice.md) scopes this choice; the production WebRTC/PixiJS and full M1 performance gates remain open.
+The first [diagnostic slice](diagnostic-viewer.md) implements Python/OpenCV capture/inference and TypeScript Canvas2D skeleton rendering. Its original paired JPEG/observation transport followed inference cadence for directly inspectable alignment; the compatible paired endpoint remains available for diagnostics and game input. [ADR 0005](decisions/0005-diagnostic-skeleton-slice.md) scopes this choice; the production WebRTC/PixiJS and full M1 performance gates remain open.
+
+The smooth diagnostic viewer now uses independent preview/pose pull streams and a display-clock render loop under [ADR 0006](decisions/0006-independent-preview.md). RTMPose is the development default following the user’s comparison; production hardware certification and model/provider benchmarking remain open.
 
 ## Data flow
 
@@ -45,7 +47,7 @@ Begin with one local vision service and one mirror application, not distributed 
 
 The vision process exclusively opens both cameras. Each acquired frame is referenced by the video path and the inference path; preview and gameplay do not independently reopen the same device.
 
-The diagnostic console also offers explicit browser permission/discovery and a temporary device-identification preview while the vision source is stopped. It releases browser tracks before native acquisition starts. Browser device IDs are references for setup, never inferred OpenCV indices; diagnostic acquisition remains owned by the vision process. See [camera setup](diagnostic-viewer.md#explicit-camera-permission-and-selection).
+The diagnostic console also offers explicit browser permission/discovery and a temporary device-identification preview while the vision source is stopped. It releases browser tracks before native acquisition starts. Browser device IDs are references for setup, never inferred OpenCV indices. The shared native camera selector obtains metadata without opening devices and re-resolves the selected OS identity on Start. Diagnostic acquisition remains owned by the vision process. See [camera setup](diagnostic-viewer.md#camera-choice-and-permission).
 
 Capture, inference, simulation, and rendering have independent rates. Prefer recent observations over processing every captured frame. Use bounded queues with observable drop counters and no unbounded catch-up loop. Render smoothly between useful observations; interpolation for presentation must not invent scoring input.
 

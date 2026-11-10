@@ -22,6 +22,8 @@ The milestone IDs below are stable local references. Each milestone may become s
 
 **Console iteration:** [Issue #15](https://github.com/DupeisTaken/motion-capture-games/issues/15) adds a compact single-page test console, explicit browser discovery/identification with manual native-index verification, bounded stage diagnostics, less DOM churn, high-resolution host timing and synthetic pacing fixes. [The console report](../reports/diagnostic-console.html) owns actual checks and synthetic measurements. Physical M1 gates and [independent high-rate preview #10](https://github.com/DupeisTaken/motion-capture-games/issues/10) remain open.
 
+**Camera selection:** [Issue #23](https://github.com/DupeisTaken/motion-capture-games/issues/23) adds named native choices and Refresh across the console and both games, with explicit disconnect/error states and a manual fallback. [The selection report](../reports/camera-selection.html) records actual checks; it does not certify multiple simultaneous cameras or capture modes.
+
 **Identity stability follow-up:** [Issue #11](https://github.com/DupeisTaken/motion-capture-games/issues/11) and [PR #13](https://github.com/DupeisTaken/motion-capture-games/pull/13) cover elapsed-time-aware velocity updates and independent last-observed/predicted assignment comparison in [camera-local tracking](tracking-algorithms.md). Competing feasible associations suspend affected local IDs instead of letting prediction transfer them to a neighboring person; abrupt approaches/reversals may require new tentative IDs. The [tracking stability report](../reports/tracking-stability.html) owns executed verification. Real disturbance/crossing trials, provider truncation/ranking churn at capacity, indistinguishable replacements and explicit player enrollment/recovery remain M1/M2 work; this focused fix does not close those gates.
 
 **Owns:** Vision capture/inference adapters, the first mirror slice, draft protocol schemas, diagnostic presentation, and an initial installation/performance profile. Depends on M0.
@@ -119,3 +121,7 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 **Current status:** Documentation scaffold only. Runtime controls, gesture thresholds, obstacle tuning, hardware capability and performance remain unimplemented and unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
 
 **Scaffold delivery:** [Issue #5](https://github.com/DupeisTaken/motion-capture-games/issues/5) and [PR #6](https://github.com/DupeisTaken/motion-capture-games/pull/6) track this documentation update; [the runner report](../reports/motion-runner.html) records its actual checks. M6 implementation needs its own issue when work begins; completing the scaffold does not close the game milestone.
+
+## Smooth diagnostic preview follow-up
+
+[Issue #10](https://github.com/DupeisTaken/motion-capture-games/issues/10) tracks RTMPose as the development default and independent smooth display rendering. [ADR 0006](decisions/0006-independent-preview.md) records source/pose timing limits; [the report](../reports/preview-performance.html) records actual software and performance evidence. This does not close M1 hardware, external-latency or multiplayer gates.

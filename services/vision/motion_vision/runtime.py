@@ -12,13 +12,15 @@ from collections.abc import Callable
 from typing import Any, Literal, cast
 
 import cv2
+import fastjsonschema
 from jsonschema import Draft7Validator
 from pydantic import BaseModel, ConfigDict, Field
 
+from .cameras import resolve_camera
 from .models import ROOT, availability
 from .providers import Image, PoseProvider, create_provider
 from .sources import CameraSource, demo_frame
-from .timing import host_time_ns, next_preview_tick
+from .timing import SourceRate, host_time_ns, next_preview_tick
 from .tracking import Tracker
 
 MAX_METADATA = 64 * 1024
@@ -26,6 +28,9 @@ MAX_PREVIEW = 2 * 1024 * 1024
 SCHEMA = json.loads((ROOT / "contracts/schemas/observation.schema.json").read_text())
 Draft7Validator.check_schema(SCHEMA)
 VALIDATOR = Draft7Validator(SCHEMA)
+VALIDATE_OBSERVATION = fastjsonschema.compile(SCHEMA, use_default=False)
+PREVIEW_SCHEMA = json.loads((ROOT / "contracts/schemas/preview.schema.json").read_text())
+VALIDATE_PREVIEW = fastjsonschema.compile(PREVIEW_SCHEMA, use_default=False)
 # Provisional diagnostic guard, not an accepted gameplay freshness/performance target.
 MAX_CAPTURE_AGE_NS = 500_000_000
 
@@ -33,15 +38,16 @@ MAX_CAPTURE_AGE_NS = 500_000_000
 class StartRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     source: Literal["camera", "demo"] = "demo"
-    algorithm: Literal["mediapipe", "rtmpose"] = "mediapipe"
+    algorithm: Literal["mediapipe", "rtmpose"] = "rtmpose"
     tracker: Literal["iou", "pose"] = "pose"
     cameraIndex: int = Field(default=0, ge=0, le=9)
+    cameraId: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     maxPeople: int = Field(default=6, ge=1, le=6)
     demoScenario: Literal["cycle", "three", "empty"] = "cycle"
 
 
 def encode_packet(observation: dict[str, Any], jpeg: bytes) -> bytes:
-    VALIDATOR.validate(observation)
+    VALIDATE_OBSERVATION(observation)
     count = observation["detectedCount"]
     if count != len(observation["people"]) or count > observation["capacity"]:
         raise ValueError("Person count does not match bounded observations")
@@ -84,6 +90,7 @@ class VisionRuntime:
         self.control_lock = threading.Lock()
         self.stop_event = threading.Event()
         self.worker: threading.Thread | None = None
+        self.preview_worker: threading.Thread | None = None
         self.camera: CameraSource | None = None
         self.packet: bytes | None = None
         self.packet_number = 0
@@ -93,6 +100,10 @@ class VisionRuntime:
         self.settings: StartRequest | None = None
         self.epoch: str | None = None
         self.detected_count = 0
+        self.observation: dict[str, Any] | None = None
+        self.preview: bytes | None = None
+        self.preview_number = 0
+        self.preview_capture_at: int | None = None
 
     def status(self) -> dict[str, Any]:
         with self.condition:
@@ -115,6 +126,10 @@ class VisionRuntime:
 
     def start(self, settings: StartRequest) -> dict[str, Any]:
         with self.control_lock:
+            if settings.source == "camera" and settings.cameraId:
+                resolve_camera(
+                    settings.cameraId
+                )  # Reject vanished choices before stopping a source.
             self._stop()
             with self.condition:
                 self.settings = settings
@@ -122,6 +137,10 @@ class VisionRuntime:
                 self.packet = None
                 self.packet_capture_at = None
                 self.packet_number = 0
+                self.observation = None
+                self.preview = None
+                self.preview_number = 0
+                self.preview_capture_at = None
                 self.state = "starting"
                 self.message = (
                     "Loading local models…"
@@ -157,6 +176,8 @@ class VisionRuntime:
             self.packet = None
             self.packet_capture_at = None
             self.detected_count = 0
+            self.observation = None
+            self.preview = None
             self.condition.notify_all()
             camera = self.camera
         if camera is not None and not camera.close():
@@ -168,6 +189,11 @@ class VisionRuntime:
             worker.join(timeout=5)
             if worker.is_alive():
                 raise RuntimeError("The vision worker is still stopping. Wait a moment and retry.")
+        if self.preview_worker is not None:
+            self.preview_worker.join(timeout=3)
+            if self.preview_worker.is_alive():
+                raise RuntimeError("The preview worker is still stopping. Wait and retry.")
+            self.preview_worker = None
         # Re-read after joining too: never discard an owner whose driver still holds a device.
         camera = self.camera
         if camera is not None and not camera.close():
@@ -199,6 +225,7 @@ class VisionRuntime:
             self.packet = None
             self.packet_capture_at = None
             self.detected_count = 0
+            self.observation = None
             self.state = "stale"
             self.message = "Camera observations are too old. Improve lighting or try another model; stale joints are hidden."
             self.condition.notify_all()
@@ -211,6 +238,107 @@ class VisionRuntime:
         if self.packet_capture_at is not None and not self._capture_fresh(self.packet_capture_at):
             self._mark_stale()
 
+    def next_observation(
+        self, after: int, timeout: float = 2.0
+    ) -> tuple[int, dict[str, Any] | None]:
+        with self.condition:
+            self.condition.wait_for(
+                lambda: self.packet_number > after or self.state in ("idle", "error", "stale"),
+                timeout=timeout,
+            )
+            self._expire_packet()
+            if self.state != "running" or self.packet_number <= after:
+                return self.packet_number, None
+            return self.packet_number, self.observation
+
+    def next_preview(self, after: int, timeout: float = 2.0) -> tuple[int, bytes | None]:
+        with self.condition:
+            self.condition.wait_for(
+                lambda: self.preview_number > after or self.state in ("idle", "error"),
+                timeout=timeout,
+            )
+            if (
+                self.state in ("idle", "error")
+                or self.preview_number <= after
+                or self.preview_capture_at is None
+                or not self._capture_fresh(self.preview_capture_at)
+            ):
+                return self.preview_number, None
+            return self.preview_number, self.preview
+
+    @staticmethod
+    def _resize(image: Image) -> Image:
+        if image.shape[1] > 960:
+            return cast(
+                Image, cv2.resize(image, (960, round(image.shape[0] * 960 / image.shape[1])))
+            )
+        return image
+
+    def _publish_preview(
+        self,
+        image: Image,
+        sequence: int,
+        captured_at: int,
+        settings: StartRequest,
+        epoch: str,
+        fps: float,
+    ) -> None:
+        ok, jpeg = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 78])
+        if not ok or not 0 < jpeg.nbytes <= MAX_PREVIEW:
+            raise RuntimeError("Could not encode a bounded camera preview.")
+        metadata = {
+            "version": 1,
+            "epoch": epoch,
+            "sequence": sequence,
+            "source": settings.source,
+            "image": {"width": image.shape[1], "height": image.shape[0]},
+            "capturedAtNs": str(captured_at),
+            "clockDomain": "host-monotonic",
+            "clockQuality": "synthetic" if settings.source == "demo" else "host-read-completion",
+            "captureFps": fps,
+        }
+        VALIDATE_PREVIEW(metadata)
+        header = json.dumps(metadata, separators=(",", ":"), allow_nan=False).encode()
+        with self.condition:
+            if not self.stop_event.is_set() and self._capture_fresh(captured_at):
+                self.preview = struct.pack(">I", len(header)) + header + jpeg.tobytes()
+                self.preview_number = sequence
+                self.preview_capture_at = captured_at
+                self.condition.notify_all()
+
+    def _preview_camera(
+        self, camera: CameraSource, settings: StartRequest, epoch: str, stop: threading.Event
+    ) -> None:
+        after = 0
+        rate = SourceRate()
+        try:
+            while not stop.is_set():
+                captured = camera.next(after)
+                if captured is None:
+                    continue
+                after = captured.sequence
+                fps = rate.record(after, captured.captured_at_ns)
+                if self._capture_fresh(captured.captured_at_ns):
+                    self._publish_preview(
+                        self._resize(captured.image),
+                        after,
+                        captured.captured_at_ns,
+                        settings,
+                        epoch,
+                        fps,
+                    )
+        except Exception:
+            logging.getLogger(__name__).exception("Camera preview stopped")
+            with self.condition:
+                if not stop.is_set():
+                    self.state = "error"
+                    self.message = "Camera preview failed. Stop and retry; inspect the service log if it persists."
+                    self.packet = self.preview = None
+                    self.observation = None
+                    self.detected_count = 0
+                    stop.set()
+                    self.condition.notify_all()
+
     def _run(self, settings: StartRequest, epoch: str, stop: threading.Event) -> None:
         provider: PoseProvider | None = None
         camera: CameraSource | None = None
@@ -218,6 +346,7 @@ class VisionRuntime:
         previous_capture = 0
         last_capture_at: int | None = None
         dropped = 0
+        demo_rate = SourceRate()
         started = time.monotonic()
         demo_tick = self.clock_ns()
         try:
@@ -226,12 +355,23 @@ class VisionRuntime:
                 provider = create_provider(settings.algorithm, settings.maxPeople)
                 if stop.is_set():
                     return
-                camera = CameraSource(settings.cameraIndex)
+                # Re-resolve after model loading: hot-plugging can reorder native indices.
+                index = (
+                    resolve_camera(settings.cameraId) if settings.cameraId else settings.cameraIndex
+                )
+                camera = CameraSource(index)
                 with self.condition:
                     if stop.is_set():
                         return
                     self.camera = camera
                     camera.start()
+                    self.preview_worker = threading.Thread(
+                        target=self._preview_camera,
+                        args=(camera, settings, epoch, stop),
+                        name="motion-preview",
+                        daemon=True,
+                    )
+                    self.preview_worker.start()
             while not stop.is_set():
                 processing_started = self.clock_ns()
                 if camera is not None:
@@ -249,11 +389,7 @@ class VisionRuntime:
                         continue
                     processing_started = self.clock_ns()
                     # Inference and preview use the exact same resized image geometry.
-                    if image.shape[1] > 960:
-                        image = cast(
-                            Image,
-                            cv2.resize(image, (960, round(image.shape[0] * 960 / image.shape[1]))),
-                        )
+                    image = self._resize(image)
                     inference_started = self.clock_ns()
                     assert provider is not None
                     detections = provider.infer(image, captured_at)
@@ -284,7 +420,7 @@ class VisionRuntime:
                     "sequence": previous_capture,
                     "frameId": f"{epoch}:{previous_capture}",
                     "source": settings.source,
-                    "cameraId": f"camera:{settings.cameraIndex}"
+                    "cameraId": (settings.cameraId or f"camera:{settings.cameraIndex}")
                     if camera is not None
                     else "synthetic-scene",
                     "image": {"width": image.shape[1], "height": image.shape[0]},
@@ -319,6 +455,7 @@ class VisionRuntime:
                         self._mark_stale()
                         continue
                     self.packet = packet
+                    self.observation = observation
                     self.packet_number = previous_capture
                     self.packet_capture_at = captured_at if camera is not None else None
                     self.detected_count = len(people)
@@ -330,6 +467,14 @@ class VisionRuntime:
                     )
                     self.condition.notify_all()
                 if camera is None:
+                    self._publish_preview(
+                        image,
+                        previous_capture,
+                        captured_at,
+                        settings,
+                        epoch,
+                        demo_rate.record(previous_capture, captured_at),
+                    )
                     now = self.clock_ns()
                     demo_tick = next_preview_tick(demo_tick, now)
                     stop.wait((demo_tick - now) / 1e9)
@@ -344,10 +489,14 @@ class VisionRuntime:
                         else "Vision processing failed. Stop and retry; inspect the local service log if it persists."
                     )
                     self.packet = None
+                    self.observation = None
+                    self.preview = None
                     self.packet_capture_at = None
                     self.detected_count = 0
                     self.condition.notify_all()
         finally:
+            # A failed inference owner must also stop the independent preview worker.
+            stop.set()
             if camera is not None:
                 camera.close()
             if provider is not None:

@@ -1,4 +1,9 @@
 import {
+  CameraChoice,
+  cameraChoiceMarkup,
+  type CameraSelection,
+} from "./camera-choice";
+import {
   DodgeGame,
   TUNING,
   type GameOptions,
@@ -40,7 +45,7 @@ export function mountDodgeballGame(
  <hr><label for="source-select">Input source</label><select id="source-select"><option value="demo">Rehearsal · no camera</option><option value="camera">Camera · body tracking</option></select>
  <div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
  <div id="demo-controls"><p class="field-note">Move the body with your pointer, touch or arrow keys. This is a synthetic rehearsal.</p><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
- <div id="camera-controls" hidden><label for="camera-index">Native camera index</label><input id="camera-index" type="number" min="0" max="9" step="1" value="0"><p class="field-note">Frame your whole body. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="source-stop" class="mm-text" disabled>Stop camera</button><label for="player-track">Player track</label><select id="player-track"><option value="">Start camera to see tracks</option></select></div>
+ <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Frame your whole body. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="source-stop" class="mm-text" disabled>Stop camera</button><label for="player-track">Player track</label><select id="player-track"><option value="">Start camera to see tracks</option></select></div>
  <p id="player-binding" class="field-note" hidden></p><button id="join-player" class="mm-secondary join">Join player 1</button><p id="player-status" class="field-note" role="status">Join explicitly, then start your round.</p>
  <div class="setup-tip"><span>PLAY WITH ROOM</span><p>Clear your space. Use comfortable steps; no jumping or sudden lunges needed.</p></div></aside>
  <section class="mm-game" aria-label="Dodgeball game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>DODGES</span><strong id="dodges-value">0</strong></div><div class="score-item"><span id="shields-label">HITS</span><strong id="hits-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
@@ -80,6 +85,7 @@ export function mountDodgeballGame(
   let lastHits = 0,
     lastDodges = 0,
     feedbackUntil = 0;
+  const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
   const isDemo = () => select("source-select").value === "demo";
   const isJoined = () => (isDemo() ? demoJoined : !!session.binding);
@@ -100,6 +106,7 @@ export function mountDodgeballGame(
   function updateReleaseControls() {
     if (disposed) return;
     const release = releases.state;
+    cameraChoice.setLocked(connecting || !!epoch || release.pendingCount > 0);
     get("camera-release").hidden = release.pendingCount === 0;
     const message = get("camera-release-message");
     if (message.textContent !== release.message)
@@ -395,9 +402,11 @@ export function mountDodgeballGame(
   }
   async function startCamera() {
     if (connecting || releases.state.pendingCount > 0) return;
-    const index = Number(get<HTMLInputElement>("camera-index").value);
-    if (!Number.isInteger(index) || index < 0 || index > 9) {
-      setMessage("Choose a camera index from 0 to 9.");
+    let camera: CameraSelection;
+    try {
+      camera = cameraChoice.selection();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
       return;
     }
     const stopping = stopCamera("Starting local camera…");
@@ -422,9 +431,9 @@ export function mountDodgeballGame(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           source: "camera",
-          algorithm: "mediapipe",
+          algorithm: "rtmpose",
           tracker: "pose",
-          cameraIndex: index,
+          ...camera,
           maxPeople: 3,
           demoScenario: "three",
         }),
@@ -547,6 +556,7 @@ export function mountDodgeballGame(
   listen(get("source-stop"), "click", () => void stopCamera());
   listen(get("retry-camera-stop"), "click", () => void releases.retry());
   listen(select("source-select"), "change", () => {
+    if (!isDemo()) void cameraChoice.refresh();
     void stopCamera();
     demoJoined = false;
     demoEpoch++;
@@ -685,6 +695,7 @@ export function mountDodgeballGame(
     tick,
     dispose() {
       disposed = true;
+      cameraChoice.dispose();
       listeners.abort();
       resize.disconnect();
       if (timer !== null) window.clearInterval(timer);

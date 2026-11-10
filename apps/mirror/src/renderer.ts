@@ -32,7 +32,7 @@ function context(canvas: HTMLCanvasElement) {
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
   }
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true })!;
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   return { ctx, width, height };
 }
@@ -68,7 +68,7 @@ export function drawStandby(canvas: HTMLCanvasElement) {
 export function drawFrame(
   canvas: HTMLCanvasElement,
   image: ImageBitmap,
-  frame: Observation,
+  frame: Pick<Observation, "image" | "people">,
   options: RenderOptions,
 ) {
   const { ctx, width, height } = context(canvas);
@@ -108,30 +108,32 @@ export function drawFrame(
     }
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+    // Batch same-style segments: one outline/color stroke per body, not per bone.
+    ctx.beginPath();
     for (const bone of visibleBones(person.joints, options.confidence)) {
-      const a = mapJoint(bone.a, rect, options.mirror),
-        b = mapJoint(bone.b, rect, options.mirror);
-      ctx.beginPath();
+      const a = mapJoint(bone.a, rect, options.mirror);
+      const b = mapJoint(bone.b, rect, options.mirror);
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
-      ctx.strokeStyle = "#142035";
-      ctx.lineWidth = 7;
-      ctx.stroke();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 3.2;
-      ctx.stroke();
     }
+    ctx.strokeStyle = "#142035";
+    ctx.lineWidth = 7;
+    ctx.stroke();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3.2;
+    ctx.stroke();
+    ctx.beginPath();
     for (const joint of Object.values(person.joints)) {
       if (!isRenderableJoint(joint, options.confidence)) continue;
       const point = mapJoint(joint, rect, options.mirror);
-      ctx.beginPath();
+      ctx.moveTo(point.x + 4, point.y);
       ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.lineWidth = 1.7;
-      ctx.strokeStyle = "#172132";
-      ctx.stroke();
     }
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.lineWidth = 1.7;
+    ctx.strokeStyle = "#172132";
+    ctx.stroke();
     const label = person.trackId
       ? `Track ${person.trackId}`
       : "Identity uncertain";

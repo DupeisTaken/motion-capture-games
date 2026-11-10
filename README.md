@@ -14,7 +14,7 @@ pnpm setup
 pnpm dev
 ```
 
-Open **http://127.0.0.1:5173**. The compact test console keeps controls, skeletons, detections, performance stages and stream context on one page. Choose **Camera** and optionally **Allow & discover cameras** to reveal names and identify a device, then verify its **Native camera index** and choose **Start camera**. Browser IDs do not automatically map to native indices. Choose **Synthetic scene** for generated bodies without camera access. Setup downloads pinned Python tools and verified model artifacts locally; preview inference works offline afterward. Camera access requires an explicit action. See [the viewer guide](docs/diagnostic-viewer.md) for controls, commands and limitations.
+Open **http://127.0.0.1:5173**. The compact test console keeps controls, skeletons, detections, performance stages and stream context on one page. Choose **Camera**, select a device by name under **Choose camera**, then choose **Start camera**. **Refresh** finds newly connected USB cameras. The same selector appears in both games after choosing Camera input. **Manual camera index** remains an advanced fallback; browser identification is optional. Choose **Synthetic scene** for generated bodies without camera access. Setup downloads pinned Python tools and verified model artifacts locally; preview inference works offline afterward. RTMPose is the development default; MediaPipe remains a comparison option. Display rendering, camera/source and pose rates are independent and reported separately. Camera access requires an explicit action. See [the viewer guide](docs/diagnostic-viewer.md) for controls, commands and limitations.
 
 ## Play Mole Motion
 
