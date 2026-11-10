@@ -39,6 +39,10 @@ MP_INDICES = (0, 2, 5, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28)
 JOINT_OBSERVED_SCORE = 0.5
 # Filter low-scoring RTMDet candidates before the more expensive per-person pose step.
 DETECTION_SCORE = 0.4
+DETECTOR_MEAN = np.array([103.53, 116.28, 123.675], dtype=np.float32)
+DETECTOR_STD = np.array([57.375, 57.12, 58.395], dtype=np.float32)
+POSE_MEAN = np.array([123.675, 116.28, 103.53], dtype=np.float32)
+POSE_STD = np.array([58.395, 57.12, 57.375], dtype=np.float32)
 
 
 class PoseProvider(Protocol):
@@ -129,9 +133,7 @@ def detector_input(image: Image) -> tuple[NDArray[np.float32], tuple[float, floa
     padded = np.full((320, 320, 3), 114, dtype=np.uint8)
     padded[:resized_height, :resized_width] = cv2.resize(image, (resized_width, resized_height))
     # The selected archive's pipeline explicitly uses BGR (to_rgb=false).
-    values = (
-        padded.astype(np.float32) - np.array([103.53, 116.28, 123.675], dtype=np.float32)
-    ) / np.array([57.375, 57.12, 58.395], dtype=np.float32)
+    values = (padded.astype(np.float32) - DETECTOR_MEAN) / DETECTOR_STD
     return np.ascontiguousarray(values.transpose(2, 0, 1)[None]), (
         resized_width / width,
         resized_height / height,
@@ -149,11 +151,12 @@ def detection_boxes(
     labels = np.asarray(outputs[1]).reshape(-1) if len(outputs) > 1 else None
     height, width = shape[:2]
     result = []
-    for index, row in enumerate(detections[0]):
-        if not np.isfinite(row).all() or row[4] < DETECTION_SCORE:
-            continue
-        if labels is not None and int(labels[index]) != 0:
-            continue
+    rows = detections[0]
+    accepted = np.isfinite(rows).all(axis=1) & (rows[:, 4] >= DETECTION_SCORE)
+    if labels is not None:
+        accepted &= labels == 0
+    # Filter the padded detector output in NumPy before crossing into Python per person.
+    for row in rows[accepted]:
         x1, y1, x2, y2 = (
             float(row[0] / scales[0]),
             float(row[1] / scales[1]),
@@ -188,9 +191,7 @@ def pose_input(
     )
     cropped = cv2.warpAffine(image, transform, (192, 256), flags=cv2.INTER_LINEAR)
     rgb = cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB).astype(np.float32)
-    values = (rgb - np.array([123.675, 116.28, 103.53], dtype=np.float32)) / np.array(
-        [58.395, 57.12, 57.375], dtype=np.float32
-    )
+    values = (rgb - POSE_MEAN) / POSE_STD
     return np.ascontiguousarray(values.transpose(2, 0, 1)[None]), center, scale
 
 
@@ -234,15 +235,17 @@ class RTMPoseProvider:
         )
         self.model_id = manifest()["models"]["rtmpose"]["modelId"]
         self.capacity = capacity
+        self.detector_input_name = self.detector.get_inputs()[0].name
+        self.pose_input_name = self.pose.get_inputs()[0].name
 
     def infer(self, image: Image, timestamp_ns: int) -> list[Person]:
         tensor, scales = detector_input(image)
-        detected = self.detector.run(None, {self.detector.get_inputs()[0].name: tensor})
+        detected = self.detector.run(None, {self.detector_input_name: tensor})
         boxes = detection_boxes(detected, scales, image.shape)
         people = []
         for box in boxes[: self.capacity]:
             tensor, center, scale = pose_input(image, box)
-            output = self.pose.run(None, {self.pose.get_inputs()[0].name: tensor})
+            output = self.pose.run(None, {self.pose_input_name: tensor})
             joints = decode_pose(output, center, scale, image.shape)
             height, width = image.shape[:2]
             x1, y1, x2, y2 = box

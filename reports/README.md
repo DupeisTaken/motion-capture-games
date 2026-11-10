@@ -18,6 +18,8 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 
 [Pull request integration](pr-integration.html) records merge order, documentation conflict resolution, combined software checks and remaining hardware gates.
 
+[RTMPose and smooth preview](preview-performance.html) records the independent display loop, separate camera/pose rates, synthetic 60 Hz rendering evidence, before/after screenshots and remaining M1 gates. [Machine-readable results](preview-performance-results.json) retain the measured distributions.
+
 [Diagnostic console](diagnostic-console.html) records the dense responsive test page, explicit camera setup, timing/pacing corrections, actual checks, synthetic measurements and embedded before/after screenshots.
 
 [Tracking stability](tracking-stability.html) records the prediction-driven identity-switch fix, baseline/fixed synthetic replays, tracker-only timing measurements and verification. Its generated [replay evidence](tracking-stability-results.json) comes from [the reproduction tool](../services/vision/tools/tracking_stability.py). The report distinguishes correct continuity and conservative ambiguity from physical recognition accuracy, and records provider-capacity and enrollment limitations.

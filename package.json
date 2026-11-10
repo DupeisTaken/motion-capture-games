@@ -10,6 +10,7 @@
   "scripts": {
     "setup": "node scripts/tasks.mjs setup",
     "models": "node scripts/tasks.mjs models",
+    "benchmark:runtime": "node scripts/tasks.mjs benchmark",
     "vision": "node scripts/tasks.mjs vision",
     "dev": "node scripts/tasks.mjs dev",
     "build": "tsc --noEmit && vite build",
@@ -21,7 +22,8 @@
     "format:check": "prettier --check apps/mirror/src contracts/src packages/motion/src packages/session/src games tests scripts package.json vite.config.ts tsconfig.json vitest.config.ts eslint.config.mjs && node scripts/tasks.mjs python-format-check",
     "contracts:generate": "node contracts/generate.mjs",
     "contracts:check": "node contracts/generate.mjs --check",
-    "check": "pnpm contracts:check && pnpm typecheck && pnpm lint && pnpm test && pnpm format:check"
+    "check": "pnpm contracts:check && pnpm typecheck && pnpm lint && pnpm test && pnpm format:check",
+    "benchmark:preview": "node scripts/benchmark-preview.mjs"
   },
   "dependencies": {
     "ajv": "8.20.0"
@@ -32,6 +34,7 @@
     "eslint": "10.14.0",
     "happy-dom": "21.0.4",
     "json-schema-to-typescript": "16.0.0",
+    "playwright-core": "1.65.0",
     "prettier": "3.9.10",
     "typescript": "6.0.2",
     "typescript-eslint": "8.72.1",

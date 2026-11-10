@@ -553,6 +553,12 @@ describe("Mole Motion operator integration", () => {
 
   it("renders camera preview before admission and releases only its acknowledged epoch", async () => {
     const socket = await startCamera();
+    const startRequest = fetchMock.mock.calls.find(
+      ([path]) => path === "/api/start",
+    );
+    expect(JSON.parse(startRequest?.[1].body as string).algorithm).toBe(
+      "rtmpose",
+    );
     const cameraFrame = observation();
     await socket.receive(packet(cameraFrame));
     expect(renderer.drawMoleScene.mock.calls.at(-1)?.[1]).toEqual(cameraFrame);

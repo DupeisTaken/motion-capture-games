@@ -68,13 +68,17 @@ def create_app(runtime: VisionRuntime | None = None) -> FastAPI:
         except RuntimeError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
 
-    @app.websocket("/api/stream")
-    async def stream(socket: WebSocket):
+    async def stream(socket: WebSocket, kind: str = "paired"):
         origin = socket.headers.get("origin")
         if origin is not None and origin not in ALLOWED_ORIGINS:
             await socket.close(code=1008, reason="Local operator origin required")
             return
         owned_epoch = vision.status()["epoch"]
+        expected_epoch = socket.query_params.get("epoch")
+        if expected_epoch is not None and expected_epoch != owned_epoch:
+            # A delayed connection from an old Start acknowledgement cannot own a newer source.
+            await socket.close(code=1008, reason="Source epoch changed; restart the preview")
+            return
         await socket.accept()
         clients[socket] = owned_epoch
         previous_epoch: str | None = None
@@ -95,10 +99,18 @@ def create_app(runtime: VisionRuntime | None = None) -> FastAPI:
                 current = vision.status()
                 if current["epoch"] != previous_epoch:
                     previous_epoch, after = current["epoch"], 0
-                sequence, packet = await asyncio.to_thread(vision.next_packet, after)
+                next_item = {
+                    "paired": vision.next_packet,
+                    "preview": vision.next_preview,
+                    "observations": vision.next_observation,
+                }[kind]
+                sequence, packet = await asyncio.to_thread(next_item, after)
                 if packet is not None:
                     # One request, one current paired image+pose; never replay a reliable backlog.
-                    await socket.send_bytes(packet)
+                    if kind == "observations":
+                        await socket.send_json(packet)
+                    else:
+                        await socket.send_bytes(packet)
                     after = sequence
                 else:
                     status = vision.status()
@@ -116,6 +128,18 @@ def create_app(runtime: VisionRuntime | None = None) -> FastAPI:
                     await asyncio.to_thread(vision.stop_if_epoch, owned_epoch)
                 except RuntimeError:
                     pass
+
+    @app.websocket("/api/stream")
+    async def paired_stream(socket: WebSocket):
+        await stream(socket)
+
+    @app.websocket("/api/preview")
+    async def preview_stream(socket: WebSocket):
+        await stream(socket, "preview")
+
+    @app.websocket("/api/observations")
+    async def observation_stream(socket: WebSocket):
+        await stream(socket, "observations")
 
     return app
 

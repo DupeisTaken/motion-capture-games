@@ -391,6 +391,12 @@ describe("Dodgeball operator integration", () => {
   });
   it("requires explicit camera-track enrollment and rejects incomplete body input", async () => {
     const socket = await startCamera();
+    const startRequest = fetchMock.mock.calls.find(
+      ([path]) => path === "/api/start",
+    );
+    expect(JSON.parse(startRequest?.[1].body as string).algorithm).toBe(
+      "rtmpose",
+    );
     await socket.receive(packet(observation()));
     expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
     choose("player-track", "camera-track-1");

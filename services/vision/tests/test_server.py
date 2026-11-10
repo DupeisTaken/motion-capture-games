@@ -86,3 +86,51 @@ def test_disconnecting_an_old_viewer_does_not_stop_a_new_source():
         assert late_stop["epoch"] == new["epoch"]
         assert late_stop["state"] in ("starting", "running")
         assert client.post("/api/stop", json={"epoch": new["epoch"]}).json()["state"] == "idle"
+
+
+def test_independent_streams_share_one_owner_and_only_final_disconnect_stops(monkeypatch):
+    vision = VisionRuntime()
+    released = Event()
+    original_stop = vision.stop_if_epoch
+
+    def stop_and_signal(epoch):
+        original_stop(epoch)
+        released.set()
+
+    monkeypatch.setattr(vision, "stop_if_epoch", stop_and_signal)
+    with TestClient(create_app(vision), base_url="http://127.0.0.1:8765") as client:
+        client.post("/api/start", json={"source": "demo", "demoScenario": "three"})
+        with client.websocket_connect("ws://127.0.0.1:8765/api/observations") as poses:
+            with client.websocket_connect("ws://127.0.0.1:8765/api/preview") as images:
+                poses.send_json({"type": "next"})
+                observation = poses.receive_json()
+                assert observation["detectedCount"] == 3
+                images.send_json({"type": "next"})
+                packet = images.receive_bytes()
+                length = struct.unpack(">I", packet[:4])[0]
+                metadata = json.loads(packet[4 : 4 + length])
+                assert metadata["epoch"] == observation["epoch"]
+                assert "people" not in metadata
+                assert metadata["clockQuality"] == "synthetic"
+            assert client.get("/api/status").json()["state"] == "running"
+            poses.send_json({"type": "next"})
+            assert poses.receive_json()["sequence"] > observation["sequence"]
+            poses.close()
+            assert released.wait(timeout=5)
+        assert client.get("/api/status").json()["state"] == "idle"
+
+
+def test_delayed_old_epoch_handshake_cannot_own_or_stop_replacement():
+    with TestClient(create_app(), base_url="http://127.0.0.1:8765") as client:
+        old = client.post("/api/start", json={"source": "demo"}).json()
+        current = client.post("/api/start", json={"source": "demo"}).json()
+        for kind in ("preview", "observations"):
+            with pytest.raises(WebSocketDisconnect) as rejected:
+                with client.websocket_connect(
+                    f"ws://127.0.0.1:8765/api/{kind}?epoch={old['epoch']}"
+                ):
+                    pass
+            assert rejected.value.code == 1008
+        status = client.get("/api/status").json()
+        assert status["epoch"] == current["epoch"]
+        assert status["state"] in ("starting", "running")

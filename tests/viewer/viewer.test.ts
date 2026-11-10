@@ -1,40 +1,33 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Observation } from "../../contracts/generated/observation";
+import type { PreviewFrame } from "../../contracts/generated/preview";
 import fixture from "../../contracts/examples/synthetic-observation.json";
-
 const renderer = vi.hoisted(() => ({
   drawFrame: vi.fn(),
   drawStandby: vi.fn(),
 }));
 vi.mock("../../apps/mirror/src/renderer", () => renderer);
-
-type FakeBitmap = {
-  width: number;
-  height: number;
-  close: ReturnType<typeof vi.fn>;
-};
 const bitmap = (
   width = fixture.image.width,
   height = fixture.image.height,
-): FakeBitmap => ({ width, height, close: vi.fn() });
+) => ({ width, height, close: vi.fn() });
 const createBitmap = vi.fn(async () => bitmap());
 let acknowledgedEpoch: string;
 let startFailure: string | null;
-const response = (body: unknown, ok = true): Response =>
-  ({ ok, json: async () => body }) as Response;
 const fetchMock = vi.fn(
-  async (path: string, options?: RequestInit): Promise<Response> => {
-    void options;
-    if (path === "/api/start") {
-      return startFailure
-        ? response({ detail: startFailure }, false)
-        : response({ state: "running", epoch: acknowledgedEpoch });
-    }
-    return response({ state: "idle" });
+  async (path: string, _options?: RequestInit): Promise<Response> => {
+    void _options;
+    const ok = !(path === "/api/start" && startFailure);
+    const body =
+      path === "/api/start"
+        ? ok
+          ? { state: "running", epoch: acknowledgedEpoch }
+          : { detail: startFailure }
+        : { state: "idle" };
+    return { ok, json: async () => body } as Response;
   },
 );
-
 class FakeWebSocket {
   static readonly OPEN = 1;
   static instances: FakeWebSocket[] = [];
@@ -46,85 +39,88 @@ class FakeWebSocket {
     null;
   onerror: (() => void) | null = null;
   onclose: (() => void) | null = null;
-  readonly send = vi.fn();
-  readonly close = vi.fn(() => {
+  send = vi.fn();
+  close = vi.fn(() => {
     this.readyState = 3;
   });
   constructor(readonly url: string) {
     FakeWebSocket.instances.push(this);
   }
-  open(): void {
-    this.onopen?.();
-  }
-  async receive(data: ArrayBuffer | string): Promise<void> {
+  async receive(data: ArrayBuffer | string) {
     await this.onmessage?.({ data });
   }
 }
-
-function element<T extends HTMLElement = HTMLElement>(id: string): T {
-  const value = document.getElementById(id);
-  if (!value) throw new Error(`Missing viewer element: ${id}`);
-  return value as T;
+function el<T extends HTMLElement = HTMLElement>(id: string): T {
+  return document.getElementById(id) as T;
 }
-async function flushPromises(): Promise<void> {
-  // The UI awaits fetch, its JSON body and image decoding. No wall-clock sleeps.
-  for (let index = 0; index < 24; index++) await Promise.resolve();
+async function flush() {
+  for (let i = 0; i < 24; i++) await Promise.resolve();
 }
-async function startViewer(
-  source: "camera" | "demo" = "camera",
-): Promise<FakeWebSocket> {
-  if (source === "demo") element<HTMLButtonElement>("source-demo").click();
-  element<HTMLButtonElement>("start").click();
-  await flushPromises();
-  const socket = FakeWebSocket.instances.at(-1);
-  if (!socket) throw new Error("The viewer did not open a stream.");
-  socket.open();
-  return socket;
-}
-function observation(
-  count: number,
+function pose(
+  count = 3,
   sequence = 1,
   changes: Partial<Observation> = {},
 ): Observation {
   return {
-    ...(structuredClone(fixture) as Observation),
-    epoch: "test-epoch",
+    ...structuredClone(fixture),
+    epoch: acknowledgedEpoch,
     source: "camera",
-    algorithm: "mediapipe",
+    algorithm: "rtmpose",
     clock: {
       domain: "host-monotonic",
       quality: "host-read-completion",
       uncertaintyNs: null,
     },
     sequence,
-    frameId: `synthetic-test-frame-${sequence}`,
-    people: Array.from({ length: count }, (_, index) => ({
+    people: Array.from({ length: count }, (_, i) => ({
       ...structuredClone(fixture.people[0]),
-      trackId: `track-${index + 1}`,
+      trackId: `t${i}`,
       identity: "confident",
-      joints: Object.fromEntries(
-        Object.entries(fixture.people[0].joints).map(([name, joint]) => [
-          name,
-          { ...joint },
-        ]),
-      ),
-    })) as Observation["people"],
+    })),
     detectedCount: count,
     ...changes,
+  } as Observation;
+}
+function preview(
+  value: Observation,
+  changes: Partial<PreviewFrame> = {},
+): ArrayBuffer {
+  const meta: PreviewFrame = {
+    version: 1,
+    epoch: value.epoch,
+    sequence: value.sequence,
+    source: value.source,
+    image: value.image,
+    capturedAtNs: value.capturedAtNs,
+    clockDomain: "host-monotonic",
+    clockQuality: value.clock.quality,
+    captureFps: 30,
+    ...changes,
   };
+  const header = new TextEncoder().encode(JSON.stringify(meta));
+  const bytes = new Uint8Array(4 + header.length + 4);
+  new DataView(bytes.buffer).setUint32(0, header.length, false);
+  bytes.set(header, 4);
+  bytes.set([255, 216, 255, 217], 4 + header.length);
+  return bytes.buffer;
 }
-function packet(value: Observation): ArrayBuffer {
-  const metadata = new TextEncoder().encode(JSON.stringify(value));
-  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
-  const encoded = new Uint8Array(4 + metadata.byteLength + jpeg.byteLength);
-  new DataView(encoded.buffer).setUint32(0, metadata.byteLength, false);
-  encoded.set(metadata, 4);
-  encoded.set(jpeg, 4 + metadata.byteLength);
-  return encoded.buffer;
+async function start(source: "camera" | "demo" = "camera") {
+  if (source === "demo") el<HTMLButtonElement>("source-demo").click();
+  el<HTMLButtonElement>("start").click();
+  await flush();
+  const streams = FakeWebSocket.instances.slice(-2);
+  streams.forEach((ws) => ws.onopen?.());
+  return { image: streams[0], poses: streams[1] };
 }
-const stopRequestCount = (): number =>
-  fetchMock.mock.calls.filter(([path]) => path === "/api/stop").length;
-
+async function frame(
+  streams: Awaited<ReturnType<typeof start>>,
+  value = pose(),
+) {
+  await streams.poses.receive(JSON.stringify(value));
+  await streams.image.receive(preview(value));
+  vi.advanceTimersByTime(250);
+  await flush();
+}
 beforeEach(async () => {
   vi.resetModules();
   vi.clearAllMocks();
@@ -137,25 +133,30 @@ beforeEach(async () => {
       "performance",
     ],
   });
-  document.body.innerHTML = '<div id="app"></div>';
   acknowledgedEpoch = "test-epoch";
   startFailure = null;
   FakeWebSocket.instances = [];
+  document.body.innerHTML = '<div id="app"></div>';
   createBitmap.mockImplementation(async () => bitmap());
   vi.stubGlobal("fetch", fetchMock);
   vi.stubGlobal("WebSocket", FakeWebSocket);
   vi.stubGlobal("createImageBitmap", createBitmap);
+  vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
+    window.setTimeout(() => cb(performance.now()), 16),
+  );
+  vi.stubGlobal("cancelAnimationFrame", (id: number) =>
+    window.clearTimeout(id),
+  );
   vi.stubGlobal(
     "ResizeObserver",
     class {
-      observe(): void {}
-      disconnect(): void {}
-      unobserve(): void {}
+      observe() {}
+      disconnect() {}
+      unobserve() {}
     },
   );
   await import("../../apps/mirror/src/main");
-  await flushPromises();
-  // Keep source freshness distinct from the not-yet-running timestamp sentinel.
+  await flush();
   vi.advanceTimersByTime(1);
 });
 afterEach(() => {
@@ -164,44 +165,192 @@ afterEach(() => {
   vi.unstubAllGlobals();
   document.body.innerHTML = "";
 });
-
-describe("diagnostic viewer integration", () => {
-  it("keeps stable person rows across 120 frames while still redrawing every paired frame", async () => {
-    const socket = await startViewer();
-    await socket.receive(packet(observation(3)));
-    const rows = [...document.querySelectorAll(".person-row")];
-    const replace = vi.spyOn(element("person-list"), "replaceChildren");
-    for (let sequence = 2; sequence <= 121; sequence++) {
-      vi.advanceTimersByTime(50);
-      await socket.receive(packet(observation(3, sequence)));
-    }
-    expect(replace).not.toHaveBeenCalled();
-    rows.forEach((row, index) =>
-      expect(document.querySelectorAll(".person-row")[index]).toBe(row),
+describe("independent diagnostic viewer", () => {
+  it("defaults to RTMPose and separates display draws from image and pose arrivals", async () => {
+    const streams = await start();
+    const request = JSON.parse(
+      fetchMock.mock.calls.find(([p]) => p === "/api/start")?.[1]
+        ?.body as string,
     );
-    expect(renderer.drawFrame).toHaveBeenCalledTimes(121);
-    expect(element("update-rate").textContent).toBe("20.0");
-    const changed = observation(3, 122);
-    changed.people[0]!.identity = "ambiguous";
-    changed.people[0]!.trackId = null;
-    await socket.receive(packet(changed));
-    expect(replace).toHaveBeenCalledTimes(1);
-    expect(element("person-list").textContent).toContain("Uncertain");
-    expect(element("status-title").textContent).toBe("Identity needs recovery");
+    expect(request.algorithm).toBe("rtmpose");
+    expect(request).not.toHaveProperty("detectedCount");
+    await streams.image.receive(preview(pose()));
+    vi.advanceTimersByTime(160);
+    expect(renderer.drawFrame).toHaveBeenCalledTimes(10);
+    expect(renderer.drawFrame.mock.calls.at(-1)?.[2].people).toHaveLength(0);
+    await streams.poses.receive(JSON.stringify(pose()));
+    vi.advanceTimersByTime(250);
+    expect(el("person-count").textContent).toBe("3");
+    expect(renderer.drawFrame.mock.calls.at(-1)?.[2].people).toHaveLength(3);
+    expect(el("update-rate").textContent).toBe("62.5");
+    expect(el("camera-rate").textContent).toBe("30.0");
+    expect(el("pose-rate").textContent).toBe("—"); // one result does not establish a rate
   });
-  it("clears stage diagnostics on stale input and rejects invalid camera indices locally", async () => {
-    element<HTMLInputElement>("camera-index").value = "1.5";
-    element<HTMLButtonElement>("start").click();
-    await flushPromises();
+  it("updates current counts including zero and shows capacity without creating players", async () => {
+    const s = await start();
+    await frame(s, pose(3, 1, { capacity: 3, capacityReached: true }));
+    expect(el("capacity-warning").hidden).toBe(false);
+    expect(el("count-label").textContent).toBe("at capacity");
+    await frame(s, pose(0, 2));
+    expect(el("person-count").textContent).toBe("0");
+    expect(document.querySelectorAll(".person-row")).toHaveLength(0);
+  });
+  it("keeps fresh camera images drawing when pose input stalls and removes stale overlays", async () => {
+    const s = await start();
+    await frame(s);
+    for (let sequence = 2; sequence <= 5; sequence++) {
+      await s.image.receive(
+        preview(pose(3, sequence), {
+          capturedAtNs: String(BigInt(fixture.capturedAtNs) + 200_000_000n),
+        }),
+      );
+      vi.advanceTimersByTime(200);
+    }
+    expect(el("source-badge").textContent).toBe("Live");
+    expect(renderer.drawFrame.mock.calls.length).toBeGreaterThan(50);
+    expect(renderer.drawFrame.mock.calls.at(-1)?.[2].people).toHaveLength(0);
+    expect(el("person-count").textContent).toBe("0");
+    el("mirror").dispatchEvent(new Event("input"));
+    expect(el("person-count").textContent).toBe("0");
+    expect(s.image.close).not.toHaveBeenCalled();
+  });
+  it("closes both streams, bitmap and animation work on Stop", async () => {
+    const image = bitmap();
+    createBitmap.mockResolvedValueOnce(image);
+    const s = await start();
+    await frame(s);
+    el<HTMLButtonElement>("stop").click();
+    await flush();
+    expect(s.image.close).toHaveBeenCalledOnce();
+    expect(s.poses.close).toHaveBeenCalledOnce();
+    expect(image.close).toHaveBeenCalledOnce();
+    expect(el("person-count").textContent).toBe("0");
+    const draws = renderer.drawFrame.mock.calls.length;
+    vi.advanceTimersByTime(1000);
+    expect(renderer.drawFrame.mock.calls.length).toBe(draws);
+    expect(el<HTMLButtonElement>("start").disabled).toBe(false);
+    expect(
+      JSON.parse(
+        fetchMock.mock.calls.find(([p]) => p === "/api/stop")?.[1]
+          ?.body as string,
+      ).epoch,
+    ).toBe(acknowledgedEpoch);
+  });
+  it("clears images, counts and telemetry when preview input expires", async () => {
+    const image = bitmap();
+    createBitmap.mockResolvedValueOnce(image);
+    const s = await start();
+    await frame(s);
+    vi.advanceTimersByTime(1800);
+    expect(image.close).toHaveBeenCalledOnce();
+    expect(el("source-badge").textContent).toBe("Stale");
+    expect(el("person-count").textContent).toBe("0");
+    expect(el("update-rate").textContent).toBe("—");
+  });
+  it.each(["image", "poses"] as const)(
+    "rejects an unexpected epoch on %s",
+    async (kind) => {
+      const s = await start();
+      await frame(s);
+      const wrong = pose(3, 2, { epoch: "unexpected" });
+      await s[kind].receive(
+        kind === "image" ? preview(wrong) : JSON.stringify(wrong),
+      );
+      expect(el("status-title").textContent).toBe("Preview could not continue");
+      expect(el("status-message").textContent).toContain("source restarted");
+      expect(s.image.close).toHaveBeenCalled();
+      expect(s.poses.close).toHaveBeenCalled();
+    },
+  );
+  it("restores controls after an actionable startup failure", async () => {
+    startFailure = "Camera permission denied.";
+    el<HTMLButtonElement>("start").click();
+    await flush();
+    expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(el("status-message").textContent).toBe(startFailure);
+    expect(el<HTMLButtonElement>("start").disabled).toBe(false);
+  });
+  it("labels synthetic input and disables model selection for generated scenes", async () => {
+    const s = await start("demo");
+    await frame(
+      s,
+      pose(3, 1, {
+        source: "demo",
+        algorithm: "synthetic",
+        clock: {
+          domain: "host-monotonic",
+          quality: "synthetic",
+          uncertaintyNs: null,
+        },
+      }),
+    );
+    expect(el<HTMLSelectElement>("algorithm").disabled).toBe(true);
+    expect(el("source-badge").textContent).toBe("Synthetic");
+    expect(el("timing-note").textContent).toContain(
+      "not inference or camera performance results",
+    );
+  });
+  it("ignores an obsolete pending decode error after a replacement source starts", async () => {
+    let rejectOld: (reason: Error) => void = () => {};
+    createBitmap.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectOld = reject;
+      }),
+    );
+    const old = await start();
+    const pending = old.image.receive(preview(pose()));
+    await flush();
+    el<HTMLButtonElement>("stop").click();
+    await flush();
+    acknowledgedEpoch = "new-epoch";
+    const current = await start();
+    await frame(current);
+    rejectOld(new Error("Obsolete decode"));
+    await pending;
+    await flush();
+    expect(el("person-count").textContent).toBe("3");
+    expect(current.image.close).not.toHaveBeenCalled();
+  });
+  it("rejects mismatched image geometry before drawing", async () => {
+    const wrong = bitmap(100, 100);
+    createBitmap.mockResolvedValueOnce(wrong);
+    const s = await start();
+    await s.image.receive(preview(pose()));
+    expect(wrong.close).toHaveBeenCalledOnce();
+    expect(renderer.drawFrame).not.toHaveBeenCalled();
+    expect(el("status-message").textContent).toContain(
+      "dimensions do not match",
+    );
+  });
+  it("preserves console telemetry and stable operator rows across high-rate observations", async () => {
+    const streams = await start();
+    await frame(streams);
+    const replace = vi.spyOn(el("person-list"), "replaceChildren");
+    for (let sequence = 2; sequence <= 122; sequence++)
+      await frame(streams, pose(3, sequence));
+    expect(replace).not.toHaveBeenCalled();
+    expect(el("sample-count").textContent).toBe("120");
+    expect(el("processing-time").textContent).not.toBe("—");
+    expect(el("stream-camera").textContent).toContain("pose");
+    const changed = pose(3, 123);
+    changed.people[0].identity = "ambiguous";
+    changed.people[0].trackId = null;
+    await frame(streams, changed);
+    expect(replace).toHaveBeenCalledOnce();
+    expect(el("status-title").textContent).toBe("Identity needs recovery");
+  });
+  it("retains native-index validation and clears detailed console statistics on stale input", async () => {
+    el<HTMLInputElement>("camera-index").value = "1.5";
+    el<HTMLButtonElement>("start").click();
+    await flush();
     expect(fetchMock.mock.calls.some(([path]) => path === "/api/start")).toBe(
       false,
     );
-    expect(element("status-title").textContent).toBe("Invalid camera index");
-    element<HTMLInputElement>("camera-index").value = "0";
-    const socket = await startViewer();
-    await socket.receive(packet(observation(1)));
-    expect(element("processing-time").textContent).not.toBe("—");
-    expect(element("stream-camera").textContent).toContain("pose");
+    expect(el("status-title").textContent).toBe("Invalid camera index");
+    el<HTMLInputElement>("camera-index").value = "0";
+    const streams = await start();
+    await frame(streams, pose(1));
+    expect(el("processing-time").textContent).not.toBe("—");
     vi.advanceTimersByTime(1800);
     for (const id of [
       "processing-time",
@@ -209,185 +358,6 @@ describe("diagnostic viewer integration", () => {
       "stream-clock",
       "arrival-age",
     ])
-      expect(element(id).textContent).toBe("—");
-  });
-  it("automatically updates three detections to an empty scene from source packets", async () => {
-    const socket = await startViewer();
-    await socket.receive(packet(observation(3)));
-    expect(element("person-count").textContent).toBe("3");
-    expect(element("people-overlay").textContent).toBe("3 people");
-    expect(document.querySelectorAll(".person-row")).toHaveLength(3);
-    expect(renderer.drawFrame.mock.calls.at(-1)?.[2].detectedCount).toBe(3);
-    const body = JSON.parse(
-      fetchMock.mock.calls.find(([path]) => path === "/api/start")?.[1]
-        ?.body as string,
-    );
-    expect(body.maxPeople).toBe(6);
-    expect(body).not.toHaveProperty("detectedCount");
-    expect(socket.send).toHaveBeenCalledWith(JSON.stringify({ type: "next" }));
-
-    await socket.receive(packet(observation(0, 2)));
-    expect(element("person-count").textContent).toBe("0");
-    expect(element("people-overlay").textContent).toBe("0 people");
-    expect(document.querySelectorAll(".person-row")).toHaveLength(0);
-    expect(element("person-list").textContent).toContain("No people detected");
-    expect(renderer.drawFrame.mock.calls.at(-1)?.[2].detectedCount).toBe(0);
-  });
-
-  it("shows detector saturation honestly, then clears counts, warning and bitmap on stop", async () => {
-    element<HTMLSelectElement>("capacity").value = "3";
-    const image = bitmap();
-    createBitmap.mockResolvedValueOnce(image);
-    const socket = await startViewer();
-    await socket.receive(
-      packet(observation(3, 1, { capacity: 3, capacityReached: true })),
-    );
-    expect(element("capacity-warning").hidden).toBe(false);
-    expect(element("capacity-warning").textContent).toContain(
-      "additional people",
-    );
-    expect(element("count-label").textContent).toBe("at capacity");
-
-    element<HTMLButtonElement>("stop").click();
-    await flushPromises();
-    expect(image.close).toHaveBeenCalledTimes(1);
-    expect(socket.close).toHaveBeenCalledTimes(1);
-    expect(element("person-count").textContent).toBe("0");
-    expect(element("count-label").textContent).toBe("detected");
-    expect(element("capacity-warning").hidden).toBe(true);
-    expect(element("standby").hidden).toBe(false);
-    expect(element<HTMLButtonElement>("start").disabled).toBe(false);
-    expect(element<HTMLButtonElement>("stop").disabled).toBe(true);
-    expect(renderer.drawStandby).toHaveBeenCalled();
-    expect(stopRequestCount()).toBe(1);
-  });
-
-  it("hides stale skeletons and count after the display freshness timeout", async () => {
-    const image = bitmap();
-    createBitmap.mockResolvedValueOnce(image);
-    const socket = await startViewer();
-    await socket.receive(packet(observation(2)));
-    expect(element("person-count").textContent).toBe("2");
-    vi.advanceTimersByTime(1800);
-    expect(image.close).toHaveBeenCalledTimes(1);
-    expect(element("person-count").textContent).toBe("0");
-    expect(element("source-badge").textContent).toBe("Stale");
-    expect(element("status-message").textContent).toContain(
-      "Old skeletons are hidden",
-    );
-    expect(renderer.drawStandby).toHaveBeenCalled();
-    expect(stopRequestCount()).toBe(0);
-  });
-
-  it("rejects an unexpected source epoch instead of adopting restarted identity", async () => {
-    const image = bitmap();
-    createBitmap.mockResolvedValueOnce(image);
-    const socket = await startViewer();
-    await socket.receive(packet(observation(1)));
-    await socket.receive(
-      packet(observation(3, 2, { epoch: "unexpected-restart" })),
-    );
-    expect(createBitmap).toHaveBeenCalledTimes(1);
-    expect(image.close).toHaveBeenCalledTimes(1);
-    expect(element("person-count").textContent).toBe("0");
-    expect(element("status-title").textContent).toBe(
-      "Preview could not continue",
-    );
-    expect(element("status-message").textContent).toContain("source restarted");
-    expect(element<HTMLButtonElement>("start").disabled).toBe(false);
-    expect(socket.close).toHaveBeenCalled();
-  });
-
-  it("returns actionable start errors and restores the operator controls", async () => {
-    startFailure =
-      "Camera permission denied. Allow camera access in system settings.";
-    element<HTMLButtonElement>("start").click();
-    await flushPromises();
-    expect(FakeWebSocket.instances).toHaveLength(0);
-    expect(element("status-title").textContent).toBe("Unable to start");
-    expect(element("status-message").textContent).toBe(startFailure);
-    expect(element<HTMLButtonElement>("start").disabled).toBe(false);
-    expect(element<HTMLButtonElement>("stop").disabled).toBe(true);
-    expect(element<HTMLSelectElement>("algorithm").disabled).toBe(false);
-    expect(element<HTMLButtonElement>("source-demo").disabled).toBe(false);
-  });
-
-  it("labels synthetic input and disables camera inference selection for that source", async () => {
-    const socket = await startViewer("demo");
-    expect(element<HTMLSelectElement>("algorithm").disabled).toBe(true);
-    expect(element("camera-settings").hidden).toBe(true);
-    expect(element("demo-settings").hidden).toBe(false);
-    await socket.receive(
-      packet(
-        observation(3, 1, {
-          source: "demo",
-          algorithm: "synthetic",
-          clock: {
-            domain: "host-monotonic",
-            quality: "synthetic",
-            uncertaintyNs: null,
-          },
-        }),
-      ),
-    );
-    expect(element("source-badge").textContent).toBe("Synthetic");
-    expect(element("stage-source").textContent).toContain("no camera");
-    expect(element("timing-note").textContent).toContain(
-      "not inference or camera performance results",
-    );
-    const request = fetchMock.mock.calls.find(
-      ([path]) => path === "/api/start",
-    );
-    expect(JSON.parse(request?.[1]?.body as string).source).toBe("demo");
-    element<HTMLButtonElement>("stop").click();
-    await flushPromises();
-    expect(element<HTMLSelectElement>("algorithm").disabled).toBe(true);
-    element<HTMLButtonElement>("source-camera").click();
-    expect(element<HTMLSelectElement>("algorithm").disabled).toBe(false);
-  });
-
-  it("does not let a delayed decode error from an obsolete generation stop its replacement", async () => {
-    let rejectOldDecode: ((reason: Error) => void) | undefined;
-    const oldDecode = new Promise<FakeBitmap>((_resolve, reject) => {
-      rejectOldDecode = reject;
-    });
-    createBitmap.mockReturnValueOnce(oldDecode);
-    const firstSocket = await startViewer();
-    const pendingOldFrame = firstSocket.receive(packet(observation(1)));
-    await flushPromises();
-    expect(createBitmap).toHaveBeenCalledTimes(1);
-    element<HTMLButtonElement>("stop").click();
-    await flushPromises();
-    acknowledgedEpoch = "replacement-epoch";
-    const replacement = await startViewer();
-    await replacement.receive(
-      packet(observation(3, 1, { epoch: "replacement-epoch" })),
-    );
-    expect(element("person-count").textContent).toBe("3");
-    expect(stopRequestCount()).toBe(1);
-
-    if (!rejectOldDecode) throw new Error("The old decoder was not installed.");
-    rejectOldDecode(new Error("Obsolete image decode failed"));
-    await pendingOldFrame;
-    await flushPromises();
-    expect(element("person-count").textContent).toBe("3");
-    expect(replacement.close).not.toHaveBeenCalled();
-    expect(element("status-title").textContent).toBe("Skeletons detected");
-    expect(element<HTMLButtonElement>("stop").disabled).toBe(false);
-    expect(stopRequestCount()).toBe(1);
-  });
-
-  it("rejects mismatched image and observation geometry before displaying a skeleton", async () => {
-    const wrongImage = bitmap(100, 100);
-    createBitmap.mockResolvedValueOnce(wrongImage);
-    const socket = await startViewer();
-    await socket.receive(packet(observation(1)));
-    expect(wrongImage.close).toHaveBeenCalledTimes(1);
-    expect(renderer.drawFrame).not.toHaveBeenCalled();
-    expect(element("person-count").textContent).toBe("0");
-    expect(element("status-message").textContent).toContain(
-      "dimensions do not match",
-    );
-    expect(element<HTMLButtonElement>("start").disabled).toBe(false);
+      expect(el(id).textContent).toBe("—");
   });
 });

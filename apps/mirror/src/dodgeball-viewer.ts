@@ -422,7 +422,7 @@ export function mountDodgeballGame(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           source: "camera",
-          algorithm: "mediapipe",
+          algorithm: "rtmpose",
           tracker: "pose",
           cameraIndex: index,
           maxPeople: 3,
