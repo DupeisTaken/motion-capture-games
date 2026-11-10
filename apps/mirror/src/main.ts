@@ -1,3 +1,8 @@
+import {
+  CameraChoice,
+  cameraChoiceMarkup,
+  type CameraSelection,
+} from "./camera-choice";
 import "./style.css";
 import type { Observation } from "../../../contracts/generated/observation";
 import {
@@ -37,12 +42,13 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         <section class="control-section"><h2><span class="section-index">01</span> Input source</h2>
           <div class="segmented" role="group" aria-label="Input source"><button id="source-camera" aria-pressed="true">Camera</button><button id="source-demo" aria-pressed="false">Synthetic scene</button></div>
           <div id="camera-settings">
+            ${cameraChoiceMarkup}
+            <details class="camera-advanced"><summary>Browser camera identification</summary>
             <button id="discover-cameras" class="discovery-button">${icon("camera")} Allow & discover cameras</button>
             <p id="camera-permission" class="field-help" role="status">Explicit browser permission reveals camera names. Native capture also needs OS permission.</p>
             <label class="field-label" for="browser-camera">Browser camera reference</label><div class="device-row"><select id="browser-camera" disabled><option value="">Discover cameras first</option></select><button id="identify-camera" class="small-button" disabled>Identify</button></div>
             <div id="camera-check" hidden><video id="camera-check-video" muted playsinline aria-label="Temporary camera identification preview"></video><button id="release-camera" class="small-button">Release browser camera</button></div>
-            <div class="index-row"><label class="field-label" for="camera-index">Native camera index</label><input id="camera-index" type="number" min="0" max="9" step="1" value="0" required aria-describedby="camera-mapping"></div>
-            <p id="camera-mapping" class="field-help">Browser IDs do not map to native indices. Identify the device, then verify index 0–9 in the live preview.</p>
+            </details>
           </div>
           <div id="demo-settings" hidden><label class="field-label" for="demo-scenario">Test scene</label><select id="demo-scenario"><option value="three">Three moving people</option><option value="cycle">People enter and leave</option><option value="empty">Empty scene</option></select><p class="field-help">Generated joints. Camera and pose inference are bypassed.</p></div>
         </section>
@@ -59,7 +65,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         <div class="stage" id="stage">
           <canvas id="skeleton-canvas" width="1280" height="800" aria-label="Mirrored camera image and detected body skeletons"></canvas>
           <div class="stage-corner stage-top"><span class="view-label" id="view-label">Mirrored view</span><span class="people-overlay" id="people-overlay">0 people</span></div>
-          <div class="standby" id="standby"><span class="standby-icon">${icon("camera")}</span><h2>Ready to observe</h2><p>Allow camera discovery, or use a native index.<br>Synthetic scenes work without a camera.</p></div>
+          <div class="standby" id="standby"><span class="standby-icon">${icon("camera")}</span><h2>Ready to observe</h2><p>Choose a camera, then press Start camera.<br>Synthetic scenes work without a camera.</p></div>
           <div class="stage-corner stage-bottom"><span id="stage-source">No source connected</span><span id="frame-state">Waiting for frames</span></div>
         </div>
         <div class="view-options"><label><input id="mirror" type="checkbox" checked>Mirror</label><label><input id="show-video" type="checkbox" checked>Image</label><label><input id="show-boxes" type="checkbox" checked>Bounds</label><span class="view-hint">Anatomical L/R preserved</span></div>
@@ -143,6 +149,7 @@ let lastDecodeMs = 0;
 let lastDrawMs = 0;
 let lastPreviewBytes = 0;
 const diagnostics = new PreviewDiagnostics();
+const cameraChoice = new CameraChoice();
 const cameraSetup = new CameraSetup({
   busyChanged: (busy) => {
     startButton.disabled = running || busy;
@@ -303,6 +310,7 @@ function updatePeople(frame: Observation) {
 function setControls(active: boolean) {
   running = active;
   cameraSetup.setLocked(active);
+  cameraChoice.setLocked(active);
   startButton.disabled = active || cameraSetup.busy;
   stopButton.disabled = !active;
   sourceButtons.forEach((button) => (button.disabled = active));
@@ -363,15 +371,18 @@ async function stop(
 }
 async function start() {
   if (running || cameraSetup.busy) return;
-  const indexInput = get<HTMLInputElement>("camera-index");
-  if (source === "camera" && !indexInput.checkValidity()) {
-    setStatus(
-      "Invalid camera index",
-      "Choose a whole native camera index from 0 to 9.",
-      "error",
-    );
-    indexInput.reportValidity();
-    return;
+  let camera: CameraSelection = { cameraIndex: 0 };
+  if (source === "camera") {
+    try {
+      camera = cameraChoice.selection();
+    } catch (error) {
+      setStatus(
+        "Choose a camera",
+        error instanceof Error ? error.message : String(error),
+        "error",
+      );
+      return;
+    }
   }
   cameraSetup.release();
 
@@ -390,7 +401,7 @@ async function start() {
       source,
       algorithm: get<HTMLSelectElement>("algorithm").value,
       tracker: get<HTMLSelectElement>("tracker").value,
-      cameraIndex: Number(get<HTMLInputElement>("camera-index").value),
+      ...camera,
       maxPeople: Number(get<HTMLSelectElement>("capacity").value),
       demoScenario: get<HTMLSelectElement>("demo-scenario").value,
     });
@@ -541,7 +552,7 @@ window.setInterval(() => {
   get("stage-source").textContent =
     source === "demo"
       ? "Generated input · no camera"
-      : `${get<HTMLSelectElement>("algorithm").value === "rtmpose" ? "RTMPose" : "MediaPipe"} · camera ${get<HTMLInputElement>("camera-index").value}`;
+      : `${get<HTMLSelectElement>("algorithm").value === "rtmpose" ? "RTMPose" : "MediaPipe"} · ${cameraChoice.label}`;
   get("frame-state").textContent = `Frame ${lastPreview.sequence}`;
   get("source-size").textContent =
     `${lastPreview.image.width} × ${lastPreview.image.height}`;
@@ -727,3 +738,5 @@ void fetch("/api/status")
       "error",
     ),
   );
+
+void cameraChoice.refresh();

@@ -14,7 +14,7 @@ pnpm dev
 
 Open **http://127.0.0.1:5173**. Setup creates `.venv/`, downloads the Python interpreter/tools under ignored `.local/`, and downloads verified model files into ignored `models/artifacts/`. It needs network access once. The application makes no model/CDN/cloud request during gameplay preview. A later `pnpm models` repairs or redownloads missing artifacts.
 
-The server does not open a camera on startup. In the viewer, choose **Camera**, optionally discover/identify a browser camera as described below, then set its **Native camera index** (0 is the initial operator fallback), select a pose model and association mode, then choose **Start camera**. OS camera permission may be needed for the host process. Use **Stop** to release capture. Hiding the browser tab stops the preview; returning requires an explicit restart. Closing the last viewer also releases its source. This is a single-operator diagnostic service; multiple tabs share one source.
+The server does not open a camera on startup. In the viewer, choose **Camera**, select the named device under **Choose camera**, select a pose model and association mode, then choose **Start camera**. Use **Refresh** after connecting or reconnecting a USB camera. **Manual camera index** is an explicit advanced fallback (0–9). OS camera permission may be needed for the host process. Use **Stop** to release capture. Hiding the browser tab stops the preview; returning requires an explicit restart. Closing the last viewer also releases its source. This is a single-operator diagnostic service; multiple tabs share one source.
 
 Choose **Synthetic scene** to inspect rendering and the contract without a camera. The three-body, empty, and entering/leaving scenes generate observations directly: they do not measure either pose model's detection quality. They are clearly labeled in the UI and canonical payload.
 
@@ -86,13 +86,21 @@ Work is tracked in [issue #3](https://github.com/DupeisTaken/motion-capture-game
 
 The responsive single-page console places input/pipeline controls, preview, detections, twelve performance fields and stream context side by side on desktop. Narrow screens stack the same information with scrolling. Current model, camera/tracker, frame/epoch, clock quality, transform and calibration remain visible beside performance readings.
 
-### Explicit camera permission and selection
+### Camera choice and permission
 
-1. Choose **Allow & discover cameras**. Only this action requests browser camera access; audio is disabled. Discovery requires localhost/HTTPS and an available vision service. Stop any active diagnostic source first, including another tab's preview.
-2. Grant browser access to reveal camera names. The discovery stream is released after enumeration. Choose a **Browser camera reference** and **Identify** to inspect that exact device temporarily. **Release browser camera**, source changes, hiding/closing the page and starting native capture release its tracks. A late permission result is also released after setup is invalidated.
-3. Set the **Native camera index** and start the diagnostic. Verify the physical view and correct the index after stopping if needed. Browser IDs/order are not OpenCV indices: no automatic mapping or persistent device identity is claimed. Only one native camera is active in this slice.
+The console, Mole Motion and Dodgeball share **Choose camera** and **Refresh** controls. Native camera names come from the vision service's `/api/cameras` metadata endpoint; enumeration does not acquire a camera, request microphone access or read images. Games discover only after Camera input is selected, so camera-free rehearsal still works without the service.
 
-Browser permission does not grant Python/OS camera permission. Denied access, unavailable/busy devices and missing browser APIs show recovery guidance; native index selection remains available. Camera labels, browser IDs and setup video are not persisted or included in reports. API behavior follows the [Media Capture and Streams specification](https://www.w3.org/TR/mediacapture-streams/).
+1. Connect your USB camera and choose **Refresh**. Select a named camera; with several available, no device is chosen automatically. An initially single available camera is preselected, but capture still requires **Start camera**.
+2. Choose **Start camera**. The selected OS device identity is resolved again before replacing the source and after model loading, using the native capture backend's current order. A missing device fails rather than falling back to another camera. Selection and Refresh are locked during active capture; stop before switching.
+3. Refresh preserves a still-connected selection across list reordering. If it disappeared, the choice clears with a disconnected message. Identical model names receive separate numbered options. Display names use text nodes, not HTML. Empty, service-error and timed-out discovery states provide recovery instructions and never silently choose a fallback.
+
+On macOS, discovery mirrors the pinned OpenCV 4.11 AVFoundation video/muxed list sorted by unique ID. Windows uses Media Foundation metadata from pinned `cv2-enumerate-cameras` 1.4.0. Each scan runs in a fresh, serialized subprocess with a ten-second deadline and at most 32 devices; it does not open a range of camera indices. Raw OS paths/serials are replaced by opaque hashes and remain out of reports. These are device references, not participant identities or calibration records. Linux named discovery is unsupported; use the manual fallback.
+
+**Manual camera index** exposes the existing 0–9 field when native discovery is unavailable. It has no stable-device guarantee across reconnects. The optional **Browser camera identification** section in the console requests browser permission only after **Allow & discover cameras**. Its temporary video is released before native capture, on source changes and when hiding/closing the page. Browser IDs are setup references and are never inferred native indices.
+
+If USB cameras are absent, unlock the Mac, reconnect the camera with a data-capable cable, and choose **Allow** for any accessory prompt. Check OS camera permission and hub power/connection, then Refresh. Software cannot list a camera the OS does not expose. Browser permission does not grant Python/OS camera permission. Only one native camera is active at a time; this selector does not implement multi-camera fusion.
+
+The [camera selection report](../reports/camera-selection.html) records actual software and hardware checks. Hardware enumeration/opening is subject to a small OS hot-plug race because OpenCV opens by native index; changing cables during startup is not an atomic stable-ID capture guarantee. Stop/reconnect/Refresh after any device error. Windows physical capture and simultaneous USB modes remain unverified.
 
 ### Reading performance diagnostics
 

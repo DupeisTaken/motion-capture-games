@@ -47,7 +47,7 @@ Begin with one local vision service and one mirror application, not distributed 
 
 The vision process exclusively opens both cameras. Each acquired frame is referenced by the video path and the inference path; preview and gameplay do not independently reopen the same device.
 
-The diagnostic console also offers explicit browser permission/discovery and a temporary device-identification preview while the vision source is stopped. It releases browser tracks before native acquisition starts. Browser device IDs are references for setup, never inferred OpenCV indices; diagnostic acquisition remains owned by the vision process. See [camera setup](diagnostic-viewer.md#explicit-camera-permission-and-selection).
+The diagnostic console also offers explicit browser permission/discovery and a temporary device-identification preview while the vision source is stopped. It releases browser tracks before native acquisition starts. Browser device IDs are references for setup, never inferred OpenCV indices. The shared native camera selector obtains metadata without opening devices and re-resolves the selected OS identity on Start. Diagnostic acquisition remains owned by the vision process. See [camera setup](diagnostic-viewer.md#camera-choice-and-permission).
 
 Capture, inference, simulation, and rendering have independent rates. Prefer recent observations over processing every captured frame. Use bounded queues with observable drop counters and no unbounded catch-up loop. Render smoothly between useful observations; interpolation for presentation must not invent scoring input.
 

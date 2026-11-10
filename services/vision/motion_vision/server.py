@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from .cameras import discover_cameras
 from .runtime import StartRequest, VisionRuntime
 
 ALLOWED_ORIGINS = {
@@ -50,6 +51,14 @@ def create_app(runtime: VisionRuntime | None = None) -> FastAPI:
     @app.get("/api/status")
     async def status():
         return vision.status()
+
+    @app.get("/api/cameras")
+    async def cameras():
+        try:
+            devices = await asyncio.to_thread(discover_cameras)
+            return {"cameras": [{"id": item["id"], "name": item["name"]} for item in devices]}
+        except RuntimeError as error:
+            raise HTTPException(status_code=503, detail=str(error)) from error
 
     @app.post("/api/start")
     async def start(settings: StartRequest):

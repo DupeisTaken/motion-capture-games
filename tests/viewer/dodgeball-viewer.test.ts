@@ -99,8 +99,13 @@ function packet(value: Observation): ArrayBuffer {
   return encoded.buffer;
 }
 
-async function startCamera(): Promise<FakeWebSocket> {
+async function selectCamera() {
   choose("source-select", "camera");
+  await flushPromises();
+}
+
+async function startCamera(): Promise<FakeWebSocket> {
+  await selectCamera();
   element<HTMLButtonElement>("source-connect").click();
   await flushPromises();
   const socket = FakeWebSocket.instances.at(-1);
@@ -183,7 +188,16 @@ beforeEach(() => {
     configurable: true,
     value: false,
   });
-  vi.stubGlobal("fetch", fetchMock);
+  vi.stubGlobal("fetch", (path: string, options?: RequestInit) =>
+    path === "/api/cameras"
+      ? Promise.resolve({
+          ok: true,
+          json: async () => ({
+            cameras: [{ id: "a".repeat(64), name: "USB camera" }],
+          }),
+        })
+      : fetchMock(path, options),
+  );
   vi.stubGlobal("WebSocket", FakeWebSocket);
   vi.stubGlobal("createImageBitmap", createBitmap);
   vi.stubGlobal("Option", function Option(text = "", value = text) {
@@ -381,7 +395,7 @@ describe("Dodgeball operator integration", () => {
     expect(element("overlay-title").textContent).toBe(title);
   });
   it("shows an actionable backend error and permits a retry", async () => {
-    choose("source-select", "camera");
+    await selectCamera();
     fetchMock.mockRejectedValueOnce(new Error("Service offline"));
     element<HTMLButtonElement>("source-connect").click();
     await flushPromises();
@@ -396,6 +410,9 @@ describe("Dodgeball operator integration", () => {
     );
     expect(JSON.parse(startRequest?.[1].body as string).algorithm).toBe(
       "rtmpose",
+    );
+    expect(JSON.parse(startRequest?.[1].body as string).cameraId).toBe(
+      "a".repeat(64),
     );
     await socket.receive(packet(observation()));
     expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
@@ -508,7 +525,7 @@ describe("Dodgeball operator integration", () => {
     expect(element("stage-player").textContent).toBe("NOT JOINED");
   });
   it("releases a late camera-start acknowledgment after an explicit stop", async () => {
-    choose("source-select", "camera");
+    await selectCamera();
     let finish!: (value: object) => void;
     fetchMock.mockImplementationOnce(
       () =>
@@ -639,7 +656,7 @@ describe("Dodgeball operator integration", () => {
   });
 
   it("keeps a failed late-start release available after switching to rehearsal", async () => {
-    choose("source-select", "camera");
+    await selectCamera();
     let finishStart!: (value: object) => void;
     fetchMock.mockImplementationOnce(
       () =>
@@ -804,7 +821,7 @@ describe("Dodgeball operator integration", () => {
   });
 
   it("deduplicates simultaneous start intents and release retries", async () => {
-    choose("source-select", "camera");
+    await selectCamera();
     element("source-connect").dispatchEvent(new Event("click"));
     element("source-connect").dispatchEvent(new Event("click"));
     await flushPromises();

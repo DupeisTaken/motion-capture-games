@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-10",
+  "issue": "https://github.com/DupeisTaken/motion-capture-games/issues/23",
+  "verification": {
+    "vitestPassed": 352,
+    "pytestPassed": 115,
+    "checks": "pnpm check; pnpm build; frozen pnpm and uv installs; Git whitespace; real-server Chrome desktop/mobile verification"
+  },
+  "screenshots": {
+    "viewports": [
+      "1440x1050",
+      "390x844"
+    ],
+    "language": "English",
+    "cameraMetadata": "synthetic built-in and two USB camera labels; no capture opened",
+    "pages": [
+      "Tracking console",
+      "Mole Motion",
+      "Dodgeball"
+    ],
+    "browserErrors": 0,
+    "horizontalOverflow": false
+  },
+  "hardwareSpotCheck": {
+    "os": "macOS 26.6.2",
+    "host": "Apple M5",
+    "available": [
+      "EMEET SmartCam C960 4K",
+      "MacBook Air Camera"
+    ],
+    "selected": "EMEET SmartCam C960 4K",
+    "model": "RTMPose",
+    "previewSize": "960x540",
+    "sampleAfterSeconds": 5,
+    "renderFps": 60.0,
+    "sourceFps": 30.3,
+    "observationFps": 30.3,
+    "detectedPeople": 0,
+    "imagesSaved": false
+  },
+  "limitations": [
+    "Windows physical capture unverified",
+    "No simultaneous multi-camera capture or calibrated fusion",
+    "No certified 4K/60 sensor mode or end-to-end latency result",
+    "Native indexed opening has a small hot-plug race; reconnect and Refresh after errors"
+  ]
+}
