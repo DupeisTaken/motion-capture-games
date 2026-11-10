@@ -20,6 +20,10 @@ import {
 import { drawMoleScene } from "./mole-renderer";
 import { CameraReleases } from "./camera-release";
 import { createGameDisplay } from "./game-display";
+import {
+  createPreGameSettings,
+  preGameSettingsMarkup,
+} from "./pre-game-settings";
 
 // Proposed continuity window: fresh input must remain ready before play/recovery.
 const READY_HOLD_MS = 600;
@@ -39,29 +43,32 @@ export function mountMoleGame(
   deps: { now?: () => number; autoTick?: boolean; seed?: number } = {},
 ): { tick(): void; dispose(): void } {
   const now = deps.now || (() => performance.now());
+  const setupMarkup = preGameSettingsMarkup(
+    "Mole Motion",
+    `<label for="mode-select">Play mode</label><select id="mode-select"><option value="timed">◷  Timed · 60 seconds</option><option value="challenge">◎  Challenge · 15 moles</option><option value="survival">♡  Survival · 3 misses</option><option value="practice">∞  Practice · no pressure</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p>
+    <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · room to warm up</option><option value="normal" selected>Normal · find your rhythm</option><option value="hard">Hard · stretch your reach</option></select><p class="field-note">Hard favors moles farther from your available contact points, within the play area.</p>
+    <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-flick" aria-pressed="false">Flick</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies.</p>
+    `,
+    `<label for="source-select">Input source</label><select id="source-select"><option value="demo">Rehearsal · no camera</option><option value="camera">Camera · body tracking</option></select>
+    <div id="setup-camera-release" hidden><p id="setup-release-message" class="field-note" role="status"></p><button id="setup-retry-camera-stop" class="mm-secondary">Retry camera stop</button></div><p id="setup-input-status" class="field-note" role="status"></p><div id="demo-controls"><label for="demo-contact">Rehearsal contact</label><select id="demo-contact"><option value="left_wrist">Left wrist / hand</option><option value="right_wrist">Right wrist / hand</option><option value="left_hip">Left hip</option><option value="right_hip">Right hip</option><option value="left_foot">Left foot</option><option value="right_foot">Right foot</option></select><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
+    <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Start only when ready. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="setup-stop-camera" class="mm-text" disabled>Stop camera</button><details class="advanced-controls"><summary>Participant & tracking options</summary><label for="player-track">Participant override</label><select id="player-track"><option value="">Automatic · one participant</option></select><p class="field-note">Only needed with more than one participant. Selection is locked during a round.</p></details></div>
+    <div class="display-controls"><button id="open-game-display" class="mm-secondary">Open game window ↗</button><p id="display-status" class="field-note" role="status">Move the game window to your display; keep controls here.</p><label class="check-row"><input id="show-tracking" type="checkbox"> Show tracking diagnostics</label></div>
+  `,
+  );
   root.innerHTML = `
   <a class="skip" href="#game-stage">Skip to game</a>
   <header class="mm-header"><a class="mm-brand" href="/">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/">Tracking console</a><a class="current" href="/mole.html" aria-current="page">Mole Motion</a><a href="/dodgeball.html">Dodgeball</a></nav><span class="local-pill"><i></i> Local & private</span></header>
   <main class="mm-main"><div class="mm-heading"><div><p class="eyebrow">THE MOTION ARCADE <span>/</span> GAME 01</p><h1>Mole Motion<span class="heading-dot">.</span></h1><p class="intro">A little reach. A little rhythm. A whole lot of moles.</p></div><span class="experiment">Single player <span>Experimental</span></span></div>
-  <div class="mm-layout"><aside class="mm-settings" aria-label="Game settings">
-    <div class="settings-title"><h2>Make it your game</h2><span>01</span></div>
-    <label for="mode-select">Play mode</label><select id="mode-select"><option value="timed">◷  Timed · 60 seconds</option><option value="challenge">◎  Challenge · 15 moles</option><option value="survival">♡  Survival · 3 misses</option><option value="practice">∞  Practice · no pressure</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p>
-    <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · room to warm up</option><option value="normal" selected>Normal · find your rhythm</option><option value="hard">Hard · stretch your reach</option></select><p class="field-note">Hard favors moles farther from your available contact points, within the play area.</p>
-    <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-flick" aria-pressed="false">Flick</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies.</p>
-    <hr><label for="source-select">Input source</label><select id="source-select"><option value="demo">Rehearsal · no camera</option><option value="camera">Camera · body tracking</option></select>
-    <div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
-    <div id="demo-controls"><label for="demo-contact">Rehearsal contact</label><select id="demo-contact"><option value="left_wrist">Left wrist / hand</option><option value="right_wrist">Right wrist / hand</option><option value="left_hip">Left hip</option><option value="right_hip">Right hip</option><option value="left_foot">Left foot</option><option value="right_foot">Right foot</option></select><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
-    <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Start only when ready. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="source-stop" class="mm-text" disabled>Stop camera</button><details class="advanced-controls"><summary>Participant & tracking options</summary><label for="player-track">Participant override</label><select id="player-track"><option value="">Automatic · one participant</option></select><p class="field-note">Only needed with more than one participant. Selection is locked during a round.</p></details></div>
-    <p id="player-binding" class="field-note" hidden></p><p id="player-status" class="player-readiness" role="status">Press Start round. We’ll wait until your input is ready.</p><div class="display-controls"><button id="open-game-display" class="mm-secondary">Open game window ↗</button><p id="display-status" class="field-note" role="status">Move the game window to your display; keep controls here.</p><label class="check-row"><input id="show-tracking" type="checkbox"> Show tracking diagnostics</label></div>
-  </aside>
+  <div class="mm-layout play-layout">
+  <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="player-readiness" role="status">Press Start round. We’ll wait until your input is ready.</p><button id="source-stop" class="mm-text" disabled>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
   <section class="mm-game" aria-label="Mole Motion game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>HITS</span><strong id="hits-value">0</strong></div><div class="score-item"><span>BEST STREAK</span><strong id="streak-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
     <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Game play area. Rehearsal: move pointer or arrow keys to aim; Space to push."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera and game view"></canvas><div class="display-hud" aria-label="Live round score"><span>SCORE <strong id="display-score">000</strong></span><span>TIME <strong id="display-time">1:00</strong></span></div><div class="stage-label"><i></i><span id="stage-mode">TOUCH TO WHACK</span></div><div class="player-label">P1 <span id="stage-player">NOT JOINED</span></div><div id="mole-target" class="mole-target" hidden>${moleArt}</div><div id="hit-feedback" class="hit-feedback" aria-hidden="true"></div><div class="mm-overlay" id="game-overlay"><div class="overlay-mole">${moleArt}</div><p id="overlay-kicker">READY, SET, REACH</p><h2 id="overlay-title">Small moles.<br>Big moves.</h2><p id="overlay-copy">Press Start round and make your first move.<br>Keep your whole body inside the camera view.</p></div><div class="stage-bottom"><span id="stage-help">Rehearsal · move your cursor or use arrow keys</span><span>MIRRORED VIEW</span></div></div>
     <div class="target-track"><span id="target-life">Waiting for your first mole</span><progress id="target-progress" max="1" value="1" aria-label="Mole time remaining"></progress><span id="misses-value">0 escaped</span></div>
-    <div class="game-actions"><button id="start-round" class="mm-primary">Start round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="resume-round" class="mm-primary" hidden>Resume · countdown</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start round. Input checks happen automatically.</span></div>
+    <div class="game-actions"><button id="start-round" class="mm-primary">Set up round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="resume-round" class="mm-primary" hidden>Resume · countdown</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start round. Input checks happen automatically.</span></div>
     <p class="source-disclosure" id="source-disclosure">Synthetic controls, including simulated depth. This rehearsal does not measure camera or push accuracy.</p>
   </section></div>
   <section class="how-grid" aria-label="How to play"><article><span class="how-number">01</span><div><h2>Meet your mole</h2><p>Touch with a hand or foot, or choose Flick and flap your wrist near a mole. Push needs depth input.</p></div></article><article><span class="how-number">02</span><div><h2>Move, reset, repeat</h2><p>Each mole counts once. Move away after a touch, settle your hand after a flick, or bring your push back.</p></div></article><article><span class="how-number">03</span><div><h2>Stay in the picture</h2><p>Missing feet? Step back, check framing or clear an occlusion. Play pauses fairly.</p></div></article></section>
-  <footer class="mm-footer"><span>Built for movement. Played in your space.</span><span>One player · English · M2 software preview</span></footer></main>`;
+  <footer class="mm-footer"><span>Built for movement. Played in your space.</span><span>One player · English · M2 software preview</span></footer>${setupMarkup}</main>`;
 
   // Cache references before the stage moves to its separate display document.
   const controls = new Map(
@@ -110,6 +117,14 @@ export function mountMoleGame(
     demoTime = -Infinity;
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
+  const setup = createPreGameSettings(root, () => {
+    resetGame();
+    requested = true;
+    manualPaused = false;
+    if (!isDemo()) ingestCamera();
+    tick();
+    get("game-stage").focus();
+  });
   const isDemo = () => select("source-select").value === "demo";
   const isJoined = () => (isDemo() ? demoJoined : !!session.binding);
   const active = () =>
@@ -134,6 +149,8 @@ export function mountMoleGame(
     interaction,
   });
   function setMessage(message: string) {
+    if (get("setup-input-status").textContent !== message)
+      get("setup-input-status").textContent = message;
     if (get("game-status").textContent !== message)
       get("game-status").textContent = message;
   }
@@ -153,6 +170,12 @@ export function mountMoleGame(
     get<HTMLButtonElement>("source-connect").disabled =
       connecting || !!epoch || release.pendingCount > 0;
     get<HTMLButtonElement>("source-stop").disabled = !epoch && !connecting;
+    get<HTMLButtonElement>("setup-stop-camera").disabled =
+      !epoch && !connecting;
+    get("setup-camera-release").hidden = release.pendingCount === 0;
+    get("setup-release-message").textContent = release.message;
+    get<HTMLButtonElement>("setup-retry-camera-stop").disabled =
+      release.releasing;
     if (!isDemo() && !epoch) setMessage(release.message || cameraMessage);
   }
   function updateTrackChoices() {
@@ -343,17 +366,21 @@ export function mountMoleGame(
       setPlayerStatus(readiness.reason || "Waiting for ready input.");
     get("display-score").textContent = get("score-value").textContent;
     get("display-time").textContent = get("time-value").textContent;
+    const needsNewRound =
+      state.phase === "paused" && (readiness.requiresNewRound || needsNewOwner);
     const locked = active();
+    const configurationLocked = locked && !needsNewRound;
     for (const id of [
       "mode-select",
       "difficulty-select",
       "source-select",
       "demo-contact",
     ])
-      get<HTMLSelectElement>(id).disabled = locked;
-    get<HTMLButtonElement>("interaction-touch").disabled = locked;
-    get<HTMLButtonElement>("interaction-flick").disabled = locked;
-    get<HTMLButtonElement>("interaction-push").disabled = locked || !isDemo();
+      get<HTMLSelectElement>(id).disabled = configurationLocked;
+    get<HTMLButtonElement>("interaction-touch").disabled = configurationLocked;
+    get<HTMLButtonElement>("interaction-flick").disabled = configurationLocked;
+    get<HTMLButtonElement>("interaction-push").disabled =
+      configurationLocked || !isDemo();
     get<HTMLButtonElement>("start-round").disabled =
       state.phase !== "ready" || requested;
     get("start-round").hidden = state.phase !== "ready" || requested;
@@ -362,13 +389,12 @@ export function mountMoleGame(
       "countdown",
     ].includes(state.phase);
     get("pause-round").hidden = ["paused", "results"].includes(state.phase);
-    const needsNewRound =
-      state.phase === "paused" && (readiness.requiresNewRound || needsNewOwner);
     get("resume-round").hidden =
       state.phase !== "paused" || needsNewRound || !manualPaused;
     get<HTMLButtonElement>("resume-round").disabled = !viewVisible();
     get<HTMLButtonElement>("end-round").disabled = !locked;
     get("restart-round").hidden = state.phase !== "results" && !needsNewRound;
+    setup.setLocked(configurationLocked);
     get("restart-round").textContent = needsNewRound
       ? "Start new round ↗"
       : "Play again ↗";
@@ -731,6 +757,8 @@ export function mountMoleGame(
   }
   listen(get("source-connect"), "click", () => void startCamera());
   listen(get("source-stop"), "click", () => void stopCamera());
+  listen(get("setup-stop-camera"), "click", () => void stopCamera());
+  listen(get("setup-retry-camera-stop"), "click", () => void releases.retry());
   listen(get("retry-camera-stop"), "click", () => void releases.retry());
   listen(select("source-select"), "change", () => {
     if (!isDemo()) void cameraChoice.refresh();
@@ -756,7 +784,11 @@ export function mountMoleGame(
     });
   for (const value of ["touch", "flick", "push"] as const)
     listen(get(`interaction-${value}`), "click", () => {
-      if (active() || (value === "push" && !isDemo())) return;
+      if (
+        get<HTMLButtonElement>("confirm-start").disabled ||
+        (value === "push" && !isDemo())
+      )
+        return;
       interaction = value;
       resetGame();
       updateSettings();
@@ -776,11 +808,8 @@ export function mountMoleGame(
       get("display-status").textContent =
         "Allow pop-ups for this local page, then try again.";
   });
-  listen(get("start-round"), "click", () => {
-    requested = true;
-    manualPaused = false;
-    tick();
-  });
+  listen(get("open-settings"), "click", () => setup.open());
+  listen(get("start-round"), "click", () => setup.open(get("start-round")));
   listen(get("pause-round"), "click", () => {
     manualPaused = true;
     game.pause("Paused by player.");
@@ -796,15 +825,7 @@ export function mountMoleGame(
     else game.finish();
     tick();
   });
-  listen(get("restart-round"), "click", () => {
-    const startAgain =
-      needsNewOwner || game.readiness(now(), frame).requiresNewRound;
-    resetGame();
-    requested = startAgain;
-    if (!isDemo()) ingestCamera();
-    setMessage("Ready for another round. Adjust your setup or start again.");
-    tick();
-  });
+  listen(get("restart-round"), "click", () => setup.open(get("restart-round")));
   listen(get("demo-framing"), "change", () => tick());
   function aim(event: PointerEvent) {
     if (!isDemo()) return;
@@ -871,10 +892,12 @@ export function mountMoleGame(
     deps.autoTick === false ? () => {} : display.startTicker(tick);
   updateSettings();
   tick();
+  setup.open();
   return {
     tick,
     dispose() {
       disposed = true;
+      setup.dispose();
       cameraChoice.dispose();
       listeners.abort();
       display.dispose();

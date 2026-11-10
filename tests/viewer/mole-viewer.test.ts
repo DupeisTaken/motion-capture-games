@@ -146,6 +146,7 @@ function startDemo(): void {
   app.tick();
   app.tick();
   element<HTMLButtonElement>("start-round").click();
+  element<HTMLButtonElement>("confirm-start").click();
   advance(3500);
 }
 
@@ -240,6 +241,68 @@ afterEach(() => {
 });
 
 describe("Mole Motion operator integration", () => {
+  it("opens unified setup on load without starting input or a round", () => {
+    const setup = element<HTMLDialogElement>("pre-game-settings");
+    expect(setup.open).toBe(true);
+    expect(setup.contains(element("source-select"))).toBe(true);
+    expect(setup.contains(element("mode-select"))).toBe(true);
+    expect(setup.contains(element("difficulty-select"))).toBe(true);
+    expect(setup.contains(element("show-tracking"))).toBe(true);
+    expect(document.activeElement).toBe(element("close-settings"));
+    advance(5000);
+    expect(element("game-overlay").hidden).toBe(false);
+    expect(element("time-value").textContent).toBe("1:00");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(FakeWebSocket.instances).toHaveLength(0);
+  });
+
+  it("retains choices and requires confirmation after closing and reopening setup", () => {
+    choose("mode-select", "practice");
+    choose("difficulty-select", "hard");
+    element<HTMLButtonElement>("close-settings").click();
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(false);
+    element<HTMLButtonElement>("start-round").click();
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(true);
+    advance(4000);
+    expect(element("game-overlay").hidden).toBe(false);
+    expect(element<HTMLSelectElement>("mode-select").value).toBe("practice");
+    expect(element<HTMLSelectElement>("difficulty-select").value).toBe("hard");
+    element<HTMLButtonElement>("confirm-start").click();
+    advance(3500);
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(false);
+    expect(element("game-overlay").hidden).toBe(true);
+    expect(element<HTMLButtonElement>("open-settings").disabled).toBe(true);
+  });
+
+  it("reviews every replay without discarding results until confirmation", () => {
+    startDemo();
+    element<HTMLButtonElement>("end-round").click();
+    const result = element("overlay-copy").textContent;
+    const score = element("score-value").textContent;
+    element<HTMLButtonElement>("restart-round").click();
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(true);
+    advance(4000);
+    expect(element("overlay-copy").textContent).toBe(result);
+    expect(element("score-value").textContent).toBe(score);
+    element<HTMLButtonElement>("close-settings").click();
+    expect(document.activeElement).toBe(element("restart-round"));
+    expect(element("overlay-copy").textContent).toBe(result);
+    element<HTMLButtonElement>("restart-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
+    advance(3500);
+    expect(element("game-overlay").hidden).toBe(true);
+  });
+
+  it("keeps manual pause and resume outside setup", () => {
+    startDemo();
+    element<HTMLButtonElement>("pause-round").click();
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(false);
+    element<HTMLButtonElement>("resume-round").click();
+    advance(2500);
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(false);
+    expect(element("game-overlay").hidden).toBe(true);
+  });
+
   it("offers camera flicks with wrist guidance and locks the interaction during play", () => {
     choose("source-select", "camera");
     element<HTMLButtonElement>("interaction-flick").click();
@@ -255,6 +318,7 @@ describe("Mole Motion operator integration", () => {
     expect(element("stage-mode").textContent).toBe("FLICK TO WHACK");
     expect(element<HTMLButtonElement>("interaction-push").disabled).toBe(true);
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     expect(element<HTMLButtonElement>("interaction-flick").disabled).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -289,6 +353,7 @@ describe("Mole Motion operator integration", () => {
     const socket = await startCamera();
     element<HTMLButtonElement>("interaction-flick").click();
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     let sequence = 0;
     const send = async (x = 0.01, y = 0.01) => {
       now += 50;
@@ -417,10 +482,11 @@ describe("Mole Motion operator integration", () => {
         /1 moles whacked.*100 points/,
       );
       element<HTMLButtonElement>("restart-round").click();
+      element<HTMLButtonElement>("confirm-start").click();
       expect(Number(element("score-value").textContent)).toBe(0);
       expect(element("hits-value").textContent).toBe("0");
-      expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
-      expect(element<HTMLSelectElement>("mode-select").disabled).toBe(false);
+      expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
+      expect(element<HTMLSelectElement>("mode-select").disabled).toBe(true);
     },
   );
 
@@ -485,12 +551,17 @@ describe("Mole Motion operator integration", () => {
     await flushPromises();
     expect(FakeWebSocket.instances).toHaveLength(0);
     expect(element("camera-release").hidden).toBe(false);
+    expect(element("setup-camera-release").hidden).toBe(false);
+    expect(
+      element("pre-game-settings").contains(element("setup-retry-camera-stop")),
+    ).toBe(true);
     expect(element("camera-release-message").textContent).toMatch(
       /unconfirmed.*driver/i,
     );
-    element<HTMLButtonElement>("retry-camera-stop").click();
+    element<HTMLButtonElement>("setup-retry-camera-stop").click();
     await flushPromises();
     expect(element("camera-release").hidden).toBe(true);
+    expect(element("setup-camera-release").hidden).toBe(true);
     const stops = fetchMock.mock.calls.filter(([path]) => path === "/api/stop");
     expect(
       stops.map(([, init]) => JSON.parse(String(init.body)).epoch),
@@ -594,10 +665,11 @@ describe("Mole Motion operator integration", () => {
     expect(element<HTMLButtonElement>("source-connect").disabled).toBe(false);
   });
 
-  it("starts rehearsal directly without a join step or camera access", () => {
+  it("starts rehearsal after setup without a join step or camera access", () => {
     expect(document.getElementById("join-player")).toBeNull();
     expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     expect(element("overlay-title").textContent).toBe("3");
     advance(3500);
     expect(element("mole-target").hidden).toBe(false);
@@ -609,6 +681,7 @@ describe("Mole Motion operator integration", () => {
     const framing = element<HTMLInputElement>("demo-framing");
     framing.checked = false;
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     advance(1000);
     expect(element("time-value").textContent).toBe("1:00");
     expect(element("overlay-copy").textContent).toMatch(/feet/i);
@@ -641,6 +714,7 @@ describe("Mole Motion operator integration", () => {
     const socket = await startCamera();
     expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     advance(500);
     expect(element("time-value").textContent).toBe("1:00");
     for (let sequence = 1; sequence <= 80; sequence++) {
@@ -654,6 +728,7 @@ describe("Mole Motion operator integration", () => {
   it("does not select by detection order when multiple participants are present", async () => {
     const socket = await startCamera();
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     for (let sequence = 1; sequence <= 20; sequence++) {
       const value = observation(sequence);
       value.people.push({
@@ -683,6 +758,7 @@ describe("Mole Motion operator integration", () => {
     choose("player-track", "camera-track-2");
     expect(element("player-binding").textContent).toMatch(/camera-track-2/);
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     expect(element<HTMLSelectElement>("player-track").disabled).toBe(false);
     for (let sequence = 2; sequence <= 15; sequence++) {
       const next = {
@@ -700,6 +776,7 @@ describe("Mole Motion operator integration", () => {
   it("requires a new round after explicit identity uncertainty even if the same track returns", async () => {
     const socket = await startCamera();
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     for (let sequence = 1; sequence <= 80; sequence++) {
       now += 50;
       await socket.receive(packet(observation(sequence)));
@@ -733,6 +810,7 @@ describe("Mole Motion operator integration", () => {
     async (change) => {
       const socket = await startCamera();
       element<HTMLButtonElement>("start-round").click();
+      element<HTMLButtonElement>("confirm-start").click();
       for (let sequence = 1; sequence <= 80; sequence++) {
         now += 50;
         await socket.receive(packet(observation(sequence)));
@@ -771,6 +849,7 @@ describe("Mole Motion operator integration", () => {
       expect(element("restart-round").hidden).toBe(false);
       expect(element("overlay-copy").textContent).toMatch(/score ownership/i);
       element<HTMLButtonElement>("restart-round").click();
+      element<HTMLButtonElement>("confirm-start").click();
       expect(element("score-value").textContent).toBe("000");
       expect(element("start-round").hidden).toBe(true);
       expect(element("game-status").textContent).toMatch(/waiting/i);
@@ -813,6 +892,7 @@ describe("Mole Motion operator integration", () => {
     async (gap) => {
       const socket = await startCamera();
       element<HTMLButtonElement>("start-round").click();
+      element<HTMLButtonElement>("confirm-start").click();
       for (let sequence = 1; sequence <= 80; sequence++) {
         now += 50;
         await socket.receive(packet(observation(sequence)));
@@ -842,6 +922,7 @@ describe("Mole Motion operator integration", () => {
   it("keeps a confident camera owner through missing feet and resumes automatically", async () => {
     const socket = await startCamera();
     element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
     for (let sequence = 1; sequence <= 80; sequence++) {
       now += 50;
       await socket.receive(packet(observation(sequence)));

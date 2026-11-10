@@ -23,6 +23,10 @@ import {
 import { drawDodgeScene } from "./dodgeball-renderer";
 import { CameraReleases } from "./camera-release";
 import { createGameDisplay } from "./game-display";
+import {
+  createPreGameSettings,
+  preGameSettingsMarkup,
+} from "./pre-game-settings";
 
 const ballArt = `<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="46" fill="#ee8c67"/><path d="M17 44c29 16 57 17 87-1M21 83c28-18 54-18 79-1M59 14c-18 27-18 65 0 92M70 15c18 27 18 63 0 90" fill="none" stroke="#923f32" stroke-width="4"/><path d="M31 29a43 43 0 0 1 25-12" fill="none" stroke="#ffd0a0" stroke-width="6" stroke-linecap="round"/></svg>`;
 const RECOVERY_GRACE_MS = 2_000;
@@ -37,27 +41,32 @@ export function mountDodgeballGame(
   deps: { now?: () => number; autoTick?: boolean; seed?: number } = {},
 ): { tick(): void; dispose(): void } {
   const now = deps.now || (() => performance.now());
+  const setupMarkup = preGameSettingsMarkup(
+    "Dodgeball",
+    `<label for="mode-select">Play mode</label><select id="mode-select" aria-describedby="mode-description"><option value="timed">Timed · 60 seconds</option><option value="survival">Survival · 3 shields</option><option value="practice">Practice · no pressure</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p>
+ <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · time to react</option><option value="normal" selected>Normal · find your flow</option><option value="hard">Hard · think on your feet</option></select><p class="field-note">A ring marks the exact ball footprint. Move your whole body clear before it fills.</p>
+ `,
+    `<label for="source-select">Input source</label><select id="source-select"><option value="demo">Rehearsal · no camera</option><option value="camera">Camera · body tracking</option></select>
+
+ <div id="setup-camera-release" hidden><p id="setup-release-message" class="field-note" role="status"></p><button id="setup-retry-camera-stop" class="mm-secondary">Retry camera stop</button></div><p id="setup-input-status" class="field-note" role="status"></p><div id="demo-controls"><p class="field-note">Move the body with your pointer, touch or arrow keys. This is a synthetic rehearsal.</p><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
+ <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Frame your whole body. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="setup-stop-camera" class="mm-text" disabled>Stop camera</button></div>
+ <label class="check-row"><input id="show-tracking" type="checkbox"> Show tracking diagnostics</label>
+ <div class="setup-tip"><span>PLAY WITH ROOM</span><p>Clear your space. Use comfortable steps; no jumping or sudden lunges needed.</p></div><button id="open-game-window" class="mm-secondary display-button">Open game window &#8599;</button><p id="display-status" class="field-note" role="status">Keep controls here. Put the game on another display.</p>
+ `,
+  );
   root.innerHTML = `
  <a class="skip" href="#game-stage">Skip to game</a>
  <header class="mm-header"><a class="mm-brand" href="/">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/">Tracking console</a><a href="/mole.html">Mole Motion</a><a class="current" href="/dodgeball.html" aria-current="page">Dodgeball</a></nav><span class="local-pill"><i></i> Local & private</span></header>
  <main class="mm-main"><div class="mm-heading"><div><p class="eyebrow">THE MOTION ARCADE <span>/</span> GAME 02</p><h1>Dodgeball<span class="heading-dot">.</span></h1><p class="intro">Read the ring. Find your space. Make your move.</p></div><span class="experiment">Single player <span>Experimental</span></span></div>
- <div class="mm-layout"><aside id="game-settings" class="mm-settings" aria-label="Game settings">
- <div class="settings-title"><h2>Find your flow</h2><span>02</span></div><button id="open-game-window" class="mm-secondary display-button">Open game window &#8599;</button><p id="display-status" class="field-note" role="status">Keep controls here. Put the game on another display.</p>
- <label for="mode-select">Play mode</label><select id="mode-select" aria-describedby="mode-description"><option value="timed">Timed · 60 seconds</option><option value="survival">Survival · 3 shields</option><option value="practice">Practice · no pressure</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p>
- <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · time to react</option><option value="normal" selected>Normal · find your flow</option><option value="hard">Hard · think on your feet</option></select><p class="field-note">A ring marks the exact ball footprint. Move your whole body clear before it fills.</p>
- <hr><label for="source-select">Input source</label><select id="source-select"><option value="demo">Rehearsal · no camera</option><option value="camera">Camera · body tracking</option></select>
- <div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
- <div id="demo-controls"><p class="field-note">Move the body with your pointer, touch or arrow keys. This is a synthetic rehearsal.</p><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
- <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Frame your whole body. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="source-stop" class="mm-text" disabled>Stop camera</button></div>
- <label class="check-row"><input id="show-tracking" type="checkbox"> Show tracking diagnostics</label><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="field-note" role="status">Press Start. We will find one ready player.</p>
- <div class="setup-tip"><span>PLAY WITH ROOM</span><p>Clear your space. Use comfortable steps; no jumping or sudden lunges needed.</p></div></aside>
- <section class="mm-game" aria-label="Dodgeball game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>DODGES</span><strong id="dodges-value">0</strong></div><div class="score-item"><span id="shields-label">HITS</span><strong id="hits-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
+ <div class="mm-layout play-layout">
+ <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="field-note" role="status">Press Start. We will find one ready player.</p><button id="source-stop" class="mm-text" disabled>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
+  <section class="mm-game" aria-label="Dodgeball game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>DODGES</span><strong id="dodges-value">0</strong></div><div class="score-item"><span id="shields-label">HITS</span><strong id="hits-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
  <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Dodgeball play area. Rehearsal: move your pointer, touch or use arrow keys to move the whole body."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera view and virtual ball warning"></canvas><div class="stage-label"><i></i><span>READ THE RING · DODGE THE BALL</span></div><div class="display-hud" aria-label="Live game score"><span>SCORE <strong id="display-score">000</strong></span><span id="display-clock-label">TIME <strong id="display-time">1:00</strong></span><span>DODGES <strong id="display-dodges">0</strong></span></div><div class="player-label">P1 <span id="stage-player">WAITING</span></div><div id="dodge-feedback" class="hit-feedback" aria-hidden="true" hidden></div><div class="mm-overlay" id="game-overlay"><div class="overlay-ball">${ballArt}</div><p id="overlay-kicker">READY, SET, SIDESTEP</p><h2 id="overlay-title">A little space.<br>A great escape.</h2><p id="overlay-copy">Press Start, then move clear of each warning ring. Keep your whole body in view.</p></div><div class="stage-bottom"><span id="stage-help">Rehearsal · pointer, touch or arrow keys to move</span><span>MIRRORED VIEW</span></div></div>
  <div class="target-track" id="warning-track"><span id="warning-life">Waiting for your first ball</span><progress id="warning-progress" max="1" value="0" aria-label="Ball phase time remaining"></progress><span id="streak-value">Best streak 0</span></div>
- <div class="game-actions"><button id="start-round" class="mm-primary">Start round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="resume-round" class="mm-primary" hidden>Resume · countdown</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start when you are ready.</span></div>
+ <div class="game-actions"><button id="start-round" class="mm-primary">Set up round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="resume-round" class="mm-primary" hidden>Resume · countdown</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start when you are ready.</span></div>
  <p class="source-disclosure" id="source-disclosure">Synthetic full-body rehearsal. Camera accuracy and physical latency still require hardware trials.</p></section></div>
  <section class="how-grid" aria-label="How to play"><article><span class="how-number">01</span><div><h2>Read the warning</h2><p>A striped amber ring shows where the ball will land. The ring stays still.</p></div></article><article><span class="how-number">02</span><div><h2>Move all of you</h2><p>Get your head, torso, arms and legs clear before the ring turns coral. Each clean escape builds your streak.</p></div></article><article><span class="how-number">03</span><div><h2>Stay in the picture</h2><p>Missing feet? Step back, adjust the camera or clear an occlusion. Tracking issues pause play fairly.</p></div></article></section>
- <footer class="mm-footer"><span>Built for movement. Played in your space.</span><span>One player · English · M4 software preview</span></footer></main>`;
+ <footer class="mm-footer"><span>Built for movement. Played in your space.</span><span>One player · English · M4 software preview</span></footer>${setupMarkup}</main>`;
   const elements = new Map(
     [...root.querySelectorAll<HTMLElement>("[id]")].map((element) => [
       element.id,
@@ -119,6 +128,13 @@ export function mountDodgeballGame(
     feedbackUntil = 0;
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
+  const setup = createPreGameSettings(root, () => {
+    resetGame();
+    armed = true;
+    if (!isDemo() && observation) ingestCamera();
+    tick();
+    get("game-stage").focus();
+  });
   const isDemo = () => select("source-select").value === "demo";
   const isJoined = () => (isDemo() ? demoJoined : !!session.binding);
   const active = () =>
@@ -128,6 +144,8 @@ export function mountDodgeballGame(
     difficulty: select("difficulty-select").value as GameOptions["difficulty"],
   });
   function setMessage(message: string) {
+    if (get("setup-input-status").textContent !== message)
+      get("setup-input-status").textContent = message;
     if (get("game-status").textContent !== message)
       get("game-status").textContent = message;
   }
@@ -147,6 +165,12 @@ export function mountDodgeballGame(
     get<HTMLButtonElement>("source-connect").disabled =
       connecting || !!epoch || release.pendingCount > 0;
     get<HTMLButtonElement>("source-stop").disabled = !epoch && !connecting;
+    get<HTMLButtonElement>("setup-stop-camera").disabled =
+      !epoch && !connecting;
+    get("setup-camera-release").hidden = release.pendingCount === 0;
+    get("setup-release-message").textContent = release.message;
+    get<HTMLButtonElement>("setup-retry-camera-stop").disabled =
+      release.releasing;
     if (!isDemo() && !epoch) setMessage(release.message || cameraMessage);
   }
   function updatePlayerBinding() {
@@ -361,9 +385,13 @@ export function mountDodgeballGame(
       );
     else if (!isDemo() && session.binding && !readiness.ready)
       setPlayerStatus(readiness.reason || "Waiting for ready input.");
+    const needsNewRound =
+      state.phase === "paused" &&
+      (readiness.requiresNewRound || ownershipChanged);
     const locked = active() || armed;
+    const configurationLocked = locked && !needsNewRound;
     for (const id of ["mode-select", "difficulty-select", "source-select"])
-      get<HTMLSelectElement>(id).disabled = locked;
+      get<HTMLSelectElement>(id).disabled = configurationLocked;
     get<HTMLButtonElement>("start-round").disabled =
       hidden() || state.phase !== "ready" || armed;
     get("start-round").hidden = state.phase !== "ready" || armed;
@@ -372,15 +400,13 @@ export function mountDodgeballGame(
       "countdown",
     ].includes(state.phase);
     get("pause-round").hidden = ["paused", "results"].includes(state.phase);
-    const needsNewRound =
-      state.phase === "paused" &&
-      (readiness.requiresNewRound || ownershipChanged);
     get("resume-round").hidden =
       state.phase !== "paused" || needsNewRound || !manualPause;
     get<HTMLButtonElement>("resume-round").disabled =
       !isJoined() || !readiness.ready || hidden();
     get<HTMLButtonElement>("end-round").disabled = !locked;
     get("restart-round").hidden = state.phase !== "results" && !needsNewRound;
+    setup.setLocked(configurationLocked);
     get("restart-round").textContent = needsNewRound
       ? "Set up new round ↗"
       : "Play again ↗";
@@ -682,6 +708,8 @@ export function mountDodgeballGame(
   });
   listen(get("source-connect"), "click", () => void startCamera());
   listen(get("source-stop"), "click", () => void stopCamera());
+  listen(get("setup-stop-camera"), "click", () => void stopCamera());
+  listen(get("setup-retry-camera-stop"), "click", () => void releases.retry());
   listen(get("retry-camera-stop"), "click", () => void releases.retry());
   listen(select("source-select"), "change", () => {
     if (!isDemo()) void cameraChoice.refresh();
@@ -704,13 +732,8 @@ export function mountDodgeballGame(
       tick();
     });
   listen(get("show-tracking"), "change", () => render());
-  listen(get("start-round"), "click", () => {
-    if (!hidden() && game.state.phase === "ready" && !armed) {
-      armed = true;
-      tick();
-      get("game-stage").focus();
-    }
-  });
+  listen(get("open-settings"), "click", () => setup.open());
+  listen(get("start-round"), "click", () => setup.open(get("start-round")));
   listen(get("pause-round"), "click", () => {
     manualPause = true;
     game.pause("Paused by player.");
@@ -737,14 +760,7 @@ export function mountDodgeballGame(
       game.state.phase === "results" ? "restart-round" : "start-round",
     ).focus();
   });
-  listen(get("restart-round"), "click", () => {
-    resetGame();
-    armed = true;
-    if (!isDemo() && observation) ingestCamera();
-    setMessage("Ready for another round. Adjust your setup or start again.");
-    tick();
-    get("game-stage").focus();
-  });
+  listen(get("restart-round"), "click", () => setup.open(get("restart-round")));
   listen(get("demo-framing"), "change", () => tick());
   function aim(event: PointerEvent) {
     if (!isDemo()) return;
@@ -816,10 +832,12 @@ export function mountDodgeballGame(
     deps.autoTick === false ? () => {} : display.startTicker(tick);
   updateSettings();
   tick();
+  setup.open();
   return {
     tick,
     dispose() {
       disposed = true;
+      setup.dispose();
       cameraChoice.dispose();
       display.dispose();
       listeners.abort();
