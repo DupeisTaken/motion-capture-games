@@ -1,6 +1,6 @@
 import json
 import struct
-import time
+from threading import Event
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,10 +11,6 @@ from starlette.websockets import WebSocketDisconnect
 
 def test_control_validation_origin_and_host_protection():
     with TestClient(create_app(), base_url="http://127.0.0.1:8765") as client:
-        for _ in range(100):
-            if client.get("/api/status").json()["state"] == "idle":
-                break
-            time.sleep(0.01)
         assert client.get("/api/status").json()["state"] == "idle"
         assert client.post("/api/start", json={"maxPeople": 999}).status_code == 422
         assert (
@@ -26,8 +22,16 @@ def test_control_validation_origin_and_host_protection():
         assert client.get("/api/status", headers={"Host": "evil.example"}).status_code == 400
 
 
-def test_pull_stream_auto_count_and_final_viewer_release():
+def test_pull_stream_auto_count_and_final_viewer_release(monkeypatch):
     vision = VisionRuntime()
+    released = Event()
+    original_stop = vision.stop_if_epoch
+
+    def stop_and_signal(epoch):
+        original_stop(epoch)
+        released.set()
+
+    monkeypatch.setattr(vision, "stop_if_epoch", stop_and_signal)
     with TestClient(create_app(vision), base_url="http://127.0.0.1:8765") as client:
         started = client.post("/api/start", json={"source": "demo", "demoScenario": "three"})
         assert started.status_code == 200
@@ -44,6 +48,10 @@ def test_pull_stream_auto_count_and_final_viewer_release():
             next_length = struct.unpack(">I", next_packet[:4])[0]
             next_observation = json.loads(next_packet[4 : 4 + next_length])
             assert next_observation["sequence"] > observation["sequence"]
+            # Starlette cancels the handler on context exit. Wait for actual
+            # asynchronous cleanup before that cancellation can interrupt it.
+            socket.close()
+            assert released.wait(timeout=5), "Final-viewer cleanup did not complete"
         assert client.get("/api/status").json()["state"] == "idle"
 
 
@@ -80,8 +88,16 @@ def test_disconnecting_an_old_viewer_does_not_stop_a_new_source():
         assert client.post("/api/stop", json={"epoch": new["epoch"]}).json()["state"] == "idle"
 
 
-def test_independent_streams_share_one_owner_and_only_final_disconnect_stops():
+def test_independent_streams_share_one_owner_and_only_final_disconnect_stops(monkeypatch):
     vision = VisionRuntime()
+    released = Event()
+    original_stop = vision.stop_if_epoch
+
+    def stop_and_signal(epoch):
+        original_stop(epoch)
+        released.set()
+
+    monkeypatch.setattr(vision, "stop_if_epoch", stop_and_signal)
     with TestClient(create_app(vision), base_url="http://127.0.0.1:8765") as client:
         client.post("/api/start", json={"source": "demo", "demoScenario": "three"})
         with client.websocket_connect("ws://127.0.0.1:8765/api/observations") as poses:
@@ -99,10 +115,8 @@ def test_independent_streams_share_one_owner_and_only_final_disconnect_stops():
             assert client.get("/api/status").json()["state"] == "running"
             poses.send_json({"type": "next"})
             assert poses.receive_json()["sequence"] > observation["sequence"]
-        for _ in range(100):
-            if client.get("/api/status").json()["state"] == "idle":
-                break
-            time.sleep(0.01)
+            poses.close()
+            assert released.wait(timeout=5)
         assert client.get("/api/status").json()["state"] == "idle"
 
 

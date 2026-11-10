@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import math
 import threading
-import time
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -12,6 +11,7 @@ import cv2
 import numpy as np
 
 from .providers import COCO17, Image, Person, joint
+from .timing import host_time_ns
 
 
 @dataclass(frozen=True)
@@ -53,7 +53,7 @@ class CameraSource:
             sequence = 0
             while not self.stop_event.is_set():
                 ok, image = capture.read()
-                captured_at_ns = time.monotonic_ns()
+                captured_at_ns = host_time_ns()
                 if not ok or image is None:
                     raise RuntimeError(
                         "Camera stopped delivering frames. Stop, reconnect the camera and retry."

@@ -2,7 +2,6 @@
 
 import json
 import threading
-import time
 from copy import deepcopy
 
 import fastjsonschema
@@ -19,7 +18,7 @@ def test_preview_advances_while_inference_is_blocked(monkeypatch):
 
     class Camera:
         def __init__(self, _index):
-            self.latest = CapturedFrame(1, time.monotonic_ns(), image)
+            self.latest = CapturedFrame(1, runtime.host_time_ns(), image)
             self.condition = threading.Condition()
             self.closed = False
 
@@ -35,7 +34,7 @@ def test_preview_advances_while_inference_is_blocked(monkeypatch):
 
         def advance(self):
             with self.condition:
-                self.latest = CapturedFrame(2, time.monotonic_ns(), image)
+                self.latest = CapturedFrame(2, runtime.host_time_ns(), image)
                 self.condition.notify_all()
 
         def close(self):

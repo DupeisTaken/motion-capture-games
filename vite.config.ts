@@ -13,5 +13,16 @@ export default defineConfig({
   preview: {
     proxy: { "/api": { target: "http://127.0.0.1:8765", ws: true } },
   },
-  build: { outDir: "../../dist/mirror", emptyOutDir: true },
+  build: {
+    outDir: "../../dist/mirror",
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        diagnostics: fileURLToPath(
+          new URL("apps/mirror/index.html", import.meta.url),
+        ),
+        mole: fileURLToPath(new URL("apps/mirror/mole.html", import.meta.url)),
+      },
+    },
+  },
 });

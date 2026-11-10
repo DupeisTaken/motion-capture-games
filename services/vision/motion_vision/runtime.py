@@ -19,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .models import ROOT, availability
 from .providers import Image, PoseProvider, create_provider
 from .sources import CameraSource, demo_frame
+from .timing import SourceRate, host_time_ns, next_preview_tick
 from .tracking import Tracker
 
 MAX_METADATA = 64 * 1024
@@ -81,7 +82,7 @@ def encode_packet(observation: dict[str, Any], jpeg: bytes) -> bytes:
 
 
 class VisionRuntime:
-    def __init__(self, clock_ns: Callable[[], int] = time.monotonic_ns) -> None:
+    def __init__(self, clock_ns: Callable[[], int] = host_time_ns) -> None:
         self.clock_ns = clock_ns
         self.condition = threading.Condition()
         self.control_lock = threading.Lock()
@@ -303,22 +304,22 @@ class VisionRuntime:
         self, camera: CameraSource, settings: StartRequest, epoch: str, stop: threading.Event
     ) -> None:
         after = 0
-        previous_at: int | None = None
-        fps = 0.0
+        rate = SourceRate()
         try:
             while not stop.is_set():
                 captured = camera.next(after)
                 if captured is None:
                     continue
-                if previous_at is not None and captured.captured_at_ns > previous_at:
-                    rate = (
-                        (captured.sequence - after) * 1e9 / (captured.captured_at_ns - previous_at)
-                    )
-                    fps = rate if fps == 0 else 0.9 * fps + 0.1 * rate
-                after, previous_at = captured.sequence, captured.captured_at_ns
+                after = captured.sequence
+                fps = rate.record(after, captured.captured_at_ns)
                 if self._capture_fresh(captured.captured_at_ns):
                     self._publish_preview(
-                        self._resize(captured.image), after, previous_at, settings, epoch, fps
+                        self._resize(captured.image),
+                        after,
+                        captured.captured_at_ns,
+                        settings,
+                        epoch,
+                        fps,
                     )
         except Exception:
             logging.getLogger(__name__).exception("Camera preview stopped")
@@ -339,9 +340,9 @@ class VisionRuntime:
         previous_capture = 0
         last_capture_at: int | None = None
         dropped = 0
-        previous_demo_at: int | None = None
-        demo_fps = 0.0
+        demo_rate = SourceRate()
         started = time.monotonic()
+        demo_tick = self.clock_ns()
         try:
             cv2.setNumThreads(1)
             if settings.source == "camera":
@@ -456,15 +457,17 @@ class VisionRuntime:
                     )
                     self.condition.notify_all()
                 if camera is None:
-                    if previous_demo_at is not None and captured_at > previous_demo_at:
-                        rate = 1e9 / (captured_at - previous_demo_at)
-                        demo_fps = rate if demo_fps == 0 else 0.9 * demo_fps + 0.1 * rate
-                    previous_demo_at = captured_at
                     self._publish_preview(
-                        image, previous_capture, captured_at, settings, epoch, demo_fps
+                        image,
+                        previous_capture,
+                        captured_at,
+                        settings,
+                        epoch,
+                        demo_rate.record(previous_capture, captured_at),
                     )
-                if camera is None:
-                    stop.wait(max(0, 1 / 20 - (self.clock_ns() - processing_started) / 1e9))
+                    now = self.clock_ns()
+                    demo_tick = next_preview_tick(demo_tick, now)
+                    stop.wait((demo_tick - now) / 1e9)
         except Exception as error:
             logging.getLogger(__name__).exception("Diagnostic vision source failed")
             with self.condition:

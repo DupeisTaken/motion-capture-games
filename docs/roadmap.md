@@ -20,6 +20,10 @@ The milestone IDs below are stable local references. Each milestone may become s
 
 **Current slice:** [Issue #3](https://github.com/DupeisTaken/motion-capture-games/issues/3) implements a one-view skeleton/count diagnostic, two pretrained model adapters, two association modes, a canonical contract and synthetic verification. See [the viewer guide](diagnostic-viewer.md) and [delivery report](../reports/skeleton-diagnostics.html). This is partial M1 progress; no real three-player crossing, production media selection or hardware/latency certification gate is closed by software tests.
 
+**Console iteration:** [Issue #15](https://github.com/DupeisTaken/motion-capture-games/issues/15) adds a compact single-page test console, explicit browser discovery/identification with manual native-index verification, bounded stage diagnostics, less DOM churn, high-resolution host timing and synthetic pacing fixes. [The console report](../reports/diagnostic-console.html) owns actual checks and synthetic measurements. Physical M1 gates and [independent high-rate preview #10](https://github.com/DupeisTaken/motion-capture-games/issues/10) remain open.
+
+**Identity stability follow-up:** [Issue #11](https://github.com/DupeisTaken/motion-capture-games/issues/11) and [PR #13](https://github.com/DupeisTaken/motion-capture-games/pull/13) cover elapsed-time-aware velocity updates and independent last-observed/predicted assignment comparison in [camera-local tracking](tracking-algorithms.md). Competing feasible associations suspend affected local IDs instead of letting prediction transfer them to a neighboring person; abrupt approaches/reversals may require new tentative IDs. The [tracking stability report](../reports/tracking-stability.html) owns executed verification. Real disturbance/crossing trials, provider truncation/ranking churn at capacity, indistinguishable replacements and explicit player enrollment/recovery remain M1/M2 work; this focused fix does not close those gates.
+
 **Owns:** Vision capture/inference adapters, the first mirror slice, draft protocol schemas, diagnostic presentation, and an initial installation/performance profile. Depends on M0.
 
 **Acceptance criteria:**
@@ -55,6 +59,8 @@ All six remain open. [ADR 0004](decisions/0004-proposed-vision-experiment.md) re
 **Problem:** Establish a complete, understandable game interaction and reliable attribution.
 
 **Owns:** Game-ready motion input, session lifecycle, explicit joining, practice, target interaction, score/results and replay. Depends on the relevant M1 gates.
+
+**Experimental software progress:** [Issue #12](https://github.com/DupeisTaken/motion-capture-games/issues/12) and [PR #17](https://github.com/DupeisTaken/motion-capture-games/pull/17) start [Mole Motion](games/mole-motion.md) early at the user's request. Its one-player runtime includes seeded target/scoring replay, camera wrist/ankle contact, synthetic depth-push rehearsal, timed/challenge/survival/practice modes, hard distance-biased placement and explicit framing/identity pause recovery. [The delivery report](../reports/mole-motion.html) owns actual software and browser evidence. This does not close M1, certify physical pushes, establish participant reach/latency, or deliver three-player scoring. Next issue-ready work: calibrated depth provider and participant reach setup; physical hit/framing trials; measured session identity/recovery before multiplayer admission. Reuse the existing [XYZ experiment issue #4](https://github.com/DupeisTaken/motion-capture-games/issues/4) when scoping calibrated depth.
 
 **Acceptance criteria:**
 

@@ -322,4 +322,42 @@ describe("independent diagnostic viewer", () => {
       "dimensions do not match",
     );
   });
+  it("preserves console telemetry and stable operator rows across high-rate observations", async () => {
+    const streams = await start();
+    await frame(streams);
+    const replace = vi.spyOn(el("person-list"), "replaceChildren");
+    for (let sequence = 2; sequence <= 122; sequence++)
+      await frame(streams, pose(3, sequence));
+    expect(replace).not.toHaveBeenCalled();
+    expect(el("sample-count").textContent).toBe("120");
+    expect(el("processing-time").textContent).not.toBe("—");
+    expect(el("stream-camera").textContent).toContain("pose");
+    const changed = pose(3, 123);
+    changed.people[0].identity = "ambiguous";
+    changed.people[0].trackId = null;
+    await frame(streams, changed);
+    expect(replace).toHaveBeenCalledOnce();
+    expect(el("status-title").textContent).toBe("Identity needs recovery");
+  });
+  it("retains native-index validation and clears detailed console statistics on stale input", async () => {
+    el<HTMLInputElement>("camera-index").value = "1.5";
+    el<HTMLButtonElement>("start").click();
+    await flush();
+    expect(fetchMock.mock.calls.some(([path]) => path === "/api/start")).toBe(
+      false,
+    );
+    expect(el("status-title").textContent).toBe("Invalid camera index");
+    el<HTMLInputElement>("camera-index").value = "0";
+    const streams = await start();
+    await frame(streams, pose(1));
+    expect(el("processing-time").textContent).not.toBe("—");
+    vi.advanceTimersByTime(1800);
+    for (const id of [
+      "processing-time",
+      "packet-size",
+      "stream-clock",
+      "arrival-age",
+    ])
+      expect(el(id).textContent).toBe("—");
+  });
 });

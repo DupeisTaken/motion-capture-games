@@ -21,3 +21,7 @@ Hold an observed pose for display only when source, epoch and geometry match, it
 The preview responds independently during slow inference but its held skeleton can lag video. The 150 ms limit is a provisional visible diagnostic tradeoff, not measured exposure alignment or an accepted collision tolerance. Faster video does not repair missing/ambiguous identity. Actual camera/inference rates may be below display rate. JPEG encoding and the legacy exact-pair endpoint still incur processing costs; WebRTC and native media paths remain options for the production media gate.
 
 The [performance report](../../reports/preview-performance.html) owns measured draw intervals, schema overhead, synthetic screenshots, actual checks and limits. Tests cover independent delivery under blocked inference, bounds, stale overlays, source epochs and resource cleanup. Before production gameplay, measure fast-motion overlay error, external latency, one-/three-player accuracy and the full pipeline on every declared rig.
+
+## Integration with later milestones
+
+Retain the compact tracking console, explicit browser camera discovery, bounded stage diagnostics, high-resolution shared host clock, drift-free synthetic pacing, tracking stability fixes and Mole Motion from main. Game camera input keeps the legacy exact-pair endpoint and adopts the RTMPose default. Capture FPS uses an aggregate count/time window so short driver bursts cannot inflate it.

@@ -11,6 +11,13 @@ const validatePreview = new Ajv({ strict: true }).compile<PreviewFrame>(
 
 export type { Observation } from "../../../contracts/generated/observation";
 export { parseObservation } from "../../../contracts/src/validate";
+export {
+  GAME_INPUT_QUALITY,
+  observedContacts,
+  observationSpaceRevision,
+  observationToGameFrame,
+} from "./game-input";
+export type { ContactName, GameMotionFrame, MotionContact } from "./game-input";
 export type Person = Observation["people"][number];
 export type Joints = Person["joints"];
 export type JointName = keyof Joints;

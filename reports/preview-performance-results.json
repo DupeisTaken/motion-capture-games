@@ -12,59 +12,66 @@
     "deviceScaleFactor": 2
   },
   "legacyRenderLoop": {
-    "twoSecondWindows": [
-      18.590162287537783,
-      18.668326072505522,
-      18.56435643518708,
-      18.61138396364962,
-      18.72848754673055,
-      18.73146365482784,
-      18.493784034605827,
-      18.565313806286692,
-      18.723748799041363,
-      18.66155201999881
+    "draws": 600,
+    "fps": 20.001202075711227,
+    "rafFps": 60.00246813932313,
+    "p50Ms": 50.299999952316284,
+    "p95Ms": 56.89999985694885,
+    "p99Ms": 60.89999985694885,
+    "intervalsOver25Ms": 599,
+    "twoSecondWindowFps": [
+      20.057162914785337,
+      20.039050456810433,
+      20.00923503008448,
+      19.929721507866827,
+      20.066889632107024,
+      20.026033845431435,
+      19.956935035924186,
+      20.10252286469281,
+      19.991582492084003,
+      20.00718206584621,
+      20.03907619715114,
+      19.979508196721312,
+      19.97439180537772,
+      20.010261672652643
     ],
     "hidden": false,
-    "visibility": [],
-    "rafFps": 59.897318881916725,
-    "rafP95Ms": 17.30000000000291,
-    "durationSeconds": 19.979299999952318,
-    "draws": 373,
-    "fps": 18.619270945472955,
-    "p50Ms": 54.200000047683716,
-    "p95Ms": 57.09999990463257,
-    "p99Ms": 59.200000047683716,
-    "over25ms": 372,
-    "telemetry": "At a glancePreview updates18.7 /sInference time0 msSource image960 \u00d7 540Skipped captures0Synthetic observations. These are not inference or camera performance results.",
-    "mobileOverflow": false
+    "visibilityChanges": [],
+    "telemetry": "03 PerformanceLast 120 frames\n        \n          Preview updates20.0/s\n          Pose inferencen/ams\n          Source processing6.0ms\n          Processing p9510.4ms\n          JPEG + validation\u00b91.9ms\n          Canvas draw\u00b20.5ms\n          Read \u2192 processed6.0ms\n          Last arrival age1ms\n          Packet size26.6KiB\n          Skipped captures0\n          Source image960 \u00d7 540\n          Samples120\n        \n        Synthetic observations. These are not inference or camera performance results.\n        \u00b9 Packet validation + JPEG decode. \u00b2 Draw submission, not screen presentation. Arrival age uses the browser clock.\n      ",
+    "mobileOverflow": false,
+    "browser": "157.0.8103.40",
+    "headless": false,
+    "warmupMs": 5000,
+    "measurementMs": 30000,
+    "deviceScaleFactor": 2
   },
   "independentRenderLoop": {
     "draws": 1800,
     "fps": 59.9992662679102,
-    "rafFps": 60.00246813932313,
+    "rafFps": 60.00026681608367,
     "p50Ms": 16.600000143051147,
-    "p95Ms": 18.100000143051147,
-    "p99Ms": 18.700000047683716,
+    "p95Ms": 17.5,
+    "p99Ms": 17.90000009536743,
     "intervalsOver25Ms": 0,
     "twoSecondWindowFps": [
-      59.96774843493299,
-      59.96774843493299,
-      59.97681568757615,
-      60.018005398757744,
-      59.99798326539416,
-      60.001008414539264,
-      60.00403389040181,
+      59.97379296297763,
+      59.982862036533895,
+      59.98588567540092,
+      59.97379296297763,
+      60.006000601490804,
       59.99495840685657,
-      59.99798326539416,
-      59.99193386051687,
-      60.02824858468284,
-      59.96170513237851,
-      60.00403388318817,
+      59.9837332234342,
+      60.00300014714619,
+      59.96544364409969,
+      60.00300014714619,
+      59.96774843493299,
+      60.007059656962696,
+      59.99193385330615,
       59.99798325818198
     ],
     "hidden": false,
     "visibilityChanges": [],
-    "telemetry": "At a glanceRender FPS60.0Camera / source FPS17.8Pose FPS17.8Overlay gap0 msInference time0 msSource image960 \u00d7 540Skipped captures0Synthetic observations. These are not inference or camera performance results. Render FPS counts redraws, not new source frames.",
+    "telemetry": "03 PerformanceLast 120 poses\n        \n          Render FPS60.0/s\n          Camera / source FPS20.0Pose FPS19.9Overlay gap0 msPose inferencen/ams\n          Source processing8.7ms\n          Processing p958.8ms\n          JPEG + validation\u00b91.7ms\n          Canvas draw\u00b20.2ms\n          Read \u2192 processed8.7ms\n          Last arrival age1ms\n          Packet size20.3KiB\n          Skipped captures0\n          Source image960 \u00d7 540\n          Samples120\n        \n        Synthetic observations. These are not inference or camera performance results. Render FPS counts redraws, not new source frames.\n        \u00b9 Packet validation + JPEG decode. \u00b2 Draw submission, not screen presentation. Arrival age uses the browser clock.\n      ",
     "mobileOverflow": false,
     "browser": "157.0.8103.40",
     "headless": false,
@@ -78,28 +85,28 @@
     "workload": "synthetic three-person observation; model inputs are constant gray tensors",
     "referenceSchema": {
       "samples": 200,
-      "p50Ms": 1.571375,
-      "p95Ms": 1.639792
+      "p50Ms": 1.6067084999999999,
+      "p95Ms": 1.672583
     },
     "compiledSchema": {
       "samples": 200,
-      "p50Ms": 0.087792,
-      "p95Ms": 0.091375
+      "p50Ms": 0.084541,
+      "p95Ms": 0.092833
     },
     "compiledPacket": {
       "samples": 200,
-      "p50Ms": 0.13368750000000001,
-      "p95Ms": 0.150666
+      "p50Ms": 0.1255415,
+      "p95Ms": 0.135792
     },
     "detector": {
       "samples": 200,
-      "p50Ms": 6.581875500000001,
-      "p95Ms": 6.646375
+      "p50Ms": 6.6961045,
+      "p95Ms": 7.543667
     },
     "poseCrop": {
       "samples": 200,
-      "p50Ms": 21.975291499999997,
-      "p95Ms": 22.061
+      "p50Ms": 22.191083499999998,
+      "p95Ms": 22.449
     }
   },
   "limits": [
@@ -107,5 +114,11 @@
     "Display redraws are distinct from new camera exposures and pose observations.",
     "The 60 Hz screen caps the displayed cadence at approximately 60 FPS.",
     "External latency, Windows, physical three-person crossings and hardware certification remain unverified."
-  ]
+  ],
+  "verification": {
+    "vitestPassed": 234,
+    "pytestPassed": 103,
+    "mainIntegrationBase": "af0ac95",
+    "pullRequest": "https://github.com/DupeisTaken/motion-capture-games/pull/21"
+  }
 }
