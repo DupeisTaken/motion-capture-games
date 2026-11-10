@@ -63,7 +63,7 @@ pnpm build
 pnpm check
 ```
 
-`pnpm check` runs schema drift, TypeScript/Python types, ESLint/Ruff, Vitest/pytest and formatting checks. `pnpm build` produces the frontend in `dist/mirror/`. Run `pnpm vision` in one terminal and `pnpm preview` in another to serve that build on port 4173. Start and stop commands use Node across Windows and macOS. `pnpm dev` manages its own two child processes.
+`pnpm check` runs repository documentation/whitespace checks, schema drift, TypeScript/Python types, ESLint/Ruff, Vitest/pytest, formatting and Python byte compilation. `pnpm build` runs independent workspace build scripts and produces the frontend in `dist/mirror/`, verifying every configured HTML entry and its local bundles. [CI conventions](continuous-integration.md) define per-language commands, OS coverage and package requirements. Run `pnpm vision` in one terminal and `pnpm preview` in another to serve that build on port 4173. Start and stop commands use Node across Windows and macOS. `pnpm dev` manages its own two child processes.
 
 Tests use synthetic observations, fake captures and local HTTP/WebSocket clients. They check transforms, absent joints, bounded packets, ordering/restarts, counting, ambiguous association and capture/resource recovery. Model smoke checks and physical camera trials are separate evidence; consult the delivery report rather than assuming these passed from a unit-test result.
 

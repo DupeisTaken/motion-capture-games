@@ -23,6 +23,7 @@
 
 - Fix root causes across relevant scenarios. Explain non-obvious implementation ideas with concise comments and update the owning documentation.
 - Add meaningful tests for new behavior. Run the required checks for the change; investigate failures and try alternatives before stopping.
+- Follow [CI conventions](docs/continuous-integration.md): run `pnpm check` and `pnpm build`, keep the component/build table current, and require the latest PR commit's `software-checks` gate. New distributable packages need explicit builds and clean consumer/install checks; source-only modules are checked through their consumers.
 - State exactly which checks ran. Never describe planned CI, hardware tests, or performance goals as passing results.
 - Verify UI changes using real local-server screenshots at relevant desktop and mobile sizes and supported language variants. The foundation report is English only; no other language is currently supported.
 - Use synthetic data in committed fixtures and reports. Keep credentials, participant footage, and private participant data out of the repository.

@@ -1,6 +1,8 @@
 # Cross-component verification
 
-Run `pnpm test` for Vitest contract/motion/viewer tests followed by pytest vision tests. `pnpm check` adds schema drift, types, lint and formatting. The software workflow runs these checks and `pnpm build`.
+Run `pnpm test` for Vitest contract/motion/viewer tests followed by pytest vision tests. `pnpm check` adds repository documentation/whitespace, schema drift, types, lint and formatting. [CI conventions](../docs/continuous-integration.md) define the Ubuntu/Windows/macOS lanes, build coverage and stable merge gate. `pnpm build` runs declared workspace builds and verifies all emitted Vite entries/assets.
+
+- `tooling/`: rejects broken local documentation links/anchors, report rendering dependencies, missing application entries/bundles and remote build scripts.
 
 - `contracts/`: canonical validation, count/capacity semantics, quality, timing and ownership boundaries.
 - `motion/`: aspect-preserving mirror transforms, missing/uncertain joints, source epoch/sequence order and bounded paired-frame decoding.

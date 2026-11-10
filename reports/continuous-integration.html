@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Repository CI · Motion capture games</title>
+  <style>
+    :root{color-scheme:light;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#183047;background:#f2f5f7;line-height:1.6}
+    *{box-sizing:border-box}body{margin:0}main{max-width:1120px;margin:auto;padding:48px 32px 72px}header{border-top:6px solid #087e8b;padding-top:24px;margin-bottom:32px}.eyebrow{font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;font-weight:750;color:#087e8b}h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.12;letter-spacing:-.04em;max-width:900px;margin:16px 0}h2{font-size:1.4rem;margin:0 0 16px}p{max-width:84ch}a{color:#065f76;text-underline-offset:3px}code{font: .9em ui-monospace,Consolas,monospace;overflow-wrap:anywhere}.lead{font-size:1.16rem;color:#40566b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card,section{background:#fff;border:1px solid #d5e0e6;border-radius:12px;padding:26px;margin-bottom:22px}.grid .card{margin:0}.badge{display:inline-block;padding:4px 12px;background:#e4f4f1;color:#176250;border-radius:20px;font-size:.82rem;font-weight:700}.label{font-size:.8rem;color:#526879;text-transform:uppercase;letter-spacing:.08em}.flow{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0}.flow span{padding:10px 14px;border-radius:7px;background:#eaf3f6;font-weight:650}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:.93rem;text-align:left}th,td{padding:12px 10px;border-bottom:1px solid #d9e2e8;vertical-align:top}th{background:#edf3f6}.muted{color:#526879}li+li{margin-top:8px}footer{font-size:.85rem;color:#526879;padding-top:12px}a:focus-visible{outline:3px solid #e7a622;outline-offset:4px}@media(max-width:680px){main{padding:24px 16px 48px}.grid{grid-template-columns:1fr}section,.card{padding:20px}th,td{padding:10px 8px}h1{font-size:2.25rem}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Engineering delivery · 10 November 2026</div>
+    <h1>One merge gate.<br>Explicit checks for every component.</h1>
+    <p class="lead">Repository CI now separates documentation, TypeScript and Python validation, builds every configured application entry and defines when a component needs its own package build.</p>
+    <span class="badge">Camera-free software verification</span>
+    <p><a href="https://github.com/DupeisTaken/motion-capture-games/issues/20">Issue #20</a> · <span id="pr-link">Pull request link added after creation.</span></p>
+  </header>
+  <div class="grid">
+    <article class="card"><div class="label">Before</div><h2>One Ubuntu job</h2><p>A single job installed both stacks, ran root checks and built the frontend. Documentation checks, build-output checks and package promotion rules were not explicit. No build artifacts were retained.</p></article>
+    <article class="card"><div class="label">After</div><h2>Separate, observable coverage</h2><p>Repository checks plus TypeScript and Python jobs on Ubuntu, Windows and macOS feed the stable <code>software-checks</code> gate. Frontend artifacts are retained for seven days.</p></article>
+  </div>
+  <section style="margin-top:22px"><h2>What the gate covers</h2><div class="flow"><span>Local links &amp; reports</span><span>TypeScript × 3 OS</span><span>Python × 3 OS</span><span>→ software-checks</span></div>
+    <div class="table-wrap"><table><thead><tr><th>Lane</th><th>Checks</th></tr></thead><tbody>
+      <tr><td>Repository</td><td>Full-change Git whitespace, local Markdown targets/anchors and static offline report metadata/assets.</td></tr>
+      <tr><td>TypeScript</td><td>Generated schema drift, strict types, lint, unit/replay/DOM/tooling tests, formatting; workspace package builds, Vite entries and referenced JS/CSS output.</td></tr>
+      <tr><td>Python vision</td><td>Lockfile freshness and dependency installation, Pyright, Ruff, synthetic pytest API/tracking tests and byte compilation.</td></tr>
+      <tr><td>Workflow</td><td>PR, main push, merge-group and manual triggers; read-only permissions, SHA-pinned actions, finite timeouts and superseded-run cancellation.</td></tr>
+    </tbody></table></div>
+  </section>
+  <section><h2>Build the artifacts that exist</h2><p>The mirror is the current distributable build. Shared TypeScript modules and games are source-only and are checked through their tests and consuming app build. Python vision remains checkout-based; no wheel or native installer is claimed.</p><p><code>pnpm build:packages</code> picks up declared workspace build scripts in dependency order. New independent packages must add output and clean consumer/install tests, artifact retention and owning documentation. Python packaging requires a resource-location design for schemas/manifests; native/offline distribution remains M5 work.</p></section>
+  <section><h2>Actual verification</h2><div id="verification"><ul><li>Local Windows: 220 Vitest tests and 54 pytest tests passed; types, lint and formatting passed.</li><li>Repository checks passed for 47 tracked Markdown/report files. Production build passed for both configured entries (diagnostics and Mole Motion), including emitted asset checks.</li><li>Local tools: Node 24.16.0, pnpm 11.25.0 and Python 3.12.14. Hosted jobs use the pinned Node 24.21.0 and Python 3.12.16 versions.</li><li>Hosted OS results and report desktop/mobile review are pending and will be recorded after the first run.</li><li>GitHub inspection: main is not protected and no repository rulesets are configured. This change documents the required gate without changing hosting policy.</li></ul></div><p class="muted">The new tooling tests exercise broken anchors/files, offline report dependencies, missing entry points/bundles and accidental remote build scripts. Local heavy checks and browser verification run sequentially.</p></section>
+  <section><h2>Evidence limits</h2><ul><li>Hosted software results do not certify USB cameras, GPU inference, participant accuracy, identity continuity, physical latency or installation capacity.</li><li>DOM tests do not replace real-server UI screenshots. No application UI was changed in this work; the report receives desktop/mobile visual review.</li><li>Documentation checks cover the repository's local-link and static-report conventions, not remote availability or every Markdown dialect.</li><li>Branch protection and merge-queue configuration are separate hosting settings; their inspected state is recorded with final verification.</li></ul></section>
+  <footer>Self-contained static HTML with embedded CSS. No credentials, participant data or external rendering assets. The before/after comparison describes workflow configuration; no application screenshot comparison is applicable.</footer>
+</main>
+</body>
+</html>
