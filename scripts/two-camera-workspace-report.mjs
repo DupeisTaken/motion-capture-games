@@ -22,7 +22,7 @@ for (const item of evidence.images) {
 }
 const hosted = evidence.hosted
   ? `<p><a href="${esc(evidence.hosted.url)}">Hosted verification</a>: ${esc(evidence.hosted.result)} for <code>${esc(evidence.hosted.head)}</code>. Latest-head <code>software-checks</code> must pass before merge.</p>`
-  : "<p>Hosted checks have not yet been verified. Latest-head software-checks must pass before merge.</p>";
+  : "<p>Hosted results are published with the implementation PR. Its latest-head software-checks gate must pass before merge.</p>";
 const reviews = evidence.reviews
   .map(
     (item) =>

@@ -4,6 +4,8 @@
 
 [Issue #34](https://github.com/DupeisTaken/motion-capture-games/issues/34) adds `/rig.html` after [PR #31](https://github.com/DupeisTaken/motion-capture-games/pull/31). The user chose an operator workspace and synthetic rehearsal first, to understand and prepare more accurate rig-space XYZ for a possible virtual maze. A second angle supplies geometry only when calibration, exposure timing, identity and useful coverage are supported by evidence.
 
+[PR #37](https://github.com/DupeisTaken/motion-capture-games/pull/37) delivers this software slice and its verification report. Both independent reviews reached 10/10 within this camera-free scope; physical validation and live capture remain separate work.
+
 The workspace extends the existing Motion Studio design language. The [tracking console](diagnostic-viewer.md) keeps single-camera diagnostics; this route puts two camera roles, their observations, a rig map, estimated coordinates and evidence gates together. No maze game, scoring or simultaneous live capture is added. [The report](../reports/two-camera-workspace.html) records actual software/browser checks and before/after evidence.
 
 ## Rehearse paired observations
