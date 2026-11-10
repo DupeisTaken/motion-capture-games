@@ -6,11 +6,17 @@ Use [the architecture](docs/architecture.md) for boundaries, [the roadmap](docs/
 
 ## Tooling direction
 
-The provisional implementation stack is TypeScript for the mirror and games, and Python for vision. Use a pnpm workspace and uv-managed Python environment when implementation starts. Pin runtime and package-manager versions at that point after checking model/runtime compatibility; commit lockfiles.
+The implementation stack is TypeScript for the mirror and games, and Python for vision. Use the repository's pnpm workspace and uv-managed `.venv/`. Runtime versions are pinned in `.node-version` and `.python-version`, pnpm in `package.json`, and uv in the setup task/workflow. Commit lockfiles and update them with manifests.
 
 The diagnostic slice configures strict TypeScript checks, ESLint/Prettier, Pyright/Ruff, Vitest contract/motion/viewer tests and pytest vision/API tests. The viewer tests simulate DOM and I/O; actual local-server screenshot/interaction verification is separately recorded in the delivery report.
 
 Use the root commands documented in [the viewer guide](docs/diagnostic-viewer.md#checks-and-developer-commands): `pnpm setup`, `pnpm dev`, `pnpm check` and `pnpm build`. The Node task dispatcher avoids requiring a POSIX shell on Windows. Use `.venv/` and repository-local dependencies. Docker is optional and must not become a prerequisite for USB camera access. Portability remains subject to the hardware/OS evidence recorded per profile.
+
+## CI and package conventions
+
+Follow [continuous integration conventions](docs/continuous-integration.md) for the required checks, OS matrix, component/build table, artifacts and independent-package requirements. Every PR runs repository documentation/whitespace checks plus TypeScript and Python checks on Ubuntu, Windows and macOS. `software-checks` requires all lanes to pass; require its latest-commit result before merge. Branch protection is a separate repository setting, not implied by the workflow.
+
+Run `pnpm check` and `pnpm build` before review. `pnpm build` builds declared workspace package scripts in dependency order and then every Vite application entry, checking emitted asset references. Source-only games/shared modules are verified through their types, tests and consuming app build. Introducing a new distributable requires an explicit build and a clean consumer/install test in CI; update the component/build table and artifact list in the same PR. Python wheels and native installers remain future packaging work until their resource and offline-install contracts are implemented.
 
 ## Naming and boundaries
 
@@ -23,7 +29,7 @@ Use the root commands documented in [the viewer guide](docs/diagnostic-viewer.md
 
 ## Contracts and replay
 
-Keep one canonical wire schema when the protocol is implemented. Generate or validate language bindings from it. CI should reject schema/client drift once generation exists. Document compatibility and migration effects when changing messages; do not hand-maintain parallel Python and TypeScript definitions.
+Keep one canonical wire schema and generate or validate language bindings from it. CI rejects schema/client drift with `pnpm contracts:check`. Document compatibility and migration effects when changing messages; do not hand-maintain parallel Python and TypeScript definitions.
 
 Include meaningful examples and fixtures for missing joints, stale frames, identity uncertainty, and clock resets. Preserve replay compatibility or document the version boundary explicitly. See [coordinates and timing](docs/coordinates-and-timing.md).
 
@@ -44,4 +50,4 @@ Substantive changes include a standalone HTML report in `reports/`. Use syntheti
 
 ## Foundation checks
 
-The diagnostic software workflow runs the root checks and frontend build; it does not supply cameras or certify performance. For documentation changes, check Git whitespace, local links and anchors, and any machine-readable examples. For an HTML report, check document structure and external dependencies and visually inspect desktop/mobile rendering from a local HTTP server. Record the exact checks actually performed in that report.
+The repository workflow runs the [CI gates](docs/continuous-integration.md#required-checks); it does not supply cameras or certify performance. `pnpm check:repo` checks Git whitespace, local Markdown links/anchors and static report metadata/assets. Contract tests validate machine-readable observation examples. For an HTML report, also visually inspect desktop/mobile rendering from a local HTTP server. Record the exact checks actually performed in that report.

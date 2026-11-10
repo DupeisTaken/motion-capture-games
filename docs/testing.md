@@ -72,9 +72,9 @@ Recognition thresholds, hysteresis, action timing, supported capabilities and di
 
 Use a real local server and screenshot the player interface on the actual mirror/display aspect ratio, plus relevant desktop/mobile operator layouts. Test each supported language. Current documentation and report are English only. Check contrast, text size at play distance, focus, keyboard/operator escape paths, non-color identity cues and clear error/recovery messages.
 
-## Continuous integration roadmap
+## Continuous integration
 
-Introduce light documentation/contract checks with initial tooling. Add formatting, types, unit and replay tests with the first code. Add browser integration checks with a runnable application. Keep GPU/USB/physical-latency runs as explicitly identified hardware jobs or manual certification evidence; generic hosted CI does not supply that hardware.
+Follow [CI conventions](continuous-integration.md) for exact commands and component/build coverage. Every PR runs repository documentation/whitespace checks and TypeScript/Python checks plus app builds on Ubuntu, Windows and macOS. The stable `software-checks` gate requires all lanes to succeed. Independently distributed packages must add output/clean-install tests when introduced. Current DOM tests do not replace real-server browser evidence. Keep GPU/USB/physical-latency runs as explicitly identified hardware jobs or manual certification evidence; generic hosted CI does not supply that hardware.
 
 ## Release gate
 

@@ -61,6 +61,7 @@ These are early experimental game slices. Physical framing/collision accuracy, p
 | [Vision research and plan](docs/vision-research.md) | Location, motion, pose algorithms, training decisions and M1 experiment plan |
 | [Vision research report](reports/vision-research.html) | Standalone, source-linked research and delivery verification |
 | [Contributing](CONTRIBUTING.md) | Tooling direction and review workflow |
+| [Continuous integration](docs/continuous-integration.md) | Required checks, OS coverage, package/build rules and artifacts |
 | [Agent instructions](AGENTS.md) | Rules for automated contributors |
 | [Foundation report](reports/foundation.html) | Standalone change report and verification record |
 | [Motion runner report](reports/motion-runner.html) | Runner scaffold change and documentation verification |

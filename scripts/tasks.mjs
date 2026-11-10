@@ -107,6 +107,17 @@ if (command === "setup") {
   }
   process.on("SIGINT", () => close());
   process.on("SIGTERM", () => close());
+} else if (command === "python-check") {
+  if (!existsSync(python))
+    throw new Error("Python environment missing. Run uv sync --locked.");
+  for (const args of [
+    ["-m", "pyright"],
+    ["-m", "ruff", "check", "services/vision"],
+    ["-m", "pytest", "-q"],
+    ["-m", "ruff", "format", "--check", "services/vision"],
+    ["-m", "compileall", "-q", "services/vision/motion_vision"],
+  ])
+    run(python, args);
 } else {
   const args = {
     models: ["-m", "motion_vision.models", ...process.argv.slice(3)],
