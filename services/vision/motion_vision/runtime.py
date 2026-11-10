@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .models import ROOT, availability
 from .providers import Image, PoseProvider, create_provider
 from .sources import CameraSource, demo_frame
+from .timing import host_time_ns, next_preview_tick
 from .tracking import Tracker
 
 MAX_METADATA = 64 * 1024
@@ -77,7 +78,7 @@ def encode_packet(observation: dict[str, Any], jpeg: bytes) -> bytes:
 
 
 class VisionRuntime:
-    def __init__(self, clock_ns: Callable[[], int] = time.monotonic_ns) -> None:
+    def __init__(self, clock_ns: Callable[[], int] = host_time_ns) -> None:
         self.clock_ns = clock_ns
         self.condition = threading.Condition()
         self.control_lock = threading.Lock()
@@ -218,6 +219,7 @@ class VisionRuntime:
         last_capture_at: int | None = None
         dropped = 0
         started = time.monotonic()
+        demo_tick = self.clock_ns()
         try:
             cv2.setNumThreads(1)
             if settings.source == "camera":
@@ -328,7 +330,9 @@ class VisionRuntime:
                     )
                     self.condition.notify_all()
                 if camera is None:
-                    stop.wait(max(0, 1 / 20 - (self.clock_ns() - processing_started) / 1e9))
+                    now = self.clock_ns()
+                    demo_tick = next_preview_tick(demo_tick, now)
+                    stop.wait((demo_tick - now) / 1e9)
         except Exception as error:
             logging.getLogger(__name__).exception("Diagnostic vision source failed")
             with self.condition:

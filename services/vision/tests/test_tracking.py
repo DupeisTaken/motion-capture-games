@@ -59,6 +59,147 @@ def test_detection_array_reordering_does_not_exchange_ids(mode: str) -> None:
 
 
 @pytest.mark.parametrize("mode", ["iou", "pose"])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_small_displacement_and_delayed_return_preserve_confirmed_ids(
+    mode: str, reverse: bool
+) -> None:
+    tracker = Tracker(mode)
+    positions = [0.20, 0.36]
+    if reverse:
+        positions.reverse()
+    established = []
+    for timestamp in (0, 33_000_000, 66_000_000):
+        established = tracker.update([person(x) for x in positions], timestamp)
+    expected = {item["box"]["x"]: item["trackId"] for item in established}
+    assert all(item["identity"] == "confident" for item in established)
+
+    # A small common box displacement over a short interval must not launch
+    # a prediction into the neighboring person's position after a slow frame.
+    disturbed = tracker.update([person(x - 0.03) for x in positions], 82_000_000)
+    assert [item["trackId"] for item in disturbed] == [expected[x] for x in positions]
+    returned = tracker.update([person(x) for x in reversed(positions)], 232_000_000)
+    assert len(returned) == 2
+    assert all(item["identity"] == "confident" for item in returned)
+    assert all(item["trackId"] == expected[item["box"]["x"]] for item in returned)
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize(
+    "final_positions, final_timestamp",
+    [
+        pytest.param([0.37, 0.43], 250_000_000, id="stop"),
+        pytest.param([0.35, 0.45], 250_000_000, id="reverse"),
+        pytest.param([0.37, 0.43], 400_000_000, id="stop-after-dropped-frames"),
+    ],
+)
+def test_approach_then_stop_or_reverse_never_exchanges_ids(
+    mode: str, reverse: bool, final_positions: list[float], final_timestamp: int
+) -> None:
+    tracker = Tracker(mode)
+    order = [1, 0] if reverse else [0, 1]
+    first = tracker.update([person([0.30, 0.50][i], width=0.10) for i in order], 0)
+    expected = {i: first[order.index(i)]["trackId"] for i in order}
+    approached = tracker.update([person([0.37, 0.43][i], width=0.10) for i in order], 100_000_000)
+    assert [item["trackId"] for item in approached] == [expected[i] for i in order]
+
+    # Neither person crosses. If prediction and observation disagree, abstaining
+    # is acceptable; confidently giving either person the other's ID is not.
+    output = tracker.update(
+        [person(final_positions[i], width=0.10) for i in reversed(order)], final_timestamp
+    )
+    assert len(output) == 2
+    for item, index in zip(output, reversed(order), strict=True):
+        assert item["trackId"] in (expected[index], None)
+        if item["trackId"] is None:
+            assert item["identity"] == "ambiguous"
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_prediction_conflict_abstains_and_retires_ids_even_with_fast_velocity_response(
+    mode: str, reverse: bool
+) -> None:
+    # A deliberately fast response leaves the stop prediction crossing. This
+    # exercises the conflict safeguard independently of ordinary noise damping.
+    tracker = Tracker(mode, TrackingConfig(velocity_time_constant_s=0.0001))
+    positions = [0.30, 0.50]
+    approach = [0.37, 0.43]
+    if reverse:
+        positions.reverse()
+        approach.reverse()
+    established = tracker.update([person(x, width=0.10) for x in positions], 0)
+    old_ids = {item["trackId"] for item in established}
+    approached = tracker.update([person(x, width=0.10) for x in approach], 100_000_000)
+    assert [item["trackId"] for item in approached] == [item["trackId"] for item in established]
+    stopped = tracker.update([person(x, width=0.10) for x in reversed(approach)], 250_000_000)
+    assert len(stopped) == 2
+    assert all(item["trackId"] is None and item["identity"] == "ambiguous" for item in stopped)
+    separated = tracker.update([person(x, width=0.10) for x in positions], 283_000_000)
+    assert not old_ids & {item["trackId"] for item in separated}
+    assert all(item["identity"] == "tentative" for item in separated)
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_sustained_motion_preserves_ids_and_current_observed_positions(
+    mode: str, reverse: bool
+) -> None:
+    tracker = Tracker(mode)
+    starts = [0.10, 0.60]
+    if reverse:
+        starts.reverse()
+    first = tracker.update([person(x) for x in starts], 0)
+    expected = [item["trackId"] for item in first]
+    for frame in range(1, 21):
+        current = [person(x + frame * 0.01) for x in starts]
+        if frame % 2:
+            current.reverse()
+        output = tracker.update(current, frame * 33_000_000)
+        assert len(output) == 2
+        for index, start in enumerate(starts):
+            observed_x = start + frame * 0.01
+            item = next(item for item in output if item["box"]["x"] == observed_x)
+            assert item["trackId"] == expected[index]
+            assert item["joints"] == person(observed_x)["joints"]
+            if frame >= 2:
+                assert item["identity"] == "confident"
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
+def test_disturbed_tracks_reacquire_tentatively_without_transferring_ids(mode: str) -> None:
+    tracker = Tracker(mode)
+    established = []
+    for timestamp in (0, 33_000_000, 66_000_000):
+        established = tracker.update([person(0.20), person(0.60)], timestamp)
+    tracker.update([person(0.17), person(0.57)], 82_000_000)
+    assert tracker.update([], 99_000_000) == []
+    recovered = tracker.update([person(0.60), person(0.20)], 232_000_000)
+    for x in (0.20, 0.60):
+        assert id_for(recovered, x) == id_for(established, x)
+    assert all(item["identity"] == "tentative" for item in recovered)
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
+def test_ambiguity_and_epoch_reset_discard_disturbed_identity_history(mode: str) -> None:
+    tracker = Tracker(mode)
+    established = []
+    for timestamp in (0, 33_000_000, 66_000_000):
+        established = tracker.update([person(0.20), person(0.60)], timestamp, "first")
+    old_ids = {item["trackId"] for item in established}
+    tracker.update([person(0.17), person(0.57)], 82_000_000)
+    overlap = tracker.update([person(0.39), person(0.40)], 232_000_000)
+    assert all(item["trackId"] is None and item["identity"] == "ambiguous" for item in overlap)
+    separated = tracker.update([person(0.60), person(0.20)], 266_000_000)
+    assert not old_ids & {item["trackId"] for item in separated}
+    assert all(item["identity"] == "tentative" for item in separated)
+    restarted = tracker.update([person(0.20), person(0.60)], 0, "second")
+    prior_ids = old_ids | {item["trackId"] for item in separated}
+    assert not prior_ids & {item["trackId"] for item in restarted}
+    assert all(item["identity"] == "tentative" for item in restarted)
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
 def test_overlap_abstains_and_separation_does_not_guess_old_identity(mode: str) -> None:
     tracker = Tracker(mode)
     old = tracker.update([person(0.25), person(0.55)], 0)
@@ -206,6 +347,12 @@ def test_configuration_rejects_unbounded_work_and_invalid_thresholds() -> None:
         Tracker("unknown")
 
 
+@pytest.mark.parametrize("time_constant", [0.0, -0.1, nan, float("inf")])
+def test_velocity_time_constant_requires_finite_positive_seconds(time_constant: float) -> None:
+    with pytest.raises(ValueError, match="velocity_time_constant_s must be finite and positive"):
+        TrackingConfig(velocity_time_constant_s=time_constant)
+
+
 @pytest.mark.parametrize("mode", ["iou", "pose"])
 @pytest.mark.parametrize("last_cost", [0.40, 0.45])
 def test_global_assignment_tie_abstains_even_with_clear_local_minima(
@@ -226,6 +373,38 @@ def test_global_assignment_tie_abstains_even_with_clear_local_minima(
     output = tracker.update([person(0.1), person(0.7)], 33_000_000)
     assert all(item["identity"] == "ambiguous" for item in output)
     assert all(item["trackId"] is None for item in output)
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("measured_margin", [0.0, 0.05])
+def test_measured_assignment_tie_cannot_be_overruled_by_clear_prediction(
+    mode: str, reverse: bool, measured_margin: float, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tracker = Tracker(mode)
+    tracker.update([person(0.1), person(0.7)], 0)
+    predicted = {(0.1, 0.1): 0.10, (0.1, 0.7): 0.40, (0.7, 0.1): 0.50, (0.7, 0.7): 0.10}
+    monkeypatch.setattr(
+        tracker,
+        "_cost",
+        lambda track, detection, timestamp: predicted[
+            (track.detection["box"]["x"], detection["box"]["x"])
+        ],
+    )
+
+    def geometry_cost(track, detection, timestamp, *, predict):
+        old_x, new_x = track.detection["box"]["x"], detection["box"]["x"]
+        if predict:
+            return predicted[(old_x, new_x)]
+        return 0.20 if old_x == new_x else 0.20 + measured_margin / 2
+
+    monkeypatch.setattr(tracker, "_geometry_cost", geometry_cost)
+    positions = [0.7, 0.1] if reverse else [0.1, 0.7]
+    # Prediction has a clear optimum, but measured geometry supports a competing
+    # permutation. Even when its first optimum agrees, the near-tie must abstain.
+    output = tracker.update([person(x) for x in positions], 33_000_000)
+    assert len(output) == 2
+    assert all(item["identity"] == "ambiguous" and item["trackId"] is None for item in output)
 
 
 @pytest.mark.parametrize("face_only", [False, True])

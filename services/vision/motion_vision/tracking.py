@@ -10,7 +10,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import cache
-from math import hypot, isfinite
+from math import exp, hypot, isfinite
 from typing import Any, Literal
 
 Detection = dict[str, Any]
@@ -55,6 +55,7 @@ class TrackingConfig:
     center_speed_gate: float = 1.2  # normalized image units per second
     maximum_center_gate: float = 0.30
     prediction_limit_s: float = 0.15
+    velocity_time_constant_s: float = 0.15  # source-time smoothing, provisional seconds
     maximum_speed: float = 1.5  # association velocity bound, image units/second
     max_match_cost: float = 0.78
     ambiguity_margin: float = 0.08
@@ -73,6 +74,7 @@ class TrackingConfig:
             "center_speed_gate",
             "maximum_center_gate",
             "prediction_limit_s",
+            "velocity_time_constant_s",
             "maximum_speed",
         ):
             value = getattr(self, name)
@@ -208,9 +210,14 @@ class Tracker:
         self._last_timestamp_ns = None
 
     def _cost(self, track: _Track, detection: Detection, timestamp_ns: int) -> float | None:
+        return self._geometry_cost(track, detection, timestamp_ns, predict=True)
+
+    def _geometry_cost(
+        self, track: _Track, detection: Detection, timestamp_ns: int, *, predict: bool
+    ) -> float | None:
         config = self.config
         elapsed_s = (timestamp_ns - track.timestamp_ns) / 1e9
-        prediction_s = min(elapsed_s, config.prediction_limit_s)
+        prediction_s = min(elapsed_s, config.prediction_limit_s) if predict else 0.0
         x, y, width, height = _box(track.detection)
         predicted = (
             x + track.velocity[0] * prediction_s,
@@ -265,6 +272,13 @@ class Tracker:
             [self._cost(track, detection, timestamp_ns) for detection in current]
             for track in self._tracks
         ]
+        observed_costs = [
+            [
+                self._geometry_cost(track, detection, timestamp_ns, predict=False)
+                for detection in current
+            ]
+            for track in self._tracks
+        ]
         ambiguous: set[int] = set()
         # Close body overlap is observable uncertainty even with no previous IDs.
         for index, detection in enumerate(current):
@@ -314,6 +328,7 @@ class Tracker:
             return retired
 
         def assign(
+            matrix: list[list[float | None]],
             usable_rows: list[int],
             usable_columns: list[int],
             forbidden: tuple[int, int] | None = None,
@@ -326,7 +341,7 @@ class Tracker:
                 tail_cost, tail = solve(index + 1, used_mask)
                 best = (config.max_match_cost + 0.01 + tail_cost, (None, *tail))
                 for bit, row in enumerate(usable_rows):
-                    cost = costs[row][column]
+                    cost = matrix[row][column]
                     if used_mask & (1 << bit) or cost is None or forbidden == (column, row):
                         continue
                     tail_cost, tail = solve(index + 1, used_mask | (1 << bit))
@@ -339,6 +354,25 @@ class Tracker:
             solve.cache_clear()
             return result
 
+        def conflicts(
+            columns: list[int], first: tuple[int | None, ...], second: tuple[int | None, ...]
+        ) -> set[int]:
+            conflicting = {
+                column
+                for column, first_row, second_row in zip(columns, first, second, strict=True)
+                if first_row is not None and second_row is not None and first_row != second_row
+            }
+            first_columns = {
+                row: column for column, row in zip(columns, first, strict=True) if row is not None
+            }
+            second_columns = {
+                row: column for column, row in zip(columns, second, strict=True) if row is not None
+            }
+            for row in first_columns.keys() & second_columns.keys():
+                if first_columns[row] != second_columns[row]:
+                    conflicting.update((first_columns[row], second_columns[row]))
+            return conflicting
+
         # A globally tied assignment can exist even when every row/column has
         # a unique best candidate. Forbid each chosen edge in turn to measure
         # that identity's actual assignment margin, including unmatched options.
@@ -347,13 +381,13 @@ class Tracker:
             retired = retired_rows()
             usable_rows = [row for row in range(len(costs)) if row not in retired]
             usable_columns = [column for column in range(len(current)) if column not in ambiguous]
-            best_cost, chosen = assign(usable_rows, usable_columns)
+            best_cost, chosen = assign(costs, usable_rows, usable_columns)
             uncertain: set[int] = set()
             for index, row in enumerate(chosen):
                 if row is None:
                     continue
                 alternative_cost, alternative = assign(
-                    usable_rows, usable_columns, forbidden=(usable_columns[index], row)
+                    costs, usable_rows, usable_columns, forbidden=(usable_columns[index], row)
                 )
                 if alternative_cost - best_cost <= config.ambiguity_margin:
                     uncertain.update(
@@ -363,6 +397,42 @@ class Tracker:
                         )
                         if first != second
                     )
+            # A disturbed box can create velocity that predicts an old ID onto
+            # another person. Prediction cannot overrule a feasible conflicting
+            # assignment from the last measured boxes. An isolated predicted
+            # match remains usable when measured geometry has no competitor.
+            prediction_changed = any(
+                costs[row][column] != observed_costs[row][column]
+                for row in usable_rows
+                for column in usable_columns
+            )
+            if prediction_changed and len(usable_rows) * len(usable_columns) > 1:
+                observed_cost, observed = assign(observed_costs, usable_rows, usable_columns)
+                uncertain.update(conflicts(usable_columns, chosen, observed))
+                row_choices = {
+                    row: sum(observed_costs[row][column] is not None for column in usable_columns)
+                    for row in usable_rows
+                }
+                column_choices = {
+                    column: sum(observed_costs[row][column] is not None for row in usable_rows)
+                    for column in usable_columns
+                }
+                for index, row in enumerate(observed):
+                    if row is None:
+                        continue
+                    column = usable_columns[index]
+                    if row_choices[row] == 1 and column_choices[column] == 1:
+                        continue  # Removing an isolated edge only leaves it unmatched.
+                    alternative_cost, alternative = assign(
+                        observed_costs,
+                        usable_rows,
+                        usable_columns,
+                        forbidden=(column, row),
+                    )
+                    if alternative_cost - observed_cost <= config.ambiguity_margin:
+                        # A measured tie is competing evidence too; solver order
+                        # must not decide whether prediction's identity survives.
+                        uncertain.update(conflicts(usable_columns, chosen, alternative))
             if not uncertain:
                 break
             ambiguous.update(uncertain)
@@ -390,7 +460,13 @@ class Tracker:
                 vy = max(
                     -config.maximum_speed, min(config.maximum_speed, (new_y - old_y) / elapsed_s)
                 )
-                track.velocity = ((track.velocity[0] + vx) / 2, (track.velocity[1] + vy) / 2)
+                # Weight velocity by source elapsed time, not frame count: a
+                # short noisy step must not dominate a later long prediction.
+                alpha = 1.0 - exp(-elapsed_s / config.velocity_time_constant_s)
+                track.velocity = (
+                    track.velocity[0] + alpha * (vx - track.velocity[0]),
+                    track.velocity[1] + alpha * (vy - track.velocity[1]),
+                )
                 track.hits = track.hits + 1 if track.misses == 0 else 1
                 track.misses = 0
                 track.detection = deepcopy(detection)
