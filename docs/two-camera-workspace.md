@@ -18,6 +18,16 @@ The two view diagrams show their own 2D observations. The floor map shows the ro
 
 Cases include normal observations, missing hips, uncertain identity, exposure timing problems, stale source input, weak geometry, changed calibration and hidden calibration bias. The bias case deliberately publishes an incorrect estimate despite plausible geometry; its reference comparison explains why physical scale checks matter. Simulated sample availability always remains separate from physically validated input.
 
+## Choose the displayed camera
+
+[Issue #38](https://github.com/DupeisTaken/motion-capture-games/issues/38) adds a **Displayed camera** control and a dedicated selected-view stage. Choose either recorded camera angle without changing primary/reference and secondary/supporting roles, reconstructed XYZ, calibration or identity. The compact inline stage leads directly into XYZ inspection, with both source diagnostic panels retained below. The selected stage uses only that source's recorded 2D observations, image dimensions and source timing; it stays explicitly unmirrored, with anatomical joint names unchanged.
+
+The choice is stored by synthetic camera identity in this browser, separately from physical role assignments. An unavailable saved identity remains selected until the operator chooses another view. Missing, stale or unsupported selected input clears the selected diagram and explains the unavailable state. Pair-wide XYZ rejection does not by itself hide a usable source diagram; the source display and reconstruction evidence are different questions.
+
+**Open display window** moves the same selected stage into a separate window. Changing the selector or recorded sample updates that stage in its current window. Returning or closing the window restores it without creating a second playback runtime, camera or inference session. Keep the operator page open; hiding it pauses rehearsal. Popup-blocked guidance leaves the inline stage usable. Entering physical planning closes the display window and hides all synthetic output.
+
+This is an operator presentation rehearsal, not live video or a maze implementation. The current service still owns one live source, and the existing games do not acquire a second camera. Live selection needs actual simultaneous source ownership, matching video/overlay transforms and validated timing before integration.
+
 ## Plan the physical rig
 
 Physical planning assigns distinct named-device references to primary and secondary roles. Explicit Refresh obtains device metadata without acquisition. Independent prefixed selectors preserve label relationships and device identity through list reordering; a disappeared selection clears rather than choosing a substitute. The same device cannot occupy both roles. Manual-index selection retains its documented reconnect limitations.
@@ -47,6 +57,7 @@ Run from the checkout root with the existing pinned environment. `pnpm dev` serv
 pnpm rig:generate
 pnpm rig:check
 pnpm verify:rig
+pnpm verify:displayed-camera
 pnpm check
 pnpm build
 ```
@@ -54,3 +65,5 @@ pnpm build
 `rig:generate` recreates and formats the static fixture; `rig:check` checks semantic drift with an explicit numerical tolerance rather than requiring bit-identical linear algebra on every OS. `verify:rig` starts a task-owned Vite server and installed browser, uses synthetic device metadata for planning checks, and saves ignored screenshots/results under `reports/local/two-camera-workspace/`. `--report-only` validates the standalone report. No browser is downloaded automatically.
 
 UI acceptance includes scenario/scrub/playback behavior, missing values and explanations, mode isolation, independent camera selectors, duplicate/disappearing devices, explicit discovery, keyboard controls and cleanup. Real Vite-server screenshots cover desktop, mobile and narrow English layouts. Browser tests use synthetic device metadata; they do not certify actual enumeration, calibration, camera modes or physical XYZ accuracy. Use [the delivery report](../reports/two-camera-workspace.html) for commands and outcomes actually run.
+
+The displayed-camera verifier additionally checks identity-preserving selection, matching source overlays/context, XYZ invariance, saved and unavailable choices, separate-window lifecycle and acquisition isolation. Its [standalone report](../reports/displayed-camera.html) records actual results and embedded before/after screenshots.

@@ -29,6 +29,41 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 describe("single-owner game window", () => {
+  it("preserves default game labels for existing callers", () => {
+    display.open();
+    expect(popup.document.title).toBe("Synthetic game · Game display");
+    expect(
+      document.querySelector(".game-display-placeholder")?.textContent,
+    ).toContain(
+      "Your game is in its own window. Camera and round controls stay here.",
+    );
+    expect(
+      document.querySelector(".game-display-placeholder button")?.textContent,
+    ).toBe("Return game here");
+  });
+  it("supports source-display labels while moving the same stage and preserving return behavior", () => {
+    display.dispose();
+    display = createGameDisplay(stage, {
+      title: "Recorded camera",
+      windowLabel: "Camera display",
+      placeholderMessage:
+        "Selected output is separate; source controls stay here.",
+      returnButtonLabel: "Return display here",
+    });
+    display.open();
+    expect(popup.document.title).toBe("Recorded camera · Camera display");
+    expect(popup.document.getElementById("stage")).toBe(stage);
+    expect(
+      document.querySelector(".game-display-placeholder")?.textContent,
+    ).toContain("Selected output is separate; source controls stay here.");
+    const back = document.querySelector<HTMLButtonElement>(
+      ".game-display-placeholder button",
+    )!;
+    expect(back.textContent).toBe("Return display here");
+    back.click();
+    expect(stage.ownerDocument).toBe(document);
+    expect(stage.nextElementSibling?.id).toBe("after");
+  });
   it("moves the same live canvas/HUD, carries styles and restores DOM order and focus", () => {
     const opener = document.getElementById("open")!;
     opener.focus();

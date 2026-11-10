@@ -8,7 +8,9 @@ Before choosing a deployment configuration, record camera model/serial, connecti
 
 ## Placement and coverage
 
-The primary camera supplies the mirror image and initial game coordinates. Place it near the display where practical, checking perspective, body coverage and readability at the actual viewing distance. The secondary camera should observe useful alternate angles during three-player crossings. Choose baseline and angle from the room and overlap tests, not a universal mounting distance.
+The primary camera initially supplies the mirror image and initial game coordinates. Place it near the display where practical, checking perspective, body coverage and readability at the actual viewing distance. The secondary camera should observe useful alternate angles during three-player crossings. Choose baseline and angle from the room and overlap tests, not a universal mounting distance.
+
+The displayed camera is a separate presentation choice. Changing it must retain the source's matching image geometry, overlay, timing and explicit mirror transform, without swapping calibration or reconstruction roles or restarting acquisition. An unavailable selected device must stay visibly unavailable. The [operator workspace](two-camera-workspace.md#choose-the-displayed-camera) rehearses this behavior with recorded synthetic views; physical planning and the current single-source games do not provide simultaneous live views.
 
 Verify full reachable arm and body coverage for the intended player heights and motion envelope. Check partial overlap, deep overlap, image edges, spectators and nearby reflective surfaces. Confirm that target placement stays inside a physical play boundary and does not encourage contact with the screen or another player.
 

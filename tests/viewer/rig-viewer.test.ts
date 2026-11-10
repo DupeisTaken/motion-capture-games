@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Window as TestWindow } from "happy-dom";
 import { createRigWorkspace } from "../../apps/mirror/src/rig";
 import dataset from "../../apps/mirror/src/rig-rehearsal.json";
 
@@ -7,6 +8,7 @@ let workspace: ReturnType<typeof createRigWorkspace>;
 const fetchMock = vi.fn();
 const acquire = vi.fn();
 const websocket = vi.fn();
+const displayPreferenceKey = "motion-studio.rig.synthetic-displayed-camera.v1";
 const sampleCount = dataset.cases[0].frames.length;
 const frameLabel = (sample: number) => `${sample} / ${sampleCount}`;
 const cameraA = { id: "a".repeat(64), name: "Reference USB" };
@@ -53,6 +55,7 @@ beforeEach(() => {
   fetchMock.mockReset().mockResolvedValue(response([cameraA, cameraB]));
   acquire.mockReset();
   websocket.mockReset();
+  window.localStorage.removeItem(displayPreferenceKey);
   document.body.innerHTML = '<div id="rig-test-root"></div>';
   workspace = createRigWorkspace(get("rig-test-root"));
 });
@@ -61,11 +64,160 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   document.body.innerHTML = "";
 });
 
 describe("two-view operator workspace", () => {
+  it("switches the actual displayed camera without changing roles, source panels or XYZ", () => {
+    const primary = dataset.cases[0].frames[0].views[0].cameraId;
+    const secondary = dataset.cases[0].frames[0].views[1].cameraId;
+    expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(primary);
+    expect(get("rig-selected-diagram").innerHTML).toBe(
+      get("rig-reference-view").innerHTML,
+    );
+    const invariant = [
+      get("rig-space").innerHTML,
+      get("rig-x").textContent,
+      get("rig-reference-context").textContent,
+      get("rig-support-context").textContent,
+    ];
+    change("rig-displayed-camera", secondary);
+    expect(get("rig-selected-diagram").innerHTML).toBe(
+      get("rig-support-view").innerHTML,
+    );
+    expect(get("rig-selected-context").textContent).toContain(secondary);
+    expect(get("rig-selected-context").textContent).toContain(
+      "synthetic-exposure",
+    );
+    expect(get("rig-selected-context").textContent).toContain(
+      "uncertainty 500000 ns",
+    );
+    expect([
+      get("rig-space").innerHTML,
+      get("rig-x").textContent,
+      get("rig-reference-context").textContent,
+      get("rig-support-context").textContent,
+    ]).toEqual(invariant);
+    expect(window.localStorage.getItem(displayPreferenceKey)).toBe(secondary);
+    selectCase("missing-hip");
+    expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(
+      secondary,
+    );
+    expect(get("rig-selected-stage").dataset.sourceStatus).toBe("partial");
+    expect(get("rig-selected-diagram").hidden).toBe(false);
+    physicalStaysUnavailable();
+  });
+  it("restores a stable display preference on reload and preserves an unavailable choice until recovery", () => {
+    const secondary = dataset.cases[0].frames[0].views[1].cameraId;
+    change("rig-displayed-camera", secondary);
+    workspace.dispose();
+    workspace = createRigWorkspace(get("rig-test-root"));
+    expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(
+      secondary,
+    );
+    workspace.dispose();
+    window.localStorage.setItem(
+      displayPreferenceKey,
+      "saved-camera-not-in-recording",
+    );
+    workspace = createRigWorkspace(get("rig-test-root"));
+    expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(
+      "saved-camera-not-in-recording",
+    );
+    expect(get("rig-selected-diagram").children).toHaveLength(0);
+    expect(get("rig-selected-unavailable").hidden).toBe(false);
+    expect(get("rig-selected-context").textContent).toContain("not replaced");
+    change("rig-displayed-camera", secondary);
+    expect(get("rig-selected-diagram").innerHTML).toBe(
+      get("rig-support-view").innerHTML,
+    );
+  });
+  it("keeps selection usable if browser preference storage is blocked", () => {
+    workspace.dispose();
+    vi.spyOn(window.localStorage, "getItem").mockImplementation(() => {
+      throw new Error("Storage blocked");
+    });
+    vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
+      throw new Error("Storage blocked");
+    });
+    workspace = createRigWorkspace(get("rig-test-root"));
+    const secondary = dataset.cases[0].frames[0].views[1].cameraId;
+    change("rig-displayed-camera", secondary);
+    expect(get("rig-selected-stage").dataset.cameraId).toBe(secondary);
+    expect(get("rig-display-preference-note").textContent).toContain(
+      "this page only",
+    );
+    expect(get("rig-selected-diagram").children).not.toHaveLength(0);
+  });
+  it("clears stale displayed geometry while retaining the two diagnostic sources and recovers", () => {
+    selectCase("stale-input");
+    expect(get("rig-selected-diagram").children).toHaveLength(0);
+    expect(get("rig-selected-unavailable").textContent).toContain("stale");
+    expect(get("rig-reference-view").querySelector("svg")).not.toBeNull();
+    expect(get("rig-support-view").querySelector("svg")).not.toBeNull();
+    selectCase("nominal");
+    expect(get("rig-selected-diagram").hidden).toBe(false);
+    expect(get("rig-selected-unavailable").hidden).toBe(true);
+  });
+  it("moves one selected stage to a window and keeps choice and samples synchronized before safe return", () => {
+    const popup = new TestWindow({ url: location.href }) as unknown as Window;
+    vi.spyOn(window, "open").mockReturnValue(popup);
+    vi.spyOn(popup, "focus").mockImplementation(() => {});
+    vi.spyOn(popup, "close").mockImplementation(() => {});
+    const stage = get("rig-selected-stage");
+    click("rig-display-window");
+    expect(popup.document.getElementById("rig-selected-stage")).toBe(stage);
+    expect(document.getElementById("rig-selected-stage")).toBeNull();
+    expect(get("rig-reference-view").querySelector("svg")).not.toBeNull();
+    const secondary = dataset.cases[0].frames[0].views[1].cameraId;
+    change("rig-displayed-camera", secondary);
+    click("rig-next");
+    expect(
+      popup.document.getElementById("rig-selected-stage")?.dataset.cameraId,
+    ).toBe(secondary);
+    expect(
+      popup.document.getElementById("rig-selected-diagram")?.innerHTML,
+    ).toBe(get("rig-support-view").innerHTML);
+    expect(
+      popup.document.getElementById("rig-selected-context")?.textContent,
+    ).toContain(`source frame ${dataset.cases[0].frames[1].views[1].frameId}`);
+    popup.dispatchEvent(new Event("pagehide"));
+    expect(get("rig-selected-stage")).toBe(stage);
+    expect(get("rig-display-window").textContent).toBe("Open display window");
+    expect(window.open).toHaveBeenCalledOnce();
+    physicalStaysUnavailable();
+  });
+  it("retains inline output when a popup is blocked and closes it on physical planning or disposal", () => {
+    const popup = new TestWindow({ url: location.href }) as unknown as Window;
+    vi.spyOn(window, "open").mockReturnValueOnce(null).mockReturnValue(popup);
+    vi.spyOn(popup, "focus").mockImplementation(() => {});
+    vi.spyOn(popup, "close").mockImplementation(() => {});
+    const stage = get("rig-selected-stage");
+    click("rig-display-window");
+    expect(get("rig-selected-stage")).toBe(stage);
+    expect(get("rig-display-location").textContent).toContain("blocked");
+    click("rig-display-window");
+    click("rig-tab-planning");
+    expect(popup.close).toHaveBeenCalledOnce();
+    expect(get("rig-selected-stage")).toBe(stage);
+    expect(stage.hidden).toBe(true);
+    expect(document.activeElement).toBe(get("rig-tab-planning"));
+    const calls = vi.mocked(window.open).mock.calls.length;
+    get("rig-display-window").dispatchEvent(new Event("click"));
+    expect(window.open).toHaveBeenCalledTimes(calls);
+    click("rig-tab-rehearsal");
+    expect(stage.hidden).toBe(false);
+    click("rig-display-window");
+    workspace.dispose();
+    expect(popup.close).toHaveBeenCalledTimes(2);
+    expect(get("rig-selected-stage")).toBe(stage);
+    expect(vi.getTimerCount()).toBe(0);
+  });
   it("starts with bounded synthetic samples and no device or capture request", () => {
+    expect(get("rig-space").closest("section")?.nextElementSibling?.id).toBe(
+      "rig-view-pair",
+    );
     expect(fetchMock).not.toHaveBeenCalled();
     expect(get<HTMLSelectElement>("rig-scenario").options.length).toBe(
       dataset.cases.length,

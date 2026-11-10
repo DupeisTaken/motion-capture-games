@@ -8,9 +8,15 @@ import {
   selectRigFrame,
   validateRigPlan,
   type RigDataset,
+  type RigFrame,
   type RigPoint,
 } from "./rig-state";
 import { renderRigSpace, renderRigView } from "./rig-renderer";
+import { createGameDisplay } from "./game-display";
+import {
+  parseDisplayedCameraPreference,
+  resolveDisplayedCamera,
+} from "./rig-display-state";
 
 const markup = `
   <a class="skip-link" href="#rig-workspace">Skip to two-view workspace</a>
@@ -26,6 +32,7 @@ const markup = `
           <p class="eyebrow">01 / RECORDED SYNTHETIC SAMPLES</p><h2>Choose a situation</h2>
           <label class="field-label" for="rig-scenario">Scenario</label><select id="rig-scenario"></select><p id="rig-scenario-description" class="field-help"></p>
           <p id="rig-scenario-risk" class="rig-note"></p>
+          <label class="field-label" for="rig-displayed-camera">Displayed camera</label><select id="rig-displayed-camera" aria-describedby="rig-display-preference-note"></select><p id="rig-display-preference-note" class="field-help">Choose the output view independently of the primary and secondary roles. Saved on this browser.</p>
           <div class="rig-play-controls"><button type="button" id="rig-play" class="primary-button" aria-pressed="false">Play samples</button><button type="button" id="rig-reset" class="secondary-button">Reset</button></div>
           <label class="field-label" for="rig-frame">Recorded sample <output id="rig-frame-label" for="rig-frame">—</output></label><input id="rig-frame" type="range" min="0" max="0" step="1" value="0"><div class="rig-step-controls"><button type="button" id="rig-previous">← Previous</button><button type="button" id="rig-next">Next →</button></div>
           <p class="field-help">Playback steps through a bounded recording at 4 samples/s. It does not measure camera, inference or display FPS.</p>
@@ -33,11 +40,12 @@ const markup = `
           <p class="field-help">Anatomical left/right stays unchanged. View diagrams use canonical, unmirrored image pixels.</p>
         </aside>
         <div class="rig-observation-area">
+          <section class="rig-panel rig-output-panel" aria-label="Displayed camera output"><div class="rig-panel-heading"><h2>Displayed camera</h2><button type="button" id="rig-display-window" class="secondary-button" aria-expanded="false">Open display window</button></div><p id="rig-display-location" class="field-help" role="status" aria-live="polite">Output is shown here. Both diagnostic views remain below.</p><div id="rig-selected-stage" class="rig-selected-stage" tabindex="0" aria-label="Displayed synthetic camera. Arrow keys step samples; Space plays or pauses."><div class="rig-selected-heading"><div><p class="rig-selected-origin">Synthetic rehearsal · no camera footage</p><h3 id="rig-selected-title">Waiting for a recorded view</h3></div><span id="rig-selected-state" class="subtle-badge">Unavailable</span></div><div id="rig-selected-diagram" class="rig-selected-diagram"></div><p id="rig-selected-unavailable" class="rig-selected-unavailable" hidden></p><p id="rig-selected-context" class="rig-selected-context"></p><p id="rig-selected-warning" class="rig-selected-warning" role="status" aria-live="polite"></p><p class="rig-selected-limit">Physical XYZ unavailable · Maze input disabled. Display selection changes presentation only.</p></div></section>
+          <section class="rig-panel rig-space-panel" aria-label="Reconstructed rig coordinates"><div class="rig-panel-heading"><div><p class="eyebrow">02 / SHARED RIG SPACE</p><h2>Where is the participant?</h2></div><span id="rig-sample-state" class="subtle-badge">—</span></div><div class="rig-space-layout"><div><div id="rig-space" class="rig-space-diagram"></div><p class="rig-map-legend"><span><i class="rig-estimate-dot"></i>Reconstructed estimate</span><span><i class="rig-reference-dot"></i>Synthetic reference</span></p><p class="field-help">Plot: X −3 to 3 m, Z 0 to 6 m, including the display area. Synthetic gate volume: X −3 to 3 m, Y 0 to 2.6 m, Z 1 to 6 m. Camera markers show solver calibration; no physical volume is validated.</p></div><div class="rig-coordinate-panel"><h3>Hip midpoint · meters</h3><div class="rig-coordinate-table"><table><caption class="rig-visually-hidden">Reconstructed root compared with synthetic reference truth</caption><thead><tr><th scope="col">Axis</th><th scope="col">Estimate</th><th scope="col">Reference</th></tr></thead><tbody><tr><th scope="row">X</th><td id="rig-x">—</td><td id="rig-reference-x">—</td></tr><tr><th scope="row">Y</th><td id="rig-y">—</td><td id="rig-reference-y">—</td></tr><tr><th scope="row">Z</th><td id="rig-z">—</td><td id="rig-reference-z">—</td></tr></tbody></table></div><p id="rig-root-state" class="field-help"></p><p class="rig-difference">Reference difference <strong id="rig-reference-difference">—</strong></p><p class="field-help">Reference values exist only because this recording is synthetic. Small residuals cannot establish physical accuracy.</p><dl class="rig-source-facts"><div><dt>Accepted joints</dt><dd id="rig-joint-count">—</dd></div><div><dt>Rig association</dt><dd id="rig-track">—</dd></div><div><dt>Solver / reference baseline</dt><dd id="rig-baseline">—</dd></div></dl></div></div><div id="rig-quality" class="rig-quality" role="status" aria-live="polite"></div></section>
           <div class="rig-view-pair" id="rig-view-pair" tabindex="0" aria-label="Synthetic camera views. Left and right arrow keys step samples; Space plays or pauses.">
             <article class="rig-panel rig-view-card"><div class="rig-panel-heading"><h2>Primary · reference view</h2><span class="subtle-badge">Synthetic</span></div><div id="rig-reference-view" class="rig-view-diagram"></div><p id="rig-reference-context" class="field-help rig-view-context"></p></article>
             <article class="rig-panel rig-view-card"><div class="rig-panel-heading"><h2>Secondary · supporting view</h2><span class="subtle-badge">Synthetic</span></div><div id="rig-support-view" class="rig-view-diagram"></div><p id="rig-support-context" class="field-help rig-view-context"></p></article>
           </div>
-          <section class="rig-panel rig-space-panel" aria-label="Reconstructed rig coordinates"><div class="rig-panel-heading"><div><p class="eyebrow">02 / SHARED RIG SPACE</p><h2>Where is the participant?</h2></div><span id="rig-sample-state" class="subtle-badge">—</span></div><div class="rig-space-layout"><div><div id="rig-space" class="rig-space-diagram"></div><p class="rig-map-legend"><span><i class="rig-estimate-dot"></i>Reconstructed estimate</span><span><i class="rig-reference-dot"></i>Synthetic reference</span></p><p class="field-help">Plot: X −3 to 3 m, Z 0 to 6 m, including the display area. Synthetic gate volume: X −3 to 3 m, Y 0 to 2.6 m, Z 1 to 6 m. Camera markers show solver calibration; no physical volume is validated.</p></div><div class="rig-coordinate-panel"><h3>Hip midpoint · meters</h3><div class="rig-coordinate-table"><table><caption class="rig-visually-hidden">Reconstructed root compared with synthetic reference truth</caption><thead><tr><th scope="col">Axis</th><th scope="col">Estimate</th><th scope="col">Reference</th></tr></thead><tbody><tr><th scope="row">X</th><td id="rig-x">—</td><td id="rig-reference-x">—</td></tr><tr><th scope="row">Y</th><td id="rig-y">—</td><td id="rig-reference-y">—</td></tr><tr><th scope="row">Z</th><td id="rig-z">—</td><td id="rig-reference-z">—</td></tr></tbody></table></div><p id="rig-root-state" class="field-help"></p><p class="rig-difference">Reference difference <strong id="rig-reference-difference">—</strong></p><p class="field-help">Reference values exist only because this recording is synthetic. Small residuals cannot establish physical accuracy.</p><dl class="rig-source-facts"><div><dt>Accepted joints</dt><dd id="rig-joint-count">—</dd></div><div><dt>Rig association</dt><dd id="rig-track">—</dd></div><div><dt>Solver / reference baseline</dt><dd id="rig-baseline">—</dd></div></dl></div></div><div id="rig-quality" class="rig-quality" role="status" aria-live="polite"></div></section>
           <details id="rig-joint-details" class="rig-panel rig-joint-details" hidden><summary>Inspect named joint rejections</summary><ul id="rig-rejected-joints" tabindex="0" aria-label="Rejected anatomical joints"></ul></details>
         </div>
       </div>
@@ -70,7 +78,16 @@ const reasonLabels: Record<string, string> = {
   reprojection: "Image reprojection exceeds the gate",
   transform_mismatch: "Image transform changed",
   future_input: "Source time is in the future",
+  camera_unavailable: "The selected camera is unavailable in this recording",
+  primary_unavailable: "No primary camera is available for the initial display",
+  invalid_timing: "Recorded source timing is invalid",
+  clock_mismatch: "Recorded source clocks cannot be compared",
+  no_visible_joints: "No source joints are visible",
+  missing_joints: "Some source joints are missing",
+  invalid_image_geometry: "Recorded image geometry is invalid",
 };
+const DISPLAY_PREFERENCE_KEY =
+  "motion-studio.rig.synthetic-displayed-camera.v1";
 const metres = (point: RigPoint | null, axis: keyof RigPoint) => {
   if (!point) return "Unavailable";
   const rounded = point[axis].toFixed(3);
@@ -82,8 +99,20 @@ export function createRigWorkspace(
   input: unknown = rawDataset,
 ) {
   root.innerHTML = markup;
+  // Cached references survive adoption into the popup, outside the operator root.
+  const cached = new Map<string, HTMLElement>();
   const get = <T extends HTMLElement = HTMLElement>(id: string) =>
-    root.querySelector<T>(`#${id}`)!;
+    (cached.get(id) ?? root.querySelector<T>(`#${id}`))! as T;
+  for (const id of [
+    "rig-selected-stage",
+    "rig-selected-title",
+    "rig-selected-diagram",
+    "rig-selected-context",
+    "rig-selected-state",
+    "rig-selected-unavailable",
+    "rig-selected-warning",
+  ])
+    cached.set(id, get(id));
   const events = new AbortController();
   const reference = new CameraChoice(root, "reference");
   const support = new CameraChoice(root, "support");
@@ -93,10 +122,130 @@ export function createRigWorkspace(
   let timer: number | null = null;
   let disposed = false;
   let playing = false;
+  let preferenceAvailable = true;
+  let displayedCameraId: string | null = null;
+  let displayChoicesSignature = "";
+  try {
+    displayedCameraId = parseDisplayedCameraPreference(
+      window.localStorage.getItem(DISPLAY_PREFERENCE_KEY),
+    );
+  } catch {
+    preferenceAvailable = false;
+  }
   const write = (id: string, value: string) => {
     const element = get(id);
     if (element.textContent !== value) element.textContent = value;
   };
+  const display = createGameDisplay(get("rig-selected-stage"), {
+    title: "Displayed camera · synthetic rehearsal",
+    windowLabel: "Camera display",
+    placeholderMessage:
+      "The selected camera output is in its own window. Camera selection, samples and both diagnostic views stay here.",
+    returnButtonLabel: "Return display here",
+    onStateChange(open) {
+      write(
+        "rig-display-window",
+        open ? "Return display here" : "Open display window",
+      );
+      get("rig-display-window").setAttribute("aria-expanded", String(open));
+      write(
+        "rig-display-location",
+        open
+          ? "Output is in a separate window. Camera selection and sample controls stay here."
+          : "Output is shown here. Both diagnostic views remain below.",
+      );
+    },
+  });
+  function saveDisplayPreference() {
+    if (!displayedCameraId) return;
+    if (preferenceAvailable) {
+      try {
+        window.localStorage.setItem(DISPLAY_PREFERENCE_KEY, displayedCameraId);
+      } catch {
+        preferenceAvailable = false;
+      }
+    }
+    write(
+      "rig-display-preference-note",
+      preferenceAvailable
+        ? "Choose the output view independently of the primary and secondary roles. Saved on this browser."
+        : "Choose the output view independently of the camera roles. Browser storage is unavailable; the choice applies to this page only.",
+    );
+  }
+  function renderSelected(frame: RigFrame) {
+    const selected = resolveDisplayedCamera(frame, displayedCameraId);
+    if (selected.selectedCameraId !== displayedCameraId) {
+      displayedCameraId = selected.selectedCameraId;
+      saveDisplayPreference();
+    }
+    const options = frame.views.map((view) => ({
+      id: view.cameraId,
+      label: `${view.cameraId} · ${view.role === "primary" ? "Primary / reference" : "Secondary / supporting"}`,
+    }));
+    if (
+      displayedCameraId &&
+      !options.some((option) => option.id === displayedCameraId)
+    )
+      options.push({
+        id: displayedCameraId,
+        label: `${displayedCameraId} · unavailable in this recording`,
+      });
+    const signature = JSON.stringify(options);
+    if (signature !== displayChoicesSignature) {
+      displayChoicesSignature = signature;
+      get<HTMLSelectElement>("rig-displayed-camera").replaceChildren(
+        ...options.map((item) => {
+          const option = document.createElement("option");
+          option.value = item.id;
+          option.textContent = item.label;
+          return option;
+        }),
+      );
+    }
+    get<HTMLSelectElement>("rig-displayed-camera").value =
+      displayedCameraId ?? "";
+    const view = selected.view;
+    get("rig-selected-stage").dataset.cameraId = displayedCameraId ?? "";
+    get("rig-selected-stage").dataset.sourceStatus = selected.status;
+    write(
+      "rig-selected-title",
+      view
+        ? `${view.cameraId} · ${view.role === "primary" ? "Primary / reference" : "Secondary / supporting"}`
+        : `${displayedCameraId ?? "Recorded camera"} · unavailable`,
+    );
+    write(
+      "rig-selected-state",
+      selected.status === "usable"
+        ? "Recorded view available"
+        : selected.status === "partial"
+          ? "Partial recorded view"
+          : "Displayed view unavailable",
+    );
+    get("rig-selected-diagram").hidden = !selected.drawable;
+    get("rig-selected-unavailable").hidden = selected.drawable;
+    if (selected.drawable && view)
+      renderRigView(get("rig-selected-diagram"), view);
+    else get("rig-selected-diagram").replaceChildren();
+    const explanations = [...selected.reasons, ...selected.warnings].map(
+      (reason) => reasonLabels[reason] || reason.replaceAll("_", " "),
+    );
+    write(
+      "rig-selected-unavailable",
+      explanations.join(" · ") || "No recorded camera view is available.",
+    );
+    write(
+      "rig-selected-context",
+      view
+        ? `${view.cameraId} · source frame ${view.frameId} · ${view.imageSize.join(" × ")} · unmirrored · ${view.cameraTrackId} · source ${view.timeNs} ns (${view.clockDomain}, ${view.timestampKind}, uncertainty ${view.uncertaintyNs} ns) · recorded age ${selected.sourceAgeNs === null ? "unavailable" : `${(Number(selected.sourceAgeNs) / 1e6).toFixed(1)} ms`}`
+        : "The preferred camera was not replaced by another view. Choose an available recorded camera to recover.",
+    );
+    write(
+      "rig-selected-warning",
+      explanations.join(" · ") ||
+        "Recorded synthetic source only. Calibration, exposure timing and identity are not physically validated.",
+    );
+    if (!preferenceAvailable) saveDisplayPreference();
+  }
   function pause() {
     playing = false;
     if (timer !== null) window.clearTimeout(timer);
@@ -128,6 +277,7 @@ export function createRigWorkspace(
         `${view.cameraId} · ${view.imageSize.join(" × ")} · unmirrored · local track ${view.cameraTrackId} · identity ${view.identityConfirmed ? "confirmed in recording" : "uncertain"} · ${view.timestampKind}`,
       );
     }
+    renderSelected(frame);
     renderRigSpace(get("rig-space"), frame);
     const estimate = frame.reconstruction.root;
     for (const axis of ["x", "y", "z"] as const) {
@@ -234,6 +384,9 @@ export function createRigWorkspace(
   }
   function setMode(mode: "rehearsal" | "planning") {
     pause();
+    const wasOpen = display.isOpen;
+    if (mode === "planning") display.close();
+    get("rig-selected-stage").hidden = mode === "planning";
     root.querySelectorAll<HTMLElement>(".rig-origin-badge").forEach((badge) => {
       badge.textContent =
         mode === "planning"
@@ -248,6 +401,7 @@ export function createRigWorkspace(
       );
       get(`rig-tab-${name}`).tabIndex = name === mode ? 0 : -1;
     }
+    if (mode === "planning" && wasOpen) get("rig-tab-planning").focus();
   }
   function validatePlan() {
     const first = reference.currentSelection(),
@@ -294,6 +448,22 @@ export function createRigWorkspace(
     validatePlan();
   });
   listen(get("rig-play"), "click", play);
+  listen(get("rig-displayed-camera"), "change", () => {
+    displayedCameraId = parseDisplayedCameraPreference(
+      get<HTMLSelectElement>("rig-displayed-camera").value,
+    );
+    saveDisplayPreference();
+    render();
+  });
+  listen(get("rig-display-window"), "click", () => {
+    if (get("rig-rehearsal").hidden || !dataset || disposed) return;
+    if (display.isOpen) display.close();
+    else if (!display.open())
+      write(
+        "rig-display-location",
+        "The display window was blocked. Allow popups for this local page or continue with the inline output.",
+      );
+  });
   listen(get("rig-reset"), "click", () => {
     pause();
     frameIndex = 0;
@@ -319,7 +489,7 @@ export function createRigWorkspace(
     get<HTMLDetailsElement>("rig-joint-details").open = false;
     render();
   });
-  listen(get("rig-view-pair"), "keydown", (event) => {
+  const sampleKeys: EventListener = (event) => {
     const key = event as KeyboardEvent;
     if (key.key === "ArrowLeft" || key.key === "ArrowRight") {
       key.preventDefault();
@@ -329,7 +499,9 @@ export function createRigWorkspace(
       key.preventDefault();
       play();
     }
-  });
+  };
+  listen(get("rig-view-pair"), "keydown", sampleKeys);
+  listen(get("rig-selected-stage"), "keydown", sampleKeys);
   for (const name of ["rehearsal", "planning"] as const) {
     listen(get(`rig-tab-${name}`), "click", () => setMode(name));
     listen(get(`rig-tab-${name}`), "keydown", (event) => {
@@ -380,6 +552,8 @@ export function createRigWorkspace(
       "rig-previous",
       "rig-next",
       "rig-scenario",
+      "rig-displayed-camera",
+      "rig-display-window",
     ])
       get<HTMLButtonElement>(id).disabled = true;
   }
@@ -387,6 +561,7 @@ export function createRigWorkspace(
     if (disposed) return;
     pause();
     disposed = true;
+    display.dispose();
     events.abort();
     unsubscribe.forEach((stop) => stop());
     reference.dispose();

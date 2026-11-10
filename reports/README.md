@@ -12,6 +12,8 @@ Explain the problem, final change and rationale. Include relevant before/after s
 
 Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.local/`.
 
+[Displayed camera](displayed-camera.html) records independent camera presentation selection, matching synthetic observations and timing, separate-window behavior, actual checks and embedded before/after screenshots. Live dual-camera capture remains deferred.
+
 [Camera defaults and mirrored movement](camera-default.html) records camera-first setup, the explicit viewer-left mapping, software checks and embedded synthetic desktop/mobile browser evidence.
 
 [Diagnostic capture lifecycle](diagnostic-capture-lifecycle.html) records epoch-scoped console cleanup, cancelled-start recovery, retryable release failures, synthetic before/after browser evidence and actual software checks.
