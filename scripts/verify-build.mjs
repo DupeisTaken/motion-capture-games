@@ -1,11 +1,27 @@
 import { existsSync, readFileSync } from "node:fs";
-import { basename, dirname, resolve } from "node:path";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export function verifyBuild(inputs, outDir) {
+function outside(root, path) {
+  const pathFromRoot = relative(root, path);
+  return (
+    pathFromRoot === ".." ||
+    pathFromRoot.startsWith(`..${sep}`) ||
+    isAbsolute(pathFromRoot)
+  );
+}
+
+export function verifyBuild(inputs, outDir, appRoot = outDir) {
   const errors = [];
   for (const input of inputs) {
-    const output = resolve(outDir, basename(input));
+    const source = resolve(appRoot, input);
+    if (outside(appRoot, source)) {
+      errors.push(`Application entry is outside the app root: ${input}`);
+      continue;
+    }
+    // Vite preserves an HTML entry's path relative to its root, including
+    // nested game pages. Flattening to the basename misses those artifacts.
+    const output = resolve(outDir, relative(appRoot, source));
     if (!existsSync(output)) {
       errors.push(`Missing built entry: ${output}`);
       continue;
@@ -27,7 +43,9 @@ export function verifyBuild(inputs, outDir) {
         href.startsWith("/") ? outDir : dirname(output),
         href.replace(/^\//, "").split(/[?#]/)[0],
       );
-      if (!existsSync(asset)) errors.push(`Missing built asset: ${href}`);
+      if (outside(outDir, asset))
+        errors.push(`Built asset escapes the artifact: ${href}`);
+      else if (!existsSync(asset)) errors.push(`Missing built asset: ${href}`);
     }
   }
   return errors;
@@ -44,7 +62,11 @@ if (
     typeof input === "string" ? [input] : Object.values(input ?? {});
   if (!inputs.length)
     throw new Error("Declare all application entries in vite.config.ts");
-  const errors = verifyBuild(inputs, resolve(config.root, config.build.outDir));
+  const errors = verifyBuild(
+    inputs,
+    resolve(config.root, config.build.outDir),
+    config.root,
+  );
   if (errors.length) {
     console.error(errors.join("\n"));
     process.exitCode = 1;

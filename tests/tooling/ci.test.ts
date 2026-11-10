@@ -84,4 +84,28 @@ describe("application build gate", () => {
     );
     expect(verifyBuild(["index.html"], root)[0]).toContain("remote asset");
   });
+  it("preserves nested entry paths and resolves their relative bundles", () => {
+    const root = fixture();
+    mkdirSync(join(root, "games"));
+    mkdirSync(join(root, "assets"));
+    writeFileSync(
+      join(root, "games/runner.html"),
+      '<script src="../assets/app.js"></script>',
+    );
+    writeFileSync(join(root, "assets/app.js"), "console.log('synthetic');");
+    expect(verifyBuild(["games/runner.html"], root)).toEqual([]);
+  });
+  it("rejects entries and asset references outside the uploaded artifact", () => {
+    const root = fixture();
+    writeFileSync(
+      join(root, "index.html"),
+      '<script src="../outside.js"></script>',
+    );
+    expect(verifyBuild(["index.html"], root)[0]).toContain(
+      "escapes the artifact",
+    );
+    expect(verifyBuild(["../outside.html"], root)[0]).toContain(
+      "outside the app root",
+    );
+  });
 });

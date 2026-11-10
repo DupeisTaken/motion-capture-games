@@ -13,8 +13,7 @@
   },
   "include": [
     "apps/mirror/src",
-    "packages/motion/src",
-    "packages/session/src",
+    "packages/*/src",
     "games/mole-motion/src",
     "contracts/src",
     "contracts/generated",
