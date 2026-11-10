@@ -15,3 +15,5 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Skeleton diagnostics](skeleton-diagnostics.html) records the runnable viewer, model smoke tests and desktop and mobile browser evidence from generated scenes.
 
 [Pull request integration](pr-integration.html) records merge order, documentation conflict resolution, combined software checks and remaining hardware gates.
+
+[Tracking stability](tracking-stability.html) records the prediction-driven identity-switch fix, baseline/fixed synthetic replays, tracker-only timing measurements and verification. Its generated [replay evidence](tracking-stability-results.json) comes from [the reproduction tool](../services/vision/tools/tracking_stability.py). The report distinguishes correct continuity and conservative ambiguity from physical recognition accuracy, and records provider-capacity and enrollment limitations.
