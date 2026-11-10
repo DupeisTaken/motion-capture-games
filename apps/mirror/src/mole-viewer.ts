@@ -12,6 +12,7 @@ import { SinglePlayerSession } from "../../../packages/session/src/index";
 import {
   containRect,
   decodeFramePacket,
+  mapJoint,
   observationSpaceRevision,
   type ContactName,
   type GameMotionFrame,
@@ -48,7 +49,7 @@ export function mountMoleGame(
     <label for="mode-select">Play mode</label><select id="mode-select"><option value="timed">◷  Timed · 60 seconds</option><option value="challenge">◎  Challenge · 15 moles</option><option value="survival">♡  Survival · 3 misses</option><option value="practice">∞  Practice · no pressure</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p>
     <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · room to warm up</option><option value="normal" selected>Normal · find your rhythm</option><option value="hard">Hard · stretch your reach</option></select><p class="field-note">Hard favors moles farther from your available contact points, within the play area.</p>
     <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies.</p>
-    <hr><label for="source-select">Input source</label><select id="source-select"><option value="demo">Rehearsal · no camera</option><option value="camera">Camera · body tracking</option></select>
+    <hr><label for="source-select">Input source</label><select id="source-select"><option value="camera">Camera · body tracking</option><option value="demo">Rehearsal · no camera</option></select>
     <div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
     <div id="demo-controls"><label for="demo-contact">Rehearsal contact</label><select id="demo-contact"><option value="left_wrist">Left wrist / hand</option><option value="right_wrist">Right wrist / hand</option><option value="left_hip">Left hip</option><option value="right_hip">Right hip</option><option value="left_foot">Left foot</option><option value="right_foot">Right foot</option></select><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
     <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Start only when ready. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="source-stop" class="mm-text" disabled>Stop camera</button><details class="advanced-controls"><summary>Participant & tracking options</summary><label for="player-track">Participant override</label><select id="player-track"><option value="">Automatic · one participant</option></select><p class="field-note">Only needed with more than one participant. Selection is locked during a round.</p></details></div>
@@ -240,7 +241,7 @@ export function mountMoleGame(
       ? interaction === "touch"
         ? "Rehearsal · move your cursor or use arrow keys"
         : "Rehearsal · aim, then tap or press Space to push"
-      : "Keep hands and both feet visible · stay inside the play area";
+      : "Move left → go left · keep hands and both feet visible";
   }
   function demoFrame(t: number): GameMotionFrame | null {
     if (!demoJoined) return null;
@@ -286,8 +287,9 @@ export function mountMoleGame(
     target.hidden = !state.target || state.phase !== "playing";
     if (state.target) {
       const mole = state.target;
-      target.style.left = `${rect.x + (1 - mole.x) * rect.width}px`;
-      target.style.top = `${rect.y + mole.y * rect.height}px`;
+      const position = mapJoint(mole, rect);
+      target.style.left = `${position.x}px`;
+      target.style.top = `${position.y}px`;
       target.style.width = `${mole.radius * 2 * rect.width}px`;
       target.style.height = `${mole.radius * 2 * rect.height}px`;
       get("target-life").textContent =
@@ -814,6 +816,7 @@ export function mountMoleGame(
     if (!isDemo()) return;
     const key = event as KeyboardEvent;
     const directions: Record<string, [number, number]> = {
+      // Source x increases toward screen-left after the single display mirror.
       ArrowLeft: [0.035, 0],
       ArrowRight: [-0.035, 0],
       ArrowUp: [0, -0.035],
@@ -849,6 +852,7 @@ export function mountMoleGame(
   const stopTicker =
     deps.autoTick === false ? () => {} : display.startTicker(tick);
   updateSettings();
+  void cameraChoice.refresh();
   tick();
   return {
     tick,

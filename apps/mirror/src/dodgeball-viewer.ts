@@ -45,7 +45,7 @@ export function mountDodgeballGame(
  <div class="settings-title"><h2>Find your flow</h2><span>02</span></div><button id="open-game-window" class="mm-secondary display-button">Open game window &#8599;</button><p id="display-status" class="field-note" role="status">Keep controls here. Put the game on another display.</p>
  <label for="mode-select">Play mode</label><select id="mode-select" aria-describedby="mode-description"><option value="timed">Timed · 60 seconds</option><option value="survival">Survival · 3 shields</option><option value="practice">Practice · no pressure</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p>
  <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · time to react</option><option value="normal" selected>Normal · find your flow</option><option value="hard">Hard · think on your feet</option></select><p class="field-note">A ring marks the exact ball footprint. Move your whole body clear before it fills.</p>
- <hr><label for="source-select">Input source</label><select id="source-select"><option value="demo">Rehearsal · no camera</option><option value="camera">Camera · body tracking</option></select>
+ <hr><label for="source-select">Input source</label><select id="source-select"><option value="camera">Camera · body tracking</option><option value="demo">Rehearsal · no camera</option></select>
  <div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
  <div id="demo-controls"><p class="field-note">Move the body with your pointer, touch or arrow keys. This is a synthetic rehearsal.</p><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
  <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Frame your whole body. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="source-stop" class="mm-text" disabled>Stop camera</button></div>
@@ -270,7 +270,7 @@ export function mountDodgeballGame(
     );
     get("stage-help").textContent = demo
       ? "Rehearsal · pointer, touch or arrow keys to move"
-      : "Keep your whole body and both feet visible";
+      : "Move left → go left · keep your whole body visible";
   }
   function demoFrame(t: number): DodgeMotionFrame | null {
     if (!demoJoined) return null;
@@ -781,6 +781,7 @@ export function mountDodgeballGame(
     if (!isDemo()) return;
     const key = event as KeyboardEvent;
     const directions: Record<string, [number, number]> = {
+      // Source x increases toward screen-left after the single display mirror.
       ArrowLeft: [0.035, 0],
       ArrowRight: [-0.035, 0],
       ArrowUp: [0, -0.035],
@@ -815,6 +816,7 @@ export function mountDodgeballGame(
   const stopTicker =
     deps.autoTick === false ? () => {} : display.startTicker(tick);
   updateSettings();
+  void cameraChoice.refresh();
   tick();
   return {
     tick,

@@ -1,5 +1,7 @@
 # Mirror application
 
+Both game viewers default to Camera, enumerate device metadata on load and acquire capture only after **Start camera**. Rehearsal remains selectable. Facing the display, leftward movement appears leftward in the mirror; pointer and arrow controls invert display coordinates back into canonical input exactly once. Mole targets use the shared `mapJoint` presentation helper, matching contacts and video in both inline and separate game windows. [The delivery report](../../reports/camera-default.html) records tests and synthetic browser evidence.
+
 The TypeScript diagnostic viewer renders an independent camera image and source-timed canonical skeletons with Canvas2D. It automatically shows current detected-person count, camera-local association states, source controls and diagnostic timing. It does not acquire diagnostic frames or import inference libraries. Explicit browser discovery and temporary identification can open a setup-only stream; its tracks are released before Python capture starts. Browser IDs are never guessed to be native indices.
 
 Run `pnpm dev` at the repository root. [The viewer guide](../../docs/diagnostic-viewer.md) describes setup and controls. The display-clock frame loop keeps one decoded image, while independent image and pose streams each request their next current item after consumption; display mirroring applies equally to video and geometry. Stop/restart, missing input and source epochs invalidate old observations and image bitmaps.

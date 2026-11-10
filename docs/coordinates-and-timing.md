@@ -18,6 +18,8 @@ Preserve valid out-of-frame estimates with an explicit status; do not clamp them
 
 All joints use anatomical names such as `left_wrist`, independent of image mirroring. Apply mirroring once through the presentation transform. Apply the same crop, aspect-ratio policy and mirror transform to video and its overlays. UI text is laid out normally rather than mirrored with the camera texture.
 
+For a participant facing the display, physical left must appear as movement to the left in the mirrored view. In normalized canonical image coordinates that physical move increases x; the display transform uses `1 - x`, so displayed x decreases. Rehearsal pointer input applies the inverse mapping and the left arrow increases canonical x. Do not reverse anatomical labels or add another mirror to game input. Both inline and separate game windows use this same mapping. [The camera-default report](../reports/camera-default.html) records synthetic verification; physical orientation still needs an installation trial.
+
 Keep transforms explicit and composable. Name them `T_destination_from_source` and document column-vector multiplication. Record camera ID, image geometry, calibration ID and transform revision. A calibration or crop change invalidates incompatible motion history.
 
 A floor-plane homography maps points on that plane; it is not a general mapping for hands and bodies at different depths. Secondary-view observations need a justified geometric mapping before use in primary-view collisions.

@@ -1,0 +1,12 @@
+{
+  "issue": "https://github.com/DupeisTaken/motion-capture-games/issues/32",
+  "pullRequest": null,
+  "checks": [
+    ["Game viewer regressions", "Passed", "80 viewer tests included in the full isolated TypeScript suite; camera defaults, all arrow directions, camera motion and detached mirroring covered."],
+    ["Baseline real-server browser", "Passed", "Both games defaulted to rehearsal at 1440 × 1000 and 390 × 844, with no automatic capture or horizontal overflow."],
+    ["Current real-server browser", "Passed", "Both games default to Camera; no automatic capture; desktop/mobile layouts, pixel movement, left/right keyboard controls and separate-window mirroring passed."],
+    ["pnpm check", "Passed", "417 TypeScript tests, 120 Python tests; repository checks, contract drift, TypeScript/Python types, lint, format and Python byte compilation passed."],
+    ["pnpm build", "Passed", "TypeScript and Vite production builds passed; emitted asset references verified for all 3 application entries."],
+    ["Report browser review", "Pending", "Desktop/mobile report review will be recorded after execution."]
+  ]
+}
