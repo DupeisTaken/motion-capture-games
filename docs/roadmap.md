@@ -16,6 +16,8 @@ The milestone IDs below are stable local references. Each milestone may become s
 
 ## M1: Diagnostic mirror and hardware experiment
 
+**Open-issue completion:** [The #3/#4 report](../reports/vision-issues.html) records a fresh viewer acceptance audit, decode-freshness correction and real synthetic-service browser verification. [The camera-free XYZ design](player-xyz-experiment.md) restores issue #4's isolated three-method comparison under current tooling, with strict metadata, per-joint refinement, coverage/unsafe-acceptance statistics and serial one-/three-player stage measurements. Earlier PR #7 was reverted by #9 with no recorded reason; this scoped implementation retains current capture/game boundaries. Software issue completion does not close physical M1 or enable depth scoring. Next issue-ready work: actual dual-camera calibration/USB modes, exposure synchronization, cross-view identity and independent static/dynamic accuracy and visible-latency validation using the owning physical protocol.
+
 **Problem:** Camera specifications and model benchmarks do not establish usable feedback or identity tracking on our installation.
 
 **Current slice:** [Issue #3](https://github.com/DupeisTaken/motion-capture-games/issues/3) implements a one-view skeleton/count diagnostic, two pretrained model adapters, two association modes, a canonical contract and synthetic verification. See [the viewer guide](diagnostic-viewer.md) and [delivery report](../reports/skeleton-diagnostics.html). This is partial M1 progress; no real three-player crossing, production media selection or hardware/latency certification gate is closed by software tests.
