@@ -1,16 +1,16 @@
 {
   "prUrl": "https://github.com/DupeisTaken/motion-capture-games/pull/19",
-  "vitestTests": 278,
+  "vitestTests": 323,
   "pytestTests": 54,
-  "newTests": 82,
+  "newTests": 108,
   "collisionPolicy": "Only new source-timed poses inside the half-open 300 ms danger interval can hit. Danger steps, pose age and pose gaps must remain at most 150 ms through final outcome settlement. A clean dodge waits for the first post-danger source sample. Motion between observations is not inferred; sufficiently fast unsampled motion can be missed.",
   "environment": "Windows local verification used Node 24.16.0, pnpm 11.25.0 and the existing repository-local Python 3.12.14 environment. Repository pins remain Node 24.21.0 and Python 3.12.16; no global environment was changed. Browser: Microsoft Edge, local Vite server at 127.0.0.1:5182, English only.",
-  "corrections": "Review and checks corrected source-time phase-boundary scoring, delayed final-danger reward settlement, strict sampling coverage through clearing, timed-endpoint source mapping, shared rehearsal clamp drift, keyboard focus, desktop stage width, 320 px scrollbar overflow and small-text contrast. The initial check failed on TypeScript narrowing; the next found an outdated touch-clamp expectation. The final complete software check passed.",
+  "corrections": "Review and checks corrected source-time phase-boundary scoring, delayed final-danger reward settlement, strict sampling coverage through clearing, timed-endpoint source mapping, shared rehearsal clamp drift, keyboard focus, desktop stage width, 320 px scrollbar overflow and small-text contrast. The initial check failed on TypeScript narrowing; the next found an outdated touch-clamp expectation. The final complete software check passed. Merge-readiness integration then incorporated the later Mole Motion review: nonmutating engine readiness, guarded Start/Resume, stable locked track enrollment, retained epoch-scoped stop failures and explicit retry across source switches. The combined full check and refreshed UI verification passed.",
   "checks": [
     {
       "name": "pnpm check",
       "result": "Passed",
-      "detail": "Canonical schema drift; TypeScript and Python types; ESLint and Ruff; 278 Vitest tests across 10 files; 54 pytest tests; Prettier and Python formatting. Includes 82 new Dodgeball cases."
+      "detail": "Canonical schema drift; TypeScript and Python types; ESLint and Ruff; 323 Vitest tests across 11 files; 54 pytest tests; Prettier and Python formatting. Includes 108 Dodgeball cases above the latest 215-test Mole Motion baseline, with 26 additional integration regressions beyond the original 82."
     },
     {
       "name": "pnpm build",
@@ -25,7 +25,7 @@
     {
       "name": "Browser gameplay and recovery",
       "result": "Verified",
-      "detail": "Real pointer-controlled rehearsal dodge scored 100 points and one dodge. Feet loss froze score, ball phase/progress and the timed round across separate observations. Explicit resume displayed a 2-second countdown and returned to play. End/results and Play again were observed."
+      "detail": "Initial rehearsal dodge scored 100 points. Integrated browser verification: feet loss froze Timed play at 0:38 and the pending ball at NEXT BALL 0.2s; restoring feet enabled an explicit 2-second resume countdown. Missing feet blocked Start. A simulated HTTP 409 camera stop retained Retry in rehearsal and blocked a new start until acknowledgment; retry recovery verified. End/results verified."
     },
     {
       "name": "Responsive and keyboard UI",
@@ -35,7 +35,7 @@
     {
       "name": "Documentation and report",
       "result": "Verified",
-      "detail": "79 relative Markdown links/anchors; Git whitespace; HTML structure; 7 embedded JPEGs decoded in Edge; no remote assets. Real-server desktop/mobile report rendering and in-report image expansion verified."
+      "detail": "Relative Markdown links/anchors, Git whitespace, HTML structure and 8 embedded JPEGs validated. No remote assets. Refreshed report rendered at desktop/mobile sizes; image expansion and decoded media checked before merge."
     }
   ],
   "screenshots": [
@@ -46,18 +46,18 @@
     },
     {
       "file": "after-desktop.jpg",
-      "title": "Dodgeball setup and restart",
-      "caption": "1440×1000, final arcade styling. Three play modes, difficulty, explicit input selection and a new round after Play again. The source is synthetic rehearsal."
+      "title": "Integrated Dodgeball setup",
+      "caption": "1440×1000 preset, integrated shared arcade styling. Three modes, difficulty and explicit enrollment. Start uses the current engine readiness assessment, including the complete body and visible feet."
     },
     {
       "file": "active-desktop.jpg",
       "title": "Visible full-body collision regions",
-      "caption": "Real Vite-server active Timed rehearsal after explicit countdown recovery. Head, torso and limbs use the engine's exported collision geometry; the stationary ring previews the ball footprint."
+      "caption": "Real Vite-server active Timed rehearsal after readiness countdown. The integrated shared shell keeps game geometry in the same contain-fit mirror transform; displayed body regions are the actual collision shapes."
     },
     {
       "file": "framing-desktop.jpg",
       "title": "Same framing warning as Mole Motion",
-      "caption": "Feet loss froze the active Timed round at 0:55 and the pending ball at 1.6 seconds. The warning explains camera adjustment and occlusion as well as stepping back."
+      "caption": "Integrated feet-loss warning: Timed play froze at 0:38 and NEXT BALL 0.2 seconds. Current readiness controls Resume, while the exact Step back warning and camera/occlusion guidance remain visible."
     },
     {
       "file": "framing-mobile.jpg",
@@ -73,12 +73,17 @@
       "file": "results-desktop.jpg",
       "title": "Results and next round",
       "caption": "End round is available during tracking recovery. Results expose clean dodges, score and best streak; Play again returns to configurable setup."
+    },
+    {
+      "file": "release-retry-desktop.jpg",
+      "title": "Retained camera-stop retry in rehearsal",
+      "caption": "Simulated control fixture with an explicit banner: no camera was opened. An HTTP 409 stop acknowledgment leaves Retry camera stop visible after switching to rehearsal. A later successful acknowledgment clears the pending epoch and enables a new start."
     }
   ],
   "review": {
     "overall": 10,
     "scope": "Independent gpt-6.1-sol review with high-detail source, regression, visual and delivery inspection. Ratings cover the experimental single-player software; physical hardware and participant certification remain excluded and explicitly unverified.",
-    "iterations": "Several independent review passes identified and verified source-time boundary, final-danger coverage, input-boundary, keyboard focus, contrast, layout and screenshot corrections. Final gpt-6.1-sol verdict: all ten dimensions 10/10 against the experimental single-player software criteria, with no unresolved actionable findings. The reviewer inspected source, regression tests, documentation, screenshots, report, PR and hosted CI; the root ran the serialized local checks. Physical participant/hardware certification remains unverified.",
+    "iterations": "Several independent review passes identified and verified source-time boundary, final-danger coverage, input-boundary, keyboard focus, contrast, layout and screenshot corrections. Final gpt-6.1-sol verdict: all ten dimensions 10/10 against the experimental single-player software criteria, with no unresolved actionable findings. The reviewer inspected source, regression tests, documentation, screenshots, report, PR and hosted CI; the root ran the serialized local checks. Physical participant/hardware certification remains unverified. The later combined-tree merge review independently re-examined readiness, camera release, stable ownership, regressions, refreshed screenshots and the updated report, and again rated all ten dimensions 10/10. The combined result is 323 Vitest tests, 54 pytest tests and 108 Dodgeball cases. Final merge is gated on the integration head’s hosted checks, not an earlier commit’s CI.",
     "dimensions": [
       {
         "name": "Correctness, modes and replay",
@@ -121,5 +126,6 @@
         "score": 10
       }
     ]
-  }
+  },
+  "integration": "Before merge, integrated Mole Motion review revision fbe03f0 (including cfff89a), resolving README and shared arcade-style conflicts while preserving both games. Ported its reviewed camera-release, stable track-owner and authoritative Start/Resume readiness behavior to Dodgeball. The combined tree passed pnpm check (323 TypeScript tests across 11 files and 54 Python tests) and the three-page build. Refreshed desktop/390/320 screenshots and a clearly labeled simulated HTTP 409 stop/retry exercise verified the integrated UI. No physical camera was opened. The dependency is merged first; Dodgeball then targets main and its fresh hosted checks gate the final merge."
 }

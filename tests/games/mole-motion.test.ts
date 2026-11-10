@@ -77,6 +77,57 @@ class Play {
 }
 
 describe("Mole Motion lifecycle and scoring", () => {
+  it.each([
+    [{ feetVisible: false }, /feet/i],
+    [{ identity: "uncertain" }, /identity/i],
+    [{ contacts: [] }, /hand or foot/i],
+    [{ depthAvailable: false }, /depth/i],
+  ] as [Partial<GameMotionFrame>, RegExp][])(
+    "reports blocked readiness without mutating the paused round (%j)",
+    (changes, reason) => {
+      const play = new Play({
+        interaction: changes.depthAvailable === false ? "push" : "touch",
+      });
+      play.start();
+      play.hit();
+      play.game.pause();
+      const before = play.game.state;
+      const frame = { ...input(play.now + 50, play.sequence + 1), ...changes };
+      const readiness = play.game.readiness(play.now + 50, frame);
+      expect(readiness.ready).toBe(false);
+      expect(readiness.reason).toMatch(reason);
+      expect(readiness.requiresNewRound).toBe(false);
+      expect(play.game.state).toEqual(before);
+    },
+  );
+
+  it("exposes stale input and changed score ownership before a resume attempt", () => {
+    const play = new Play();
+    play.start();
+    play.game.pause();
+    const sample = input(play.now, play.sequence);
+    expect(play.game.readiness(play.now + 351, sample)).toMatchObject({
+      ready: false,
+      requiresNewRound: false,
+    });
+    expect(
+      play.game.readiness(play.now + 50, {
+        ...sample,
+        atMs: play.now + 50,
+        sequence: play.sequence + 1,
+        spaceRevision: "other-player",
+      }),
+    ).toMatchObject({ ready: false, requiresNewRound: true });
+    expect(play.game.state.phase).toBe("paused");
+    expect(
+      play.game.readiness(play.now + 50, {
+        ...sample,
+        atMs: play.now + 50,
+        sequence: play.sequence + 1,
+      }).ready,
+    ).toBe(true);
+  });
+
   it("waits for explicit start and countdown before spawning and scoring", () => {
     const play = new Play();
     expect(play.game.update(0, input(0, 1)).phase).toBe("ready");

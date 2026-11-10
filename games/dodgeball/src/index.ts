@@ -63,6 +63,11 @@ export interface GameState {
   obstacle: DodgeObstacle | null;
   result: "completed" | "time-up" | "out-of-lives" | null;
 }
+export interface GameReadiness {
+  readonly ready: boolean;
+  readonly reason: string | null;
+  readonly requiresNewRound: boolean;
+}
 interface Point {
   x: number;
   y: number;
@@ -221,6 +226,26 @@ export class DodgeGame {
   }
   get state(): GameState {
     return structuredClone(this.value);
+  }
+  /** Explain blocked Start/Resume actions without accepting input or advancing play. */
+  readiness(nowMs: number, frame: DodgeMotionFrame | null): GameReadiness {
+    const clockChanged =
+      !Number.isFinite(nowMs) ||
+      nowMs < 0 ||
+      (this.lastTick !== null && nowMs < this.lastTick);
+    const sourceChanged =
+      !!frame &&
+      ((this.epoch !== null && frame.epoch !== this.epoch) ||
+        (this.spaceRevision !== null &&
+          frame.spaceRevision !== this.spaceRevision));
+    const reason = clockChanged
+      ? "The game clock changed. Start a new round."
+      : this.inputFailure(nowMs, frame);
+    return {
+      ready: reason === null,
+      reason,
+      requiresNewRound: clockChanged || sourceChanged,
+    };
   }
   start(nowMs: number): GameState {
     if (this.value.phase !== "ready") return this.state;

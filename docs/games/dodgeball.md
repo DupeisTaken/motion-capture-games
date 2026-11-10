@@ -35,6 +35,8 @@ The engine's `TUNING` owns these values. The head radius is 0.045 and limb/torso
 
 The app controls the existing local vision service and bounded paired JPEG/observation delivery, retaining one decoded image. Generation checks release late bitmaps and prevent a stopped source reviving. Game modules never open cameras, import inference libraries or use vendor landmark indices. Vision exports observations without hit decisions. No new wire schema, runtime dependency, depth provider or camera acquisition path is introduced.
 
+Start and Resume use the engine's current, nonmutating readiness assessment: stale input, incomplete bodies, uncertain identity and changed source/clock state cannot enable a misleading action. The selected camera track remains stable while poses update; a joined track is locked and labeled. Camera release uses the shared epoch-scoped `CameraReleases` controller introduced by the Mole Motion review. Failed or rejected stop requests retain their acknowledged epoch and expose **Retry camera stop**, even after switching to rehearsal. Starting another camera remains blocked until release is confirmed; a stopped local preview alone does not prove camera capture has ended.
+
 ## Verification and remaining gates
 
 Behavior tests cover collision regions, all modes, seeded replay, warning/danger phases, one-shot outcomes, invalid body input, framing/tracking/clock interruptions, identity/revision boundaries and restart. Viewer tests cover actual controls and source lifecycle. [The self-contained HTML report](../../reports/dodgeball.html) records the exact checks and real-server English desktop/mobile screenshots actually obtained.

@@ -225,6 +225,117 @@ describe("Dodgeball lifecycle and scoring", () => {
   });
 });
 
+describe("authoritative presentation readiness", () => {
+  it("assesses Start without starting or accepting a prospective source", () => {
+    const game = new DodgeGame();
+    const before = game.state;
+    expect(game.readiness(0, input(0, 1))).toEqual({
+      ready: true,
+      reason: null,
+      requiresNewRound: false,
+    });
+    expect(game.readiness(100, null)).toMatchObject({
+      ready: false,
+      requiresNewRound: false,
+    });
+    expect(game.state).toEqual(before);
+    game.start(0);
+    expect(game.step(0, { ...input(0, 1), epoch: "actual-source" }).phase).toBe(
+      "countdown",
+    );
+  });
+
+  it.each([
+    [{ feetVisible: false }, "Step back — keep both feet in view."],
+    [
+      { body: syntheticBody().filter(({ name }) => name !== "left_ankle") },
+      "Step back",
+    ],
+    [
+      { body: syntheticBody().filter(({ name }) => name !== "left_elbow") },
+      "whole body",
+    ],
+    [{ body: [...syntheticBody().slice(1), syntheticBody()[1]] }, "whole body"],
+    [
+      {
+        body: syntheticBody().map((point, n) =>
+          n ? point : { ...point, x: NaN },
+        ),
+      },
+      "whole body",
+    ],
+    [{ identity: "uncertain" }, "identity"],
+    [{ identity: "missing" }, "identity"],
+    [{ atMs: 0 }, "stale"],
+  ])("uses authoritative frame validation for %j", (changes, reason) => {
+    const game = new DodgeGame();
+    const before = game.state;
+    const readiness = game.readiness(1_000, {
+      ...input(1_000, 1),
+      ...changes,
+    } as DodgeMotionFrame);
+    expect(readiness).toMatchObject({ ready: false, requiresNewRound: false });
+    expect(readiness.reason).toContain(reason as string);
+    expect(game.state).toEqual(before);
+  });
+
+  it("updates paused foot guidance and recovers without mutating clock or input history", () => {
+    const play = new Play();
+    play.start();
+    play.tick(50, { feetVisible: false });
+    const paused = play.game.state;
+    expect(
+      play.game.readiness(play.now, {
+        ...input(play.now, play.sequence + 1),
+        feetVisible: false,
+      }).reason,
+    ).toBe("Step back — keep both feet in view.");
+    expect(
+      play.game.readiness(play.now + 10_000, input(play.now + 10_000, 99_999)),
+    ).toEqual({ ready: true, reason: null, requiresNewRound: false });
+    expect(
+      play.game.readiness(play.now, input(play.now, play.sequence + 1)).ready,
+    ).toBe(true);
+    expect(play.game.state).toEqual(paused);
+    play.game.resume(play.now);
+    expect(play.tick(50).phase).toBe("countdown");
+  });
+
+  it("requires a new round for changed source, track space or backwards/invalid clock", () => {
+    const play = new Play();
+    play.start();
+    play.game.pause("Operator pause");
+    const paused = play.game.state;
+    for (const changes of [
+      { epoch: "different-source" },
+      { spaceRevision: "different-track-space" },
+    ]) {
+      const readiness = play.game.readiness(play.now + 50, {
+        ...input(play.now + 50, play.sequence + 1),
+        ...changes,
+      });
+      expect(readiness).toMatchObject({ ready: false, requiresNewRound: true });
+      expect(readiness.reason).toContain("new round");
+    }
+    for (const now of [play.now - 1, -1, NaN, Infinity]) {
+      expect(
+        play.game.readiness(now, input(play.now, play.sequence + 1)),
+      ).toEqual({
+        ready: false,
+        reason: "The game clock changed. Start a new round.",
+        requiresNewRound: true,
+      });
+    }
+    expect(
+      play.game.readiness(
+        play.now + 50,
+        input(play.now + 50, play.sequence + 1),
+      ).ready,
+    ).toBe(true);
+    expect(play.game.state).toEqual(paused);
+  });
+});
+
 describe("authoritative body collision geometry", () => {
   it("covers head, torso interior, upper/lower arms and upper/lower legs", () => {
     const body = syntheticBody();

@@ -71,6 +71,12 @@ export interface GameState {
   result: GameResult | null;
 }
 
+export interface GameReadiness {
+  ready: boolean;
+  reason: string | null;
+  requiresNewRound: boolean;
+}
+
 const CONTACTS: readonly ContactName[] = [
   "left_hand",
   "right_hand",
@@ -170,6 +176,27 @@ export class MoleGame {
   get state(): GameState {
     // Consumers cannot mutate simulation or configuration through a UI snapshot.
     return structuredClone(this.value);
+  }
+
+  /** Presentation can explain a blocked action without advancing or resuming play. */
+  readiness(nowMs: number, frame: GameMotionFrame | null): GameReadiness {
+    const clockChanged =
+      !Number.isFinite(nowMs) ||
+      nowMs < 0 ||
+      (this.lastTick !== null && nowMs < this.lastTick);
+    const sourceChanged =
+      !!frame &&
+      ((this.epoch !== null && frame.epoch !== this.epoch) ||
+        (this.spaceRevision !== null &&
+          frame.spaceRevision !== this.spaceRevision));
+    const reason = clockChanged
+      ? "The game clock changed. Start a new round."
+      : this.inputFailure(nowMs, frame);
+    return {
+      ready: reason === null,
+      reason,
+      requiresNewRound: clockChanged || sourceChanged,
+    };
   }
 
   start(nowMs: number): GameState {
@@ -317,7 +344,7 @@ export class MoleGame {
     nowMs: number,
     frame: GameMotionFrame | null,
   ): string | null {
-    if (!frame) return "Waiting for fresh player input. Resume when ready.";
+    if (!frame) return "Waiting for fresh player input.";
     if (
       frame.version !== 1 ||
       frame.slotId !== "player-1" ||
@@ -334,7 +361,7 @@ export class MoleGame {
       typeof frame.feetVisible !== "boolean" ||
       typeof frame.depthAvailable !== "boolean"
     )
-      return "Invalid player input. Resume with fresh input.";
+      return "Invalid player input. Check the source input.";
     if (
       (this.epoch !== null && frame.epoch !== this.epoch) ||
       (this.spaceRevision !== null &&
@@ -350,20 +377,19 @@ export class MoleGame {
         this.lastSequence >= 0 &&
         frame.atMs === this.lastSourceTime)
     )
-      return "Outdated player input. Resume with fresh input.";
+      return "Outdated player input. Wait for fresh input.";
     if (frame.atMs > nowMs)
-      return "Player input is ahead of the game clock. Resume with fresh input.";
+      return "Player input is ahead of the game clock. Wait for fresh input.";
     if (nowMs - frame.atMs > TUNING.staleMs)
-      return "Player input is stale. Resume when tracking is fresh.";
+      return "Player input is stale. Wait for fresh tracking.";
     if (
       this.continuousSourceTime !== null &&
       frame.atMs - this.continuousSourceTime > TUNING.staleMs
     )
-      return "Player input was interrupted. Resume with fresh input.";
+      return "Player input was interrupted. Wait for fresh input.";
     if (frame.identity !== "confident")
       return "Player identity needs recovery. Rejoin before resuming.";
-    if (!frame.feetVisible)
-      return "Step back — keep both feet in view. Resume when ready.";
+    if (!frame.feetVisible) return "Step back — keep both feet in view.";
     if (this.options.interaction === "push" && !frame.depthAvailable)
       return "Push needs toward-screen depth. Use touch or synthetic rehearsal.";
     const names = new Set<string>();
@@ -381,7 +407,7 @@ export class MoleGame {
         (contact.towardScreenM !== undefined &&
           !Number.isFinite(contact.towardScreenM))
       )
-        return "Invalid player contact. Resume with fresh input.";
+        return "Invalid player contact. Check the source input.";
       names.add(contact.name);
     }
     if (
@@ -390,8 +416,8 @@ export class MoleGame {
       )
     )
       return this.options.interaction === "touch"
-        ? "Keep a hand or foot visible. Resume when ready."
-        : "Keep a depth-enabled hand, wrist or hip visible. Resume when ready.";
+        ? "Keep a hand or foot visible."
+        : "Keep a depth-enabled hand, wrist or hip visible.";
     return null;
   }
 
