@@ -5,7 +5,7 @@ import type {
 } from "../../../packages/motion/src/index";
 
 export type GameMode = "timed" | "challenge" | "survival" | "practice";
-export type Interaction = "touch" | "push";
+export type Interaction = "touch" | "flick" | "push";
 export type Difficulty = "easy" | "normal" | "hard";
 export type GamePhase =
   "ready" | "countdown" | "playing" | "paused" | "results";
@@ -33,6 +33,17 @@ export const TUNING = Object.freeze({
   maxStepMs: 400,
   pushNeutralM: 0.04,
   pushHitM: 0.12,
+  flick: Object.freeze({
+    // Normalized image distances and source milliseconds; participant tuning is open.
+    minimumTravel: 0.018,
+    minimumSpeedPerSecond: 0.35,
+    maximumTravel: 0.12,
+    windowMs: 120,
+    settleRadius: 0.008,
+    settleMs: 180,
+    reachPadding: 0.035,
+    maximumSamples: 16,
+  }),
   hardCandidates: 32,
   easy: Object.freeze({ radius: 0.065, lifetimeMs: 3_600 }),
   normal: Object.freeze({ radius: 0.052, lifetimeMs: 2_500 }),
@@ -89,6 +100,7 @@ const CONTACTS: readonly ContactName[] = [
 ];
 
 function eligible(contact: MotionContact, interaction: Interaction): boolean {
+  if (interaction === "flick") return /_(hand|wrist)$/.test(contact.name);
   return interaction === "touch"
     ? !contact.name.endsWith("_hip")
     : !contact.name.endsWith("_foot") && Number.isFinite(contact.towardScreenM);
@@ -104,12 +116,49 @@ function overlaps(contact: MotionContact, target: MoleTarget): boolean {
   );
 }
 
+interface FlickSample {
+  x: number;
+  y: number;
+  atMs: number;
+}
+interface FlickHistory {
+  name: ContactName;
+  samples: FlickSample[];
+  settledAt: number;
+  origin: FlickSample;
+  armed: boolean;
+}
+interface FlickPath {
+  from: FlickSample;
+  to: FlickSample;
+}
+
+function flickOverlaps({ from, to }: FlickPath, target: MoleTarget): boolean {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const along = Math.max(
+    0,
+    Math.min(
+      1,
+      ((target.x - from.x) * dx + (target.y - from.y) * dy) /
+        (dx * dx + dy * dy),
+    ),
+  );
+  return (
+    Math.hypot(
+      from.x + along * dx - target.x,
+      from.y + along * dy - target.y,
+    ) <=
+    target.radius + TUNING.flick.reachPadding
+  );
+}
+
 function validOptions(options: GameOptions): boolean {
   const area = options.reachArea;
   const radius = TUNING[options.difficulty]?.radius;
   return (
     ["timed", "challenge", "survival", "practice"].includes(options.mode) &&
-    ["touch", "push"].includes(options.interaction) &&
+    ["touch", "flick", "push"].includes(options.interaction) &&
     ["easy", "normal", "hard"].includes(options.difficulty) &&
     !!area &&
     [area.x, area.y, area.width, area.height].every(Number.isFinite) &&
@@ -157,6 +206,7 @@ export class MoleGame {
   private continuousSourceTime: number | null = null;
   private previous = new Map<ContactName, MotionContact>();
   private pushArmed = new Set<string>();
+  private flickHistory = new Map<string, FlickHistory>();
   private targetId = 0;
 
   constructor(options: Partial<GameOptions> = {}, seed = 42) {
@@ -280,6 +330,11 @@ export class MoleGame {
     const contacts = input.contacts.filter((contact) =>
       eligible(contact, this.options.interaction),
     );
+    // Consume gestures even during countdown or an expired target; never defer a hit.
+    const flicks =
+      isNew && this.options.interaction === "flick"
+        ? this.detectFlicks(contacts, input.atMs)
+        : [];
 
     if (this.value.phase === "countdown") {
       this.value.countdownMs = Math.max(0, this.value.countdownMs - delta);
@@ -318,7 +373,7 @@ export class MoleGame {
       return this.state;
     }
     if (isNew) {
-      if (this.hit(contacts, target)) {
+      if (this.hit(contacts, target, flicks)) {
         this.value.hits++;
         this.value.combo++;
         this.value.bestCombo = Math.max(this.value.bestCombo, this.value.combo);
@@ -415,9 +470,11 @@ export class MoleGame {
         eligible(contact, this.options.interaction),
       )
     )
-      return this.options.interaction === "touch"
-        ? "Keep a hand or foot visible."
-        : "Keep a depth-enabled hand, wrist or hip visible.";
+      return this.options.interaction === "flick"
+        ? "Keep a hand or wrist visible to flick."
+        : this.options.interaction === "touch"
+          ? "Keep a hand or foot visible."
+          : "Keep a depth-enabled hand, wrist or hip visible.";
     return null;
   }
 
@@ -459,7 +516,80 @@ export class MoleGame {
     this.value.target = best;
   }
 
-  private hit(contacts: MotionContact[], target: MoleTarget): boolean {
+  private detectFlicks(contacts: MotionContact[], atMs: number): FlickPath[] {
+    const paths: FlickPath[] = [];
+    const grouped = new Map<string, MotionContact>();
+    for (const contact of contacts) {
+      const key = group(contact.name);
+      // A provider may supply both aliases; prefer the wrist consistently.
+      if (!grouped.has(key) || contact.name.endsWith("_wrist"))
+        grouped.set(key, contact);
+    }
+    for (const key of this.flickHistory.keys())
+      if (!grouped.has(key)) this.flickHistory.delete(key);
+    const tuning = TUNING.flick;
+    for (const [key, contact] of grouped) {
+      const sample = { x: contact.x, y: contact.y, atMs };
+      let history = this.flickHistory.get(key);
+      if (
+        !history ||
+        history.name !== contact.name ||
+        atMs - history.samples.at(-1)!.atMs > tuning.windowMs
+      ) {
+        history = {
+          name: contact.name,
+          samples: [],
+          settledAt: atMs,
+          origin: sample,
+          armed: false,
+        };
+        this.flickHistory.set(key, history);
+      }
+      if (
+        Math.hypot(sample.x - history.origin.x, sample.y - history.origin.y) >
+        tuning.settleRadius
+      ) {
+        history.origin = sample;
+        history.settledAt = atMs;
+      }
+      if (atMs - history.settledAt >= tuning.settleMs) history.armed = true;
+      history.samples = history.samples.filter(
+        (old) => atMs - old.atMs <= tuning.windowMs,
+      );
+      if (history.armed) {
+        const from = history.samples.find((old) => {
+          const distance = Math.hypot(sample.x - old.x, sample.y - old.y);
+          return (
+            distance >= tuning.minimumTravel &&
+            (distance * 1000) / (atMs - old.atMs) >=
+              tuning.minimumSpeedPerSecond
+          );
+        });
+        if (from) {
+          // A miss or tracking jump also consumes the cycle until the hand settles.
+          history.armed = false;
+          history.origin = sample;
+          history.settledAt = atMs;
+          if (
+            Math.hypot(sample.x - from.x, sample.y - from.y) <=
+            tuning.maximumTravel
+          )
+            paths.push({ from, to: sample });
+        }
+      }
+      history.samples.push(sample);
+      history.samples = history.samples.slice(-tuning.maximumSamples);
+    }
+    return paths;
+  }
+
+  private hit(
+    contacts: MotionContact[],
+    target: MoleTarget,
+    flicks: FlickPath[],
+  ): boolean {
+    if (this.options.interaction === "flick")
+      return flicks.some((path) => flickOverlaps(path, target));
     for (const contact of contacts) {
       const previous = this.previous.get(contact.name);
       const key = group(contact.name);
@@ -516,6 +646,7 @@ export class MoleGame {
   private clearGestures(): void {
     this.previous.clear();
     this.pushArmed.clear();
+    this.flickHistory.clear();
     this.continuousSourceTime = null;
   }
 

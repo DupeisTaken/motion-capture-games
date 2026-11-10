@@ -16,6 +16,10 @@ The milestone IDs below are stable local references. Each milestone may become s
 
 ## M1: Diagnostic mirror and hardware experiment
 
+**Open-issue completion:** [The #3/#4 report](../reports/vision-issues.html) records a fresh viewer acceptance audit, decode-freshness correction and real synthetic-service browser verification. [The camera-free XYZ design](player-xyz-experiment.md) restores issue #4's isolated three-method comparison under current tooling, with strict metadata, per-joint refinement, coverage/unsafe-acceptance statistics and serial one-/three-player stage measurements. Earlier PR #7 was reverted by #9 with no recorded reason; this scoped implementation retains current capture/game boundaries. Software issue completion does not close physical M1 or enable depth scoring. Next issue-ready work: actual dual-camera calibration/USB modes, exposure synchronization, cross-view identity and independent static/dynamic accuracy and visible-latency validation using the owning physical protocol.
+
+[PR #31](https://github.com/DupeisTaken/motion-capture-games/pull/31) delivers this software completion. Both independent reviews reached 10/10 for the declared camera-free scope; the report retains failed experiment targets, unsafe acceptances and the separate physical gates.
+
 **Problem:** Camera specifications and model benchmarks do not establish usable feedback or identity tracking on our installation.
 
 **Current slice:** [Issue #3](https://github.com/DupeisTaken/motion-capture-games/issues/3) implements a one-view skeleton/count diagnostic, two pretrained model adapters, two association modes, a canonical contract and synthetic verification. See [the viewer guide](diagnostic-viewer.md) and [delivery report](../reports/skeleton-diagnostics.html). This is partial M1 progress; no real three-player crossing, production media selection or hardware/latency certification gate is closed by software tests.
@@ -59,6 +63,8 @@ The [research plan](vision-research.md#10-m1-experiment-and-decision-gates) deta
 All six remain open. [ADR 0004](decisions/0004-proposed-vision-experiment.md) records the proposal without changing the accepted identity principles.
 
 ## M2: Whack-a-mole vertical slice
+
+Wrist-flap extension: [issue #29](https://github.com/DupeisTaken/motion-capture-games/issues/29) adds an optional 2D Flick interaction with nearby swept collision, source-timed thresholds, settled-hand rearming and conservative history resets. [The report](../reports/wrist-flick.html) records verification; physical sensitivity and stationary-wrist hand-orientation tracking remain open.
 
 **Camera gameplay follow-up:** [Issue #25](https://github.com/DupeisTaken/motion-capture-games/issues/25) simplifies Mole Motion and Dodgeball to Start that waits for unique stable input, untinted camera pictures, operator-only tracking graphics and a separate window for the existing live game stage. Same-owner joint loss recovers fairly; explicit identity loss requires a new round. [The report](../reports/raw-game-display.html) owns executed tests/browser/review evidence. Windows/macOS/Linux software compatibility is separate from physical camera and participant certification.
 

@@ -37,7 +37,7 @@ ignore = ["E501"]
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
-include = ["services/vision/motion_vision"]
+include = ["services/vision/motion_vision", "services/vision/tools/xyz_benchmark.py"]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 reportMissingTypeStubs = false

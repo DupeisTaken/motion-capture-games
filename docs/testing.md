@@ -12,6 +12,8 @@ The experimental [Dodgeball slice](games/dodgeball.md) adds seeded warning/dange
 
 ## Documentation changes
 
+The [camera-free XYZ experiment](player-xyz-experiment.md) adds tests for all three methods, strict metadata/provenance, degeneracy, missing/out-of-frame joints and calibration/time/identity rejection. The benchmark reports requested-joint coverage, raw/accepted error, unsafe acceptance and separate serial stage timings. `pnpm verify:vision` exercises real synthetic-service HTTP/WebSocket transport and captures the responsive English viewer. [The #3/#4 report](../reports/vision-issues.html) owns actual checks; physical XYZ and camera/model certification remain open.
+
 Check Git whitespace, local Markdown links/anchors, HTML document structure, and any structured examples. Verify that accepted requirements, proposals, measurements and unrun checks are labeled consistently. Validate HTML reports from a local HTTP server at desktop and mobile widths; reports must work offline without external assets.
 
 ## Behavior tests to introduce with implementation

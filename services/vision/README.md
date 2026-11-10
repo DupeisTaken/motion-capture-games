@@ -1,5 +1,7 @@
 # Diagnostic vision service
 
+The isolated [camera-free XYZ comparison](../../docs/player-xyz-experiment.md) lives under `motion_vision/xyz` and uses `pnpm benchmark:xyz`. It consumes calibrated/associated joint pairs, preserves provenance and rejects uncertain input. It does not connect to this service, open another camera, change the wire schema or enable depth scoring. Tests run in the existing Python lane; [the report](../../reports/vision-issues.html) distinguishes synthetic evidence from physical validation.
+
 The first runnable middle layer owns camera acquisition, pretrained pose adapters, diagnostic camera-local tracks, automatic detected-person count and paired JPEG/observation delivery. It has no game rules or session player slots. Read [architecture](../../docs/architecture.md), [coordinates/timing](../../docs/coordinates-and-timing.md), and [multiplayer](../../docs/multiplayer.md) before extending it.
 
 ## Run

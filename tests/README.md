@@ -1,5 +1,7 @@
 # Cross-component verification
 
+XYZ cases live in `services/vision/tests/test_xyz.py`: three methods, quality/provenance rejection and per-joint degeneracy. `pnpm verify:vision` separately checks the real synthetic-service HTTP/WebSocket path and responsive English screenshots. [The #3/#4 report](../reports/vision-issues.html) records actual checks and physical limits.
+
 Run `pnpm test` for Vitest contract/motion/viewer tests followed by pytest vision tests. `pnpm check` adds repository documentation/whitespace, schema drift, types, lint and formatting. [CI conventions](../docs/continuous-integration.md) define the Ubuntu/Windows/macOS lanes, build coverage and stable merge gate. `pnpm build` runs declared workspace builds and verifies all emitted Vite entries/assets.
 
 - `tooling/`: rejects broken local documentation links/anchors, report rendering dependencies, missing application entries/bundles and remote build scripts.
