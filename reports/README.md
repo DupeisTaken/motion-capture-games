@@ -1,5 +1,7 @@
 # Change reports
 
+[Vision issues #3 and #4](vision-issues.html) records the viewer audit/freshness fix, camera-free XYZ comparison, independent reviews, actual checks and real-server English desktop/mobile evidence. [XYZ measurements](xyz-results.json) contain coverage, unsafe acceptances and serial reconstruction-only timings. Physical calibration, camera, identity and external latency certification remain open.
+
 Deliver a self-contained HTML file for substantive repository changes. Embed CSS and necessary media; the file must be readable offline without external fonts, scripts or stylesheets. External source links may be ordinary optional hyperlinks.
 
 Explain the problem, final change and rationale. Include relevant before/after screenshots, actual checks/results and measurements, rig/configuration details for hardware claims, issue/PR links when available and remaining limitations. Use synthetic examples and exclude credentials/private participant data.
@@ -31,6 +33,8 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Tracking stability](tracking-stability.html) records the prediction-driven identity-switch fix, baseline/fixed synthetic replays, tracker-only timing measurements and verification. Its generated [replay evidence](tracking-stability-results.json) comes from [the reproduction tool](../services/vision/tools/tracking_stability.py). The report distinguishes correct continuity and conservative ambiguity from physical recognition accuracy, and records provider-capacity and enrollment limitations.
 
 [Mole Motion](mole-motion.html) records the experimental game slice, rule/session/UI tests, real-server desktop/mobile synthetic screenshots and the remaining depth/hardware gates.
+
+[Wrist flicks](wrist-flick.html) records the additional 2D wrist-flap interaction, source-timed gesture/rearm rules, synthetic camera scoring, real-server desktop/mobile evidence and remaining physical sensitivity trials.
 
 [Camera selection](camera-selection.html) documents the shared native selector, refresh/recovery behavior, actual checks and remaining hardware limits.
 

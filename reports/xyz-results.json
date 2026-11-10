@@ -1,0 +1,3450 @@
+{
+  "schema_version": 1,
+  "evidence": "synthetic-only; hardware certification pending",
+  "implementation": "motion_vision.xyz-v2",
+  "coordinate_space": "right-handed calibrated rig meters: X participant-screen-right, Y up, Z into play area",
+  "unsafe_count_definition": "Accepted samples above configured torso_p95_m (root/non-wrist) or wrist_p95_m (wrist). Per-sample counts, while acceptance targets are p95; not a physical safety certification.",
+  "scenario_parameters": [
+    {
+      "name": "ideal",
+      "sigma_px": 0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": true,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "nominal_1px",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": true,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "noise_3px",
+      "sigma_px": 3,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "short_baseline_1_2m",
+      "sigma_px": 1.0,
+      "baseline_m": 1.2,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "wide_baseline_2_5m",
+      "sigma_px": 1.0,
+      "baseline_m": 2.5,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "narrow_baseline_6cm",
+      "sigma_px": 1.0,
+      "baseline_m": 0.06,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "skew_4ms",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 4,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "skew_16ms",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 16,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "uncertainty_10ms",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 10,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "host_arrival_only",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": false,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "missing_20percent",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.2,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "outliers_10percent",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.1,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "calibration_yaw_1deg",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 1,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "calibration_scale_5percent",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.05,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "unmodeled_distortion",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": true,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "flagged_identity_swap",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": false,
+      "swapped": true,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "unflagged_identity_swap",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": true,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "flagged_distortion",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": true,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": true,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "calibration_revision_mismatch",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": true,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "clock_domain_mismatch",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": true,
+      "transform_mismatch": false,
+      "stale": false
+    },
+    {
+      "name": "transform_revision_mismatch",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": true,
+      "stale": false
+    },
+    {
+      "name": "stale_pair",
+      "sigma_px": 1.0,
+      "baseline_m": 2.0,
+      "skew_ms": 0.0,
+      "uncertainty_ms": 0.5,
+      "dropout": 0.0,
+      "outliers": 0.0,
+      "yaw_error_deg": 0.0,
+      "scale_error": 0.0,
+      "unknown_distortion": false,
+      "identity_confirmed": true,
+      "swapped": false,
+      "timestamp_verified": true,
+      "nominal": false,
+      "distortion_flagged": false,
+      "calibration_mismatch": false,
+      "clock_mismatch": false,
+      "transform_mismatch": false,
+      "stale": true
+    }
+  ],
+  "config": {
+    "version": 1,
+    "status": "provisional-synthetic-only",
+    "seed": 9158,
+    "frames": 180,
+    "warmup": 30,
+    "timing_repetitions": 1000,
+    "timing_trials": 3,
+    "targets": {
+      "torso_p95_m": 0.1,
+      "wrist_p95_m": 0.15,
+      "reconstruction_p95_ms": 5.0,
+      "motion_to_visible_p95_ms": 100.0,
+      "minimum_nominal_coverage": 0.95
+    },
+    "gates": {
+      "max_pair_skew_ns": 8000000,
+      "max_time_uncertainty_ns": 2000000,
+      "max_age_ns": 60000000,
+      "max_reprojection_px": 3.0,
+      "min_ray_angle_deg": 5.0,
+      "max_ray_gap_m": 0.05,
+      "max_linearized_error_m": 0.1,
+      "assumed_pixel_sigma": 1.5,
+      "motion_speed_bound_m_s": 3.0,
+      "min_world_m": [
+        -3.0,
+        0.0,
+        1.0
+      ],
+      "max_world_m": [
+        3.0,
+        2.6,
+        6.0
+      ]
+    }
+  },
+  "environment": {
+    "os": "Windows",
+    "release": "11",
+    "machine": "AMD64",
+    "python": "3.12.16",
+    "numpy": "2.3.5",
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "thread_limits_requested": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    }
+  },
+  "synthetic_capture": {
+    "image_size": [
+      1920,
+      1080
+    ],
+    "focal_px": 1000,
+    "stand_height_m": 1.4,
+    "reference_baseline_m": 2.0,
+    "fps": 60,
+    "note": "Illustrative geometry, not a 4K device mode"
+  },
+  "experiment_duration_s": 156.53268599999137,
+  "accuracy": [
+    {
+      "scenario": "ideal",
+      "method": "dlt",
+      "nominal": true,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 9042,
+      "coverage": 0.984967320261438,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 1.2670655869532562e-15,
+        "p95": 3.657001166779273e-15,
+        "p99": 4.855018833709875e-15
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 1.280672456422863e-15,
+        "p95": 3.657001166779273e-15,
+        "p99": 4.8996756545625805e-15
+      },
+      "root_error_m": {
+        "p50": 9.453152216318872e-16,
+        "p95": 2.71108025856976e-15,
+        "p99": 3.362880859091063e-15
+      },
+      "wrist_error_m": {
+        "p50": 1.3756505200329382e-15,
+        "p95": 3.882832335139168e-15,
+        "p99": 5.3582648536708565e-15
+      },
+      "provisional_spatial_pass": true,
+      "reasons": {
+        "observed": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "ideal",
+      "method": "midpoint",
+      "nominal": true,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 9042,
+      "coverage": 0.984967320261438,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 2.255236370486907e-15,
+        "p95": 1.0686558032978252e-14,
+        "p99": 1.4515400863999798e-14
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 2.299528920302938e-15,
+        "p95": 1.069865115700175e-14,
+        "p99": 1.457336057594767e-14
+      },
+      "root_error_m": {
+        "p50": 1.825963933906181e-15,
+        "p95": 6.822685474897984e-15,
+        "p99": 9.917832596359935e-15
+      },
+      "wrist_error_m": {
+        "p50": 2.234280737922546e-15,
+        "p95": 1.0781905808215157e-14,
+        "p99": 1.5101779716146832e-14
+      },
+      "provisional_spatial_pass": true,
+      "reasons": {
+        "observed": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "ideal",
+      "method": "refined",
+      "nominal": true,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 9042,
+      "coverage": 0.984967320261438,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 5.978733960281817e-16,
+        "p95": 1.951593978782523e-15,
+        "p99": 2.8435583831733384e-15
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 6.05017830454499e-16,
+        "p95": 1.951593978782523e-15,
+        "p99": 2.8435583831733384e-15
+      },
+      "root_error_m": {
+        "p50": 5.23691153334427e-16,
+        "p95": 1.8742721836921976e-15,
+        "p99": 2.698616467127957e-15
+      },
+      "wrist_error_m": {
+        "p50": 5.551115123125783e-16,
+        "p95": 1.951593978782523e-15,
+        "p99": 2.89005671769231e-15
+      },
+      "provisional_spatial_pass": true,
+      "reasons": {
+        "observed": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "nominal_1px",
+      "method": "dlt",
+      "nominal": true,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 9042,
+      "coverage": 0.984967320261438,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007383491737379063,
+        "p95": 0.025297786550499145,
+        "p99": 0.03551146920267114
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.007472703609722517,
+        "p95": 0.025332208936648122,
+        "p99": 0.03554644349416316
+      },
+      "root_error_m": {
+        "p50": 0.004952633796138797,
+        "p95": 0.01934932014726673,
+        "p99": 0.02489186381937282
+      },
+      "wrist_error_m": {
+        "p50": 0.007458023278084986,
+        "p95": 0.025473800875305146,
+        "p99": 0.035555770907149196
+      },
+      "provisional_spatial_pass": true,
+      "reasons": {
+        "observed": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "nominal_1px",
+      "method": "midpoint",
+      "nominal": true,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 9042,
+      "coverage": 0.984967320261438,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007370512493254456,
+        "p95": 0.02526383050729959,
+        "p99": 0.03556609050085891
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.007465855584635583,
+        "p95": 0.025366806790155884,
+        "p99": 0.03558127604939683
+      },
+      "root_error_m": {
+        "p50": 0.004965999741054494,
+        "p95": 0.01925039238461429,
+        "p99": 0.024948468995372623
+      },
+      "wrist_error_m": {
+        "p50": 0.007440375216390236,
+        "p95": 0.025377412631985924,
+        "p99": 0.03560286492027199
+      },
+      "provisional_spatial_pass": true,
+      "reasons": {
+        "observed": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "nominal_1px",
+      "method": "refined",
+      "nominal": true,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 9042,
+      "coverage": 0.984967320261438,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007374499962514505,
+        "p95": 0.02529679729817718,
+        "p99": 0.03550856282624634
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.007473972813581433,
+        "p95": 0.02533420064234592,
+        "p99": 0.03552319283516077
+      },
+      "root_error_m": {
+        "p50": 0.0049521422576719,
+        "p95": 0.01936133795243336,
+        "p99": 0.024893698720601595
+      },
+      "wrist_error_m": {
+        "p50": 0.007461284832126363,
+        "p95": 0.025528648823988823,
+        "p99": 0.03555545222816554
+      },
+      "provisional_spatial_pass": true,
+      "reasons": {
+        "observed": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "noise_3px",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7648,
+      "coverage": 0.8331154684095861,
+      "root_coverage": 0.7296296296296296,
+      "wrist_coverage": 0.850925925925926,
+      "unsafe_accepted_joints": 97,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 2,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.022138068247809027,
+        "p95": 0.07577061521948955,
+        "p99": 0.1065283875294203
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.02234901560135296,
+        "p95": 0.0765663954306598,
+        "p99": 0.10737988387842552
+      },
+      "root_error_m": {
+        "p50": 0.01470988280946,
+        "p95": 0.05325946489660159,
+        "p99": 0.07382673381235857
+      },
+      "wrist_error_m": {
+        "p50": 0.02164059151559094,
+        "p95": 0.0760245018851266,
+        "p99": 0.10545822324128025
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7648,
+        "reprojection": 1352,
+        "ray_gap": 40,
+        "outside_image": 140
+      }
+    },
+    {
+      "scenario": "noise_3px",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7640,
+      "coverage": 0.8322440087145969,
+      "root_coverage": 0.7296296296296296,
+      "wrist_coverage": 0.8518518518518519,
+      "unsafe_accepted_joints": 96,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 2,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.022087849340983404,
+        "p95": 0.07570343373429453,
+        "p99": 0.10708190443455728
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.02233354886926603,
+        "p95": 0.0765836816495301,
+        "p99": 0.10774402936256675
+      },
+      "root_error_m": {
+        "p50": 0.014785702430036657,
+        "p95": 0.05292940812084708,
+        "p99": 0.0738254475448403
+      },
+      "wrist_error_m": {
+        "p50": 0.021842436544003342,
+        "p95": 0.07587208131511962,
+        "p99": 0.10542057332996187
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7640,
+        "reprojection": 1360,
+        "ray_gap": 40,
+        "outside_image": 140
+      }
+    },
+    {
+      "scenario": "noise_3px",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7651,
+      "coverage": 0.833442265795207,
+      "root_coverage": 0.7296296296296296,
+      "wrist_coverage": 0.8518518518518519,
+      "unsafe_accepted_joints": 97,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 2,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.022136523459871448,
+        "p95": 0.07580775416413822,
+        "p99": 0.10647662860584815
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.022350874347692805,
+        "p95": 0.07655915919990088,
+        "p99": 0.10737347606885285
+      },
+      "root_error_m": {
+        "p50": 0.014707832032745359,
+        "p95": 0.053282996505324864,
+        "p99": 0.073826147291471
+      },
+      "wrist_error_m": {
+        "p50": 0.021689913644711387,
+        "p95": 0.07601764116358797,
+        "p99": 0.1054615323840276
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7651,
+        "reprojection": 1349,
+        "ray_gap": 40,
+        "outside_image": 140
+      }
+    },
+    {
+      "scenario": "short_baseline_1_2m",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 5224,
+      "coverage": 0.5690631808278868,
+      "root_coverage": 0.5833333333333334,
+      "wrist_coverage": 0.5953703703703703,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.011015466871013383,
+        "p95": 0.04181956159796348,
+        "p99": 0.05876871436235222
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.008181928337723434,
+        "p95": 0.030494847833000292,
+        "p99": 0.04301137715810037
+      },
+      "root_error_m": {
+        "p50": 0.005410413196036057,
+        "p95": 0.018819983966235312,
+        "p99": 0.03246754279389755
+      },
+      "wrist_error_m": {
+        "p50": 0.007991749215335256,
+        "p95": 0.028920062093422166,
+        "p99": 0.03945637042965124
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 5224,
+        "estimated_error": 3818,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "short_baseline_1_2m",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 5223,
+      "coverage": 0.568954248366013,
+      "root_coverage": 0.5833333333333334,
+      "wrist_coverage": 0.5953703703703703,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.01099069372490001,
+        "p95": 0.041830368068456775,
+        "p99": 0.05898282968043274
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.008185076303061228,
+        "p95": 0.030397149003643584,
+        "p99": 0.04299896468652487
+      },
+      "root_error_m": {
+        "p50": 0.005471467774231649,
+        "p95": 0.018829148143758044,
+        "p99": 0.032569604143746135
+      },
+      "wrist_error_m": {
+        "p50": 0.007995346087643478,
+        "p95": 0.02899569842055044,
+        "p99": 0.03969151064983393
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 5223,
+        "estimated_error": 3819,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "short_baseline_1_2m",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 5224,
+      "coverage": 0.5690631808278868,
+      "root_coverage": 0.5833333333333334,
+      "wrist_coverage": 0.5953703703703703,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.01101252909847199,
+        "p95": 0.04181363337350787,
+        "p99": 0.058793608458675185
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.008173906750535358,
+        "p95": 0.030511924177183593,
+        "p99": 0.0429998061832916
+      },
+      "root_error_m": {
+        "p50": 0.005412980938508355,
+        "p95": 0.018822870819076666,
+        "p99": 0.03249259147860357
+      },
+      "wrist_error_m": {
+        "p50": 0.007995001627584368,
+        "p95": 0.028923990559338263,
+        "p99": 0.03944973679504645
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 5224,
+        "estimated_error": 3818,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "wide_baseline_2_5m",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 8981,
+      "coverage": 0.978322440087146,
+      "root_coverage": 1.0,
+      "wrist_coverage": 0.9435185185185185,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.006352164568900807,
+        "p95": 0.020374510631022847,
+        "p99": 0.02851684699634645
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.006451698499097422,
+        "p95": 0.020458334566061588,
+        "p99": 0.02863299863174629
+      },
+      "root_error_m": {
+        "p50": 0.004289789244436754,
+        "p95": 0.015500112237931699,
+        "p99": 0.019972069336415647
+      },
+      "wrist_error_m": {
+        "p50": 0.00650564449493336,
+        "p95": 0.02089586465641432,
+        "p99": 0.028756461222586106
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 8981,
+        "outside_image": 199
+      }
+    },
+    {
+      "scenario": "wide_baseline_2_5m",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 8981,
+      "coverage": 0.978322440087146,
+      "root_coverage": 1.0,
+      "wrist_coverage": 0.9435185185185185,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.006361887349020032,
+        "p95": 0.02039560158372507,
+        "p99": 0.0285082071771182
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.006457607554191388,
+        "p95": 0.020452558480478448,
+        "p99": 0.028682772288349923
+      },
+      "root_error_m": {
+        "p50": 0.00431836860384593,
+        "p95": 0.015433506140638736,
+        "p99": 0.020018640670092964
+      },
+      "wrist_error_m": {
+        "p50": 0.006488443894222107,
+        "p95": 0.020902028689269925,
+        "p99": 0.028752686703721893
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 8981,
+        "outside_image": 199
+      }
+    },
+    {
+      "scenario": "wide_baseline_2_5m",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 8981,
+      "coverage": 0.978322440087146,
+      "root_coverage": 1.0,
+      "wrist_coverage": 0.9435185185185185,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.006351033368268832,
+        "p95": 0.020379051959807132,
+        "p99": 0.028519443401020115
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.006451687845921678,
+        "p95": 0.02045597569806331,
+        "p99": 0.028633752334518606
+      },
+      "root_error_m": {
+        "p50": 0.004289205862156597,
+        "p95": 0.015507778355236049,
+        "p99": 0.019973496191200556
+      },
+      "wrist_error_m": {
+        "p50": 0.006505776463567988,
+        "p95": 0.020927188490691546,
+        "p99": 0.028756314297659662
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 8981,
+        "outside_image": 199
+      }
+    },
+    {
+      "scenario": "narrow_baseline_6cm",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.20669169001281748,
+        "p95": 0.8477418960100439,
+        "p99": 1.3180091235544158
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "weak_geometry": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "narrow_baseline_6cm",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.20643120298123063,
+        "p95": 0.8211743412665415,
+        "p99": 1.2386945352375376
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "weak_geometry": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "narrow_baseline_6cm",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.2072347054895297,
+        "p95": 0.8495412602516123,
+        "p99": 1.3287281080132505
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "weak_geometry": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "skew_4ms",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7300,
+      "coverage": 0.7952069716775599,
+      "root_coverage": 0.8055555555555556,
+      "wrist_coverage": 0.8194444444444444,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007814581792514983,
+        "p95": 0.02599034686316599,
+        "p99": 0.03607695358516139
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.00710490286466763,
+        "p95": 0.023353835599709404,
+        "p99": 0.03272737066785966
+      },
+      "root_error_m": {
+        "p50": 0.00497920636125107,
+        "p95": 0.017906115752964417,
+        "p99": 0.025376454179331834
+      },
+      "wrist_error_m": {
+        "p50": 0.0072154117169055025,
+        "p95": 0.023302457089946323,
+        "p99": 0.029802601799717526
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7300,
+        "estimated_error": 1741,
+        "outside_image": 139
+      }
+    },
+    {
+      "scenario": "skew_4ms",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7299,
+      "coverage": 0.7950980392156862,
+      "root_coverage": 0.8055555555555556,
+      "wrist_coverage": 0.8194444444444444,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007814387524374876,
+        "p95": 0.02599242905204386,
+        "p99": 0.03617539639885701
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.007127626096064793,
+        "p95": 0.023415046050943994,
+        "p99": 0.03272819137568344
+      },
+      "root_error_m": {
+        "p50": 0.004982812693774211,
+        "p95": 0.017946074877253478,
+        "p99": 0.025548227447202972
+      },
+      "wrist_error_m": {
+        "p50": 0.007245825923361583,
+        "p95": 0.02333712531289016,
+        "p99": 0.02983454109666145
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7299,
+        "estimated_error": 1742,
+        "outside_image": 139
+      }
+    },
+    {
+      "scenario": "skew_4ms",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7300,
+      "coverage": 0.7952069716775599,
+      "root_coverage": 0.8055555555555556,
+      "wrist_coverage": 0.8194444444444444,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007814721498038326,
+        "p95": 0.025988060717590904,
+        "p99": 0.0360775388876318
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.00710332553291816,
+        "p95": 0.023340950133466227,
+        "p99": 0.03272550920137272
+      },
+      "root_error_m": {
+        "p50": 0.0049863764977651995,
+        "p95": 0.017914686197891067,
+        "p99": 0.02538569227774817
+      },
+      "wrist_error_m": {
+        "p50": 0.007217203252880293,
+        "p95": 0.02329134618663905,
+        "p99": 0.029789195280043503
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7300,
+        "estimated_error": 1741,
+        "outside_image": 139
+      }
+    },
+    {
+      "scenario": "skew_16ms",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.012828002118273566,
+        "p95": 0.036371001409878374,
+        "p99": 0.047473280750594704
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "pair_skew": 9180
+      }
+    },
+    {
+      "scenario": "skew_16ms",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.012808408512030665,
+        "p95": 0.03643121450460549,
+        "p99": 0.047657015121728624
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "pair_skew": 9180
+      }
+    },
+    {
+      "scenario": "skew_16ms",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.012828685589656651,
+        "p95": 0.03636979034054154,
+        "p99": 0.04746863479190573
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "pair_skew": 9180
+      }
+    },
+    {
+      "scenario": "uncertainty_10ms",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007383491737379063,
+        "p95": 0.025297786550499145,
+        "p99": 0.03551146920267114
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "time_uncertain": 9180
+      }
+    },
+    {
+      "scenario": "uncertainty_10ms",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007370512493254456,
+        "p95": 0.02526383050729959,
+        "p99": 0.03556609050085891
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "time_uncertain": 9180
+      }
+    },
+    {
+      "scenario": "uncertainty_10ms",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007374499962514505,
+        "p95": 0.02529679729817718,
+        "p99": 0.03550856282624634
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "time_uncertain": 9180
+      }
+    },
+    {
+      "scenario": "host_arrival_only",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007383491737379063,
+        "p95": 0.025297786550499145,
+        "p99": 0.03551146920267114
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "unverified_exposure_time": 9180
+      }
+    },
+    {
+      "scenario": "host_arrival_only",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007370512493254456,
+        "p95": 0.02526383050729959,
+        "p99": 0.03556609050085891
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "unverified_exposure_time": 9180
+      }
+    },
+    {
+      "scenario": "host_arrival_only",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007374499962514505,
+        "p95": 0.02529679729817718,
+        "p99": 0.03550856282624634
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "unverified_exposure_time": 9180
+      }
+    },
+    {
+      "scenario": "missing_20percent",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 5836,
+      "accepted_joints": 5746,
+      "coverage": 0.6259259259259259,
+      "root_coverage": 0.4074074074074074,
+      "wrist_coverage": 0.6444444444444445,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007406993813576238,
+        "p95": 0.025221088196821742,
+        "p99": 0.035689678787094614
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.0074869894710476136,
+        "p95": 0.025306497863025267,
+        "p99": 0.035717457080464206
+      },
+      "root_error_m": {
+        "p50": 0.005043516926446675,
+        "p95": 0.0198756511086248,
+        "p99": 0.02629505472645286
+      },
+      "wrist_error_m": {
+        "p50": 0.007591667628674704,
+        "p95": 0.026433369982979335,
+        "p99": 0.03576856507327046
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 5746,
+        "missing": 3344,
+        "outside_image": 90
+      }
+    },
+    {
+      "scenario": "missing_20percent",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 5836,
+      "accepted_joints": 5746,
+      "coverage": 0.6259259259259259,
+      "root_coverage": 0.4074074074074074,
+      "wrist_coverage": 0.6444444444444445,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007385054220685203,
+        "p95": 0.025135335022153926,
+        "p99": 0.03567641774718572
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.007489720177035354,
+        "p95": 0.025261442286675033,
+        "p99": 0.035731899912809686
+      },
+      "root_error_m": {
+        "p50": 0.0050354506141213,
+        "p95": 0.019928795727459758,
+        "p99": 0.026336437741767558
+      },
+      "wrist_error_m": {
+        "p50": 0.007617138553697005,
+        "p95": 0.02646051260120644,
+        "p99": 0.03575025485589732
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 5746,
+        "missing": 3344,
+        "outside_image": 90
+      }
+    },
+    {
+      "scenario": "missing_20percent",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 5836,
+      "accepted_joints": 5746,
+      "coverage": 0.6259259259259259,
+      "root_coverage": 0.4074074074074074,
+      "wrist_coverage": 0.6444444444444445,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007407321753091802,
+        "p95": 0.025213914674994526,
+        "p99": 0.03569024577035426
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.0074856584767251065,
+        "p95": 0.02530543383872702,
+        "p99": 0.03571936284059347
+      },
+      "root_error_m": {
+        "p50": 0.005044169018316478,
+        "p95": 0.01987386695009781,
+        "p99": 0.026296818584925313
+      },
+      "wrist_error_m": {
+        "p50": 0.007592776963716514,
+        "p95": 0.026431597156731337,
+        "p99": 0.03576811041326723
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 5746,
+        "missing": 3344,
+        "outside_image": 90
+      }
+    },
+    {
+      "scenario": "outliers_10percent",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7462,
+      "coverage": 0.8128540305010893,
+      "root_coverage": 0.6833333333333333,
+      "wrist_coverage": 0.8148148148148148,
+      "unsafe_accepted_joints": 140,
+      "unsafe_accepted_roots": 9,
+      "unsafe_accepted_wrists": 11,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.00953307804851843,
+        "p95": 0.3912068732673132,
+        "p99": 0.8102186744917124
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.007569379390057741,
+        "p95": 0.028764311283158737,
+        "p99": 0.3081585577887113
+      },
+      "root_error_m": {
+        "p50": 0.005473409652474165,
+        "p95": 0.025928472742072946,
+        "p99": 0.1959627189811936
+      },
+      "wrist_error_m": {
+        "p50": 0.007091740796105585,
+        "p95": 0.02718719404939104,
+        "p99": 0.16110388635135017
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7462,
+        "ray_gap": 1309,
+        "reprojection": 255,
+        "estimated_error": 4,
+        "outside_volume": 3,
+        "outside_image": 147
+      }
+    },
+    {
+      "scenario": "outliers_10percent",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7462,
+      "coverage": 0.8128540305010893,
+      "root_coverage": 0.6833333333333333,
+      "wrist_coverage": 0.8148148148148148,
+      "unsafe_accepted_joints": 140,
+      "unsafe_accepted_roots": 9,
+      "unsafe_accepted_wrists": 11,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.009521807379499793,
+        "p95": 0.3964094051047391,
+        "p99": 0.7852005577245342
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.007562206692964062,
+        "p95": 0.02879432868561204,
+        "p99": 0.30725120109444004
+      },
+      "root_error_m": {
+        "p50": 0.0054988396738992655,
+        "p95": 0.025938392985533316,
+        "p99": 0.19598434323029074
+      },
+      "wrist_error_m": {
+        "p50": 0.007099467982186558,
+        "p95": 0.027306710690549366,
+        "p99": 0.16113824558923176
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7462,
+        "ray_gap": 1309,
+        "reprojection": 255,
+        "estimated_error": 4,
+        "outside_volume": 3,
+        "outside_image": 147
+      }
+    },
+    {
+      "scenario": "outliers_10percent",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7462,
+      "coverage": 0.8128540305010893,
+      "root_coverage": 0.6833333333333333,
+      "wrist_coverage": 0.8148148148148148,
+      "unsafe_accepted_joints": 140,
+      "unsafe_accepted_roots": 9,
+      "unsafe_accepted_wrists": 11,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.009532174189872485,
+        "p95": 0.3894994815225998,
+        "p99": 0.8118022569370844
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.007568368586741059,
+        "p95": 0.028764696931386443,
+        "p99": 0.3081875996952304
+      },
+      "root_error_m": {
+        "p50": 0.005479769928391599,
+        "p95": 0.02592422488498642,
+        "p99": 0.1959607854589662
+      },
+      "wrist_error_m": {
+        "p50": 0.0070923533898066115,
+        "p95": 0.027199658569991205,
+        "p99": 0.16114156332279697
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7462,
+        "ray_gap": 1309,
+        "reprojection": 255,
+        "estimated_error": 4,
+        "outside_volume": 3,
+        "outside_image": 147
+      }
+    },
+    {
+      "scenario": "calibration_yaw_1deg",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 8953,
+      "coverage": 0.9752723311546841,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 6690,
+      "unsafe_accepted_roots": 406,
+      "unsafe_accepted_wrists": 631,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.16398573575045253,
+        "p95": 0.22895724291018776,
+        "p99": 0.247582693175513
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.16603052294163817,
+        "p95": 0.22923523846318822,
+        "p99": 0.248046053374027
+      },
+      "root_error_m": {
+        "p50": 0.1651469535453764,
+        "p95": 0.2244168180495824,
+        "p99": 0.2339961160907915
+      },
+      "wrist_error_m": {
+        "p50": 0.1632329576015977,
+        "p95": 0.24014216524063714,
+        "p99": 0.26328047695095236
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 8953,
+        "reprojection": 89,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "calibration_yaw_1deg",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 8941,
+      "coverage": 0.9739651416122005,
+      "root_coverage": 1.0,
+      "wrist_coverage": 0.9990740740740741,
+      "unsafe_accepted_joints": 6658,
+      "unsafe_accepted_roots": 405,
+      "unsafe_accepted_wrists": 631,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.16407700745201645,
+        "p95": 0.2288785010320613,
+        "p99": 0.24761032056468482
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.1660303780192752,
+        "p95": 0.22931143712557964,
+        "p99": 0.24795847480976915
+      },
+      "root_error_m": {
+        "p50": 0.1651125956396155,
+        "p95": 0.22440088410727563,
+        "p99": 0.23382573674663673
+      },
+      "wrist_error_m": {
+        "p50": 0.16324021391345747,
+        "p95": 0.24004163639973508,
+        "p99": 0.26327773600327947
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 8941,
+        "reprojection": 101,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "calibration_yaw_1deg",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 8953,
+      "coverage": 0.9752723311546841,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 6690,
+      "unsafe_accepted_roots": 406,
+      "unsafe_accepted_wrists": 631,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.16399723423584914,
+        "p95": 0.22895745090948627,
+        "p99": 0.24758437297940686
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.16603912630773093,
+        "p95": 0.2292468680915797,
+        "p99": 0.2480483596242036
+      },
+      "root_error_m": {
+        "p50": 0.16515413277606622,
+        "p95": 0.22441872134070343,
+        "p99": 0.2340055360514917
+      },
+      "wrist_error_m": {
+        "p50": 0.16323355176784504,
+        "p95": 0.24014323168835092,
+        "p99": 0.26328244848189347
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 8953,
+        "reprojection": 89,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "calibration_scale_5percent",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 9042,
+      "coverage": 0.984967320261438,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 8766,
+      "unsafe_accepted_roots": 540,
+      "unsafe_accepted_wrists": 804,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.20239837087387047,
+        "p95": 0.25283257172981954,
+        "p99": 0.2682584017182079
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.20331708668903833,
+        "p95": 0.2529173704676024,
+        "p99": 0.2683101073921221
+      },
+      "root_error_m": {
+        "p50": 0.20278118234204187,
+        "p95": 0.24883353579652737,
+        "p99": 0.2572169518874317
+      },
+      "wrist_error_m": {
+        "p50": 0.1998799004044477,
+        "p95": 0.2558169087134292,
+        "p99": 0.27432119022923696
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "calibration_scale_5percent",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 9042,
+      "coverage": 0.984967320261438,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 8768,
+      "unsafe_accepted_roots": 540,
+      "unsafe_accepted_wrists": 806,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.20238303326976875,
+        "p95": 0.2527285373990407,
+        "p99": 0.26832418230952354
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.2033109853464126,
+        "p95": 0.2528050507098419,
+        "p99": 0.26833947220433596
+      },
+      "root_error_m": {
+        "p50": 0.20276860490181767,
+        "p95": 0.24896999201150097,
+        "p99": 0.2571925384096045
+      },
+      "wrist_error_m": {
+        "p50": 0.19978074601283946,
+        "p95": 0.2556520891473365,
+        "p99": 0.27418205755857306
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "calibration_scale_5percent",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 9042,
+      "coverage": 0.984967320261438,
+      "root_coverage": 1.0,
+      "wrist_coverage": 1.0,
+      "unsafe_accepted_joints": 8766,
+      "unsafe_accepted_roots": 540,
+      "unsafe_accepted_wrists": 804,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.2024069040827742,
+        "p95": 0.2528375181204925,
+        "p99": 0.2682645796965961
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.20332514695532294,
+        "p95": 0.2529204090567445,
+        "p99": 0.268311387527988
+      },
+      "root_error_m": {
+        "p50": 0.2027829342147717,
+        "p95": 0.24884287537732547,
+        "p99": 0.25721809860312
+      },
+      "wrist_error_m": {
+        "p50": 0.19988169428989205,
+        "p95": 0.2558174607853019,
+        "p99": 0.27433674356094817
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 9042,
+        "outside_image": 138
+      }
+    },
+    {
+      "scenario": "unmodeled_distortion",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7265,
+      "coverage": 0.7913943355119826,
+      "root_coverage": 0.7111111111111111,
+      "wrist_coverage": 0.8805555555555555,
+      "unsafe_accepted_joints": 1787,
+      "unsafe_accepted_roots": 27,
+      "unsafe_accepted_wrists": 207,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.08696672224300553,
+        "p95": 0.1991049026286928,
+        "p99": 0.2539859232544618
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.07514055424792274,
+        "p95": 0.16968643232446232,
+        "p99": 0.23171051777570043
+      },
+      "root_error_m": {
+        "p50": 0.06732314628591901,
+        "p95": 0.10275264307428507,
+        "p99": 0.12458392899986342
+      },
+      "wrist_error_m": {
+        "p50": 0.07098492962485993,
+        "p95": 0.22394248082706353,
+        "p99": 0.26530562593472484
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7265,
+        "reprojection": 1478,
+        "ray_gap": 159,
+        "outside_image": 278
+      }
+    },
+    {
+      "scenario": "unmodeled_distortion",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7260,
+      "coverage": 0.7908496732026143,
+      "root_coverage": 0.7111111111111111,
+      "wrist_coverage": 0.8805555555555555,
+      "unsafe_accepted_joints": 1773,
+      "unsafe_accepted_roots": 26,
+      "unsafe_accepted_wrists": 207,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.08670831961575717,
+        "p95": 0.19581167338337793,
+        "p99": 0.24438338857845507
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.07503501442817592,
+        "p95": 0.16954130452078423,
+        "p99": 0.23159596542341132
+      },
+      "root_error_m": {
+        "p50": 0.0672898050541074,
+        "p95": 0.10259497785143824,
+        "p99": 0.12402274900857121
+      },
+      "wrist_error_m": {
+        "p50": 0.0709840368851237,
+        "p95": 0.22376568403667674,
+        "p99": 0.2652293054445434
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7260,
+        "reprojection": 1483,
+        "ray_gap": 159,
+        "outside_image": 278
+      }
+    },
+    {
+      "scenario": "unmodeled_distortion",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 7268,
+      "coverage": 0.7917211328976035,
+      "root_coverage": 0.7111111111111111,
+      "wrist_coverage": 0.8805555555555555,
+      "unsafe_accepted_joints": 1788,
+      "unsafe_accepted_roots": 27,
+      "unsafe_accepted_wrists": 207,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.08694012415184932,
+        "p95": 0.1989970974128591,
+        "p99": 0.2532616964631228
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 0.07514161781632774,
+        "p95": 0.1696488392758829,
+        "p99": 0.23168766641976077
+      },
+      "root_error_m": {
+        "p50": 0.06731859803264564,
+        "p95": 0.10274006391190343,
+        "p99": 0.12455024504327944
+      },
+      "wrist_error_m": {
+        "p50": 0.07098492662059118,
+        "p95": 0.22392166568439098,
+        "p99": 0.2652995609811152
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "observed": 7268,
+        "reprojection": 1475,
+        "ray_gap": 159,
+        "outside_image": 278
+      }
+    },
+    {
+      "scenario": "flagged_identity_swap",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 2.2088811435794726,
+        "p95": 6.674447959956786,
+        "p99": 9.067742425878217
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "identity_uncertain": 9180
+      }
+    },
+    {
+      "scenario": "flagged_identity_swap",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 2.1736289601307313,
+        "p95": 5.847761883684362,
+        "p99": 8.511784033931043
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "identity_uncertain": 9180
+      }
+    },
+    {
+      "scenario": "flagged_identity_swap",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 2.2076788468493933,
+        "p95": 6.683187896169912,
+        "p99": 9.071187740221303
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "identity_uncertain": 9180
+      }
+    },
+    {
+      "scenario": "unflagged_identity_swap",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 1259,
+      "coverage": 0.13714596949891067,
+      "root_coverage": 0.06481481481481481,
+      "wrist_coverage": 0.24351851851851852,
+      "unsafe_accepted_joints": 1230,
+      "unsafe_accepted_roots": 35,
+      "unsafe_accepted_wrists": 259,
+      "wrong_identity_accepted_joints": 1259,
+      "raw_error_m": {
+        "p50": 2.2088811435794726,
+        "p95": 6.674447959956786,
+        "p99": 9.067742425878217
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 1.4591596917437792,
+        "p95": 2.2337088147919935,
+        "p99": 2.649185978534171
+      },
+      "root_error_m": {
+        "p50": 1.4670175862885944,
+        "p95": 1.7247507036590441,
+        "p99": 1.7567381613142472
+      },
+      "wrist_error_m": {
+        "p50": 1.5534343686332883,
+        "p95": 2.6464206975046256,
+        "p99": 2.8007542418739644
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "ray_gap": 6102,
+        "reprojection": 1449,
+        "observed": 1259,
+        "estimated_error": 95,
+        "outside_image": 275
+      }
+    },
+    {
+      "scenario": "unflagged_identity_swap",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 1259,
+      "coverage": 0.13714596949891067,
+      "root_coverage": 0.06481481481481481,
+      "wrist_coverage": 0.24351851851851852,
+      "unsafe_accepted_joints": 1230,
+      "unsafe_accepted_roots": 35,
+      "unsafe_accepted_wrists": 259,
+      "wrong_identity_accepted_joints": 1259,
+      "raw_error_m": {
+        "p50": 2.1736289601307313,
+        "p95": 5.847761883684362,
+        "p99": 8.511784033931043
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 1.459151563181496,
+        "p95": 2.234831154602306,
+        "p99": 2.6491853929398186
+      },
+      "root_error_m": {
+        "p50": 1.4670299653293828,
+        "p95": 1.7248313133090472,
+        "p99": 1.7568163197765967
+      },
+      "wrist_error_m": {
+        "p50": 1.5534426246039235,
+        "p95": 2.6464189487466347,
+        "p99": 2.800765023911283
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "ray_gap": 6102,
+        "reprojection": 1449,
+        "observed": 1259,
+        "estimated_error": 95,
+        "outside_image": 275
+      }
+    },
+    {
+      "scenario": "unflagged_identity_swap",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 1261,
+      "coverage": 0.13736383442265795,
+      "root_coverage": 0.06481481481481481,
+      "wrist_coverage": 0.24351851851851852,
+      "unsafe_accepted_joints": 1232,
+      "unsafe_accepted_roots": 35,
+      "unsafe_accepted_wrists": 259,
+      "wrong_identity_accepted_joints": 1261,
+      "raw_error_m": {
+        "p50": 2.2076788468493933,
+        "p95": 6.683187896169912,
+        "p99": 9.071187740221303
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": 1.4591583058238122,
+        "p95": 2.234636801163097,
+        "p99": 2.6490921727504544
+      },
+      "root_error_m": {
+        "p50": 1.4670167172115431,
+        "p95": 1.7247216355185997,
+        "p99": 1.7567085233315936
+      },
+      "wrist_error_m": {
+        "p50": 1.553433633050154,
+        "p95": 2.6464189553803044,
+        "p99": 2.8007464601694316
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "ray_gap": 6102,
+        "reprojection": 1447,
+        "observed": 1261,
+        "estimated_error": 95,
+        "outside_image": 275
+      }
+    },
+    {
+      "scenario": "flagged_distortion",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.08696672224300553,
+        "p95": 0.1991049026286928,
+        "p99": 0.2539859232544618
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "distorted_input": 9180
+      }
+    },
+    {
+      "scenario": "flagged_distortion",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.08670831961575717,
+        "p95": 0.19581167338337793,
+        "p99": 0.24438338857845507
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "distorted_input": 9180
+      }
+    },
+    {
+      "scenario": "flagged_distortion",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.08694012415184932,
+        "p95": 0.1989970974128591,
+        "p99": 0.2532616964631228
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "distorted_input": 9180
+      }
+    },
+    {
+      "scenario": "calibration_revision_mismatch",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007383491737379063,
+        "p95": 0.025297786550499145,
+        "p99": 0.03551146920267114
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "calibration_mismatch": 9180
+      }
+    },
+    {
+      "scenario": "calibration_revision_mismatch",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007370512493254456,
+        "p95": 0.02526383050729959,
+        "p99": 0.03556609050085891
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "calibration_mismatch": 9180
+      }
+    },
+    {
+      "scenario": "calibration_revision_mismatch",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007374499962514505,
+        "p95": 0.02529679729817718,
+        "p99": 0.03550856282624634
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "calibration_mismatch": 9180
+      }
+    },
+    {
+      "scenario": "clock_domain_mismatch",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007383491737379063,
+        "p95": 0.025297786550499145,
+        "p99": 0.03551146920267114
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "clock_mismatch": 9180
+      }
+    },
+    {
+      "scenario": "clock_domain_mismatch",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007370512493254456,
+        "p95": 0.02526383050729959,
+        "p99": 0.03556609050085891
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "clock_mismatch": 9180
+      }
+    },
+    {
+      "scenario": "clock_domain_mismatch",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007374499962514505,
+        "p95": 0.02529679729817718,
+        "p99": 0.03550856282624634
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "clock_mismatch": 9180
+      }
+    },
+    {
+      "scenario": "transform_revision_mismatch",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007383491737379063,
+        "p95": 0.025297786550499145,
+        "p99": 0.03551146920267114
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "transform_mismatch": 9180
+      }
+    },
+    {
+      "scenario": "transform_revision_mismatch",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007370512493254456,
+        "p95": 0.02526383050729959,
+        "p99": 0.03556609050085891
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "transform_mismatch": 9180
+      }
+    },
+    {
+      "scenario": "transform_revision_mismatch",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007374499962514505,
+        "p95": 0.02529679729817718,
+        "p99": 0.03550856282624634
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "transform_mismatch": 9180
+      }
+    },
+    {
+      "scenario": "stale_pair",
+      "method": "dlt",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007383491737379063,
+        "p95": 0.025297786550499145,
+        "p99": 0.03551146920267114
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "stale_input": 9180
+      }
+    },
+    {
+      "scenario": "stale_pair",
+      "method": "midpoint",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007370512493254456,
+        "p95": 0.02526383050729959,
+        "p99": 0.03556609050085891
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "stale_input": 9180
+      }
+    },
+    {
+      "scenario": "stale_pair",
+      "method": "refined",
+      "nominal": false,
+      "total_joints": 9180,
+      "available_pairs": 9180,
+      "accepted_joints": 0,
+      "coverage": 0.0,
+      "root_coverage": 0.0,
+      "wrist_coverage": 0.0,
+      "unsafe_accepted_joints": 0,
+      "unsafe_accepted_roots": 0,
+      "unsafe_accepted_wrists": 0,
+      "wrong_identity_accepted_joints": 0,
+      "raw_error_m": {
+        "p50": 0.007374499962514505,
+        "p95": 0.02529679729817718,
+        "p99": 0.03550856282624634
+      },
+      "raw_nonfinite_estimates": 0,
+      "accepted_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "root_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "wrist_error_m": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "provisional_spatial_pass": false,
+      "reasons": {
+        "stale_input": 9180
+      }
+    }
+  ],
+  "timing": [
+    {
+      "method": "dlt",
+      "players": 1,
+      "joints_per_player": 17,
+      "samples": 3000,
+      "warmup": 30,
+      "latency_ms": {
+        "p50": 1.11955,
+        "p95": 1.8387099999999998,
+        "p99": 2.5026609999999962
+      },
+      "trials": [
+        {
+          "p50": 1.0682,
+          "p95": 1.6613749999999998,
+          "p99": 1.8955089999999999
+        },
+        {
+          "p50": 1.2022,
+          "p95": 2.1107599999999995,
+          "p99": 2.780541999999999
+        },
+        {
+          "p50": 1.0973000000000002,
+          "p95": 1.8140049999999996,
+          "p99": 2.4768269999999997
+        }
+      ],
+      "duration_s": 3.6049978,
+      "provisional_stage_pass": true
+    },
+    {
+      "method": "midpoint",
+      "players": 1,
+      "joints_per_player": 17,
+      "samples": 3000,
+      "warmup": 30,
+      "latency_ms": {
+        "p50": 1.0191,
+        "p95": 1.6959799999999996,
+        "p99": 1.9736879999999979
+      },
+      "trials": [
+        {
+          "p50": 1.0217,
+          "p95": 1.7007549999999996,
+          "p99": 1.9309559999999997
+        },
+        {
+          "p50": 1.00645,
+          "p95": 1.711305,
+          "p99": 2.0523109999999996
+        },
+        {
+          "p50": 1.0281,
+          "p95": 1.675425,
+          "p99": 1.9101029999999999
+        }
+      ],
+      "duration_s": 3.2552195,
+      "provisional_stage_pass": true
+    },
+    {
+      "method": "refined",
+      "players": 1,
+      "joints_per_player": 17,
+      "samples": 3000,
+      "warmup": 30,
+      "latency_ms": {
+        "p50": 3.2676,
+        "p95": 5.069054999999998,
+        "p99": 6.418904999999986
+      },
+      "trials": [
+        {
+          "p50": 3.55825,
+          "p95": 5.461125,
+          "p99": 7.166368999999998
+        },
+        {
+          "p50": 3.28835,
+          "p95": 5.000184999999999,
+          "p99": 5.935155
+        },
+        {
+          "p50": 3.0269,
+          "p95": 4.624524999999999,
+          "p99": 5.414685
+        }
+      ],
+      "duration_s": 10.3634748,
+      "provisional_stage_pass": false
+    },
+    {
+      "method": "dlt",
+      "players": 3,
+      "joints_per_player": 17,
+      "samples": 3000,
+      "warmup": 30,
+      "latency_ms": {
+        "p50": 3.39335,
+        "p95": 5.237794999999997,
+        "p99": 6.981744999999988
+      },
+      "trials": [
+        {
+          "p50": 3.34165,
+          "p95": 5.36373,
+          "p99": 7.035895
+        },
+        {
+          "p50": 3.4920999999999998,
+          "p95": 5.321764999999999,
+          "p99": 7.875432
+        },
+        {
+          "p50": 3.362,
+          "p95": 5.104445,
+          "p99": 6.459026999999996
+        }
+      ],
+      "duration_s": 10.7515616,
+      "provisional_stage_pass": false
+    },
+    {
+      "method": "midpoint",
+      "players": 3,
+      "joints_per_player": 17,
+      "samples": 3000,
+      "warmup": 30,
+      "latency_ms": {
+        "p50": 3.2605,
+        "p95": 4.841659999999999,
+        "p99": 5.905398999999998
+      },
+      "trials": [
+        {
+          "p50": 3.1607000000000003,
+          "p95": 4.550665,
+          "p99": 5.095364
+        },
+        {
+          "p50": 3.2525,
+          "p95": 4.80282,
+          "p99": 5.6653759999999975
+        },
+        {
+          "p50": 3.4345499999999998,
+          "p95": 5.136594999999999,
+          "p99": 6.571483999999998
+        }
+      ],
+      "duration_s": 10.2102348,
+      "provisional_stage_pass": true
+    },
+    {
+      "method": "refined",
+      "players": 3,
+      "joints_per_player": 17,
+      "samples": 3000,
+      "warmup": 30,
+      "latency_ms": {
+        "p50": 10.2554,
+        "p95": 15.94079499999999,
+        "p99": 21.37689299999999
+      },
+      "trials": [
+        {
+          "p50": 12.47905,
+          "p95": 18.294005,
+          "p99": 25.340823999999998
+        },
+        {
+          "p50": 9.585799999999999,
+          "p95": 13.434114999999998,
+          "p99": 17.055640999999998
+        },
+        {
+          "p50": 9.0962,
+          "p95": 14.081874999999998,
+          "p99": 19.026781
+        }
+      ],
+      "duration_s": 32.320215,
+      "provisional_stage_pass": false
+    }
+  ],
+  "selected_candidate": "midpoint",
+  "hardware_gate": "NOT RUN: no cameras connected or calibrated"
+}

@@ -102,7 +102,19 @@ try {
         // Both sections belong to the same native modal; select a camera without acquisition.
         await page.locator("#source-select").selectOption("camera");
         await page.locator("#camera-choice").selectOption("a".repeat(64));
-        await page.screenshot({ path: resolve(output, `${prefix}-setup.png`) });
+        if (game === "mole") {
+          await page.locator("#interaction-flick").click();
+          assert.equal(
+            await page
+              .locator("#interaction-flick")
+              .getAttribute("aria-pressed"),
+            "true",
+          );
+        }
+        await page.screenshot({
+          path: resolve(output, `${prefix}-setup.png`),
+          animations: "disabled",
+        });
         assert.equal(
           await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
           true,
@@ -118,6 +130,7 @@ try {
         await page.locator("#source-select").selectOption("demo");
         await page.locator("#mode-select").selectOption("practice");
         await page.locator("#difficulty-select").selectOption("easy");
+        if (game === "mole") await page.locator("#interaction-flick").click();
         if (viewport.width <= 390) {
           await page.locator("#game-settings-title").scrollIntoViewIfNeeded();
           const heading = await page
@@ -127,6 +140,7 @@ try {
           assert(heading && footer && heading.y + heading.height <= footer.y);
           await page.screenshot({
             path: resolve(output, `${prefix}-game-options.png`),
+            animations: "disabled",
           });
         }
         await page.locator("#confirm-start").click();
@@ -181,6 +195,14 @@ try {
           await page.locator("#difficulty-select").inputValue(),
           "easy",
         );
+        if (game === "mole") {
+          assert.equal(
+            await page
+              .locator("#interaction-flick")
+              .getAttribute("aria-pressed"),
+            "true",
+          );
+        }
         await page.locator("#close-settings").click();
         assert.equal(
           await page.locator("#overlay-copy").textContent(),

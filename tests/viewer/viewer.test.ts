@@ -298,6 +298,111 @@ describe("independent diagnostic viewer", () => {
     expect(el("person-count").textContent).toBe("0");
     expect(el("update-rate").textContent).toBe("—");
   });
+  it.each(["first", "replacement"] as const)(
+    "discards an expired %s decode without reviving the preview and recovers on the next packet",
+    async (phase) => {
+      const s = await start();
+      const previous = bitmap();
+      if (phase === "replacement") {
+        createBitmap.mockResolvedValueOnce(previous);
+        await frame(s, pose(3, 1));
+      }
+      const decoded = deferred<ReturnType<typeof bitmap>>();
+      createBitmap.mockReturnValueOnce(decoded.promise);
+      const pending = s.image.receive(preview(pose(3, 2)));
+      await flush();
+      const pulls = s.image.send.mock.calls.length;
+      vi.advanceTimersByTime(2000);
+      renderer.drawFrame.mockClear();
+      const expired = bitmap();
+      decoded.resolve(expired);
+      await pending;
+      vi.advanceTimersByTime(16);
+      expect(expired.close).toHaveBeenCalledOnce();
+      expect(renderer.drawFrame).not.toHaveBeenCalled();
+      expect(el("source-badge").textContent).toBe("Stale");
+      expect(el("status-title").textContent).toBe("Waiting for fresh input");
+      expect(el("status-message").textContent).toContain("including decoding");
+      expect(el("standby").hidden).toBe(false);
+      expect(el("standby-title").textContent).toBe("Waiting for fresh input");
+      expect(el("viewport-title").textContent).toBe("Waiting for fresh input");
+      expect(el("stage-source").textContent).toContain("Source active");
+      expect(el("person-count").textContent).toBe("0");
+      expect(s.image.send).toHaveBeenCalledTimes(pulls + 1);
+      expect(s.image.close).not.toHaveBeenCalled();
+      if (phase === "replacement")
+        expect(previous.close).toHaveBeenCalledOnce();
+
+      const fresh = bitmap();
+      createBitmap.mockResolvedValueOnce(fresh);
+      await frame(s, pose(1, 3));
+      expect(el("source-badge").textContent).toBe("Live");
+      expect(el("person-count").textContent).toBe("1");
+      expect(renderer.drawFrame.mock.calls.at(-1)?.[1]).toBe(fresh);
+      expect(fresh.close).not.toHaveBeenCalled();
+    },
+  );
+  it("keeps synthetic first-frame expiry labels consistent with its active source", async () => {
+    const s = await start("demo");
+    const decoded = deferred<ReturnType<typeof bitmap>>();
+    createBitmap.mockReturnValueOnce(decoded.promise);
+    const pending = s.image.receive(
+      preview(
+        pose(3, 1, {
+          source: "demo",
+          algorithm: "synthetic",
+          clock: {
+            domain: "host-monotonic",
+            quality: "synthetic",
+            uncertaintyNs: null,
+          },
+        }),
+      ),
+    );
+    await flush();
+    vi.advanceTimersByTime(2000);
+    decoded.resolve(bitmap());
+    await pending;
+    expect(el("standby").hidden).toBe(false);
+    expect(el("standby-title").textContent).toBe("Waiting for fresh input");
+    expect(el("standby-message").textContent).toContain(
+      "source is still running",
+    );
+    expect(el("viewport-title").textContent).toBe("Waiting for fresh input");
+    expect(el("stage-source").textContent).toContain("Source active");
+    expect(el<HTMLButtonElement>("stop").disabled).toBe(false);
+    el<HTMLButtonElement>("stop").click();
+    await flush();
+    expect(el("standby-title").textContent).toBe("Ready to observe");
+    expect(el("viewport-title").textContent).toBe("Synthetic test scene");
+    expect(el("stage-source").textContent).toBe("No source connected");
+  });
+  it("counts decoding time within the browser arrival-age budget", async () => {
+    const s = await start();
+    const decoded = deferred<ReturnType<typeof bitmap>>();
+    createBitmap.mockReturnValueOnce(decoded.promise);
+    const pending = s.image.receive(preview(pose()));
+    await flush();
+    vi.advanceTimersByTime(1000);
+    const image = bitmap();
+    decoded.resolve(image);
+    await pending;
+    vi.advanceTimersByTime(16);
+    expect(renderer.drawFrame.mock.calls.at(-1)?.[1]).toBe(image);
+    vi.advanceTimersByTime(800);
+    expect(image.close).toHaveBeenCalledOnce();
+    expect(el("source-badge").textContent).toBe("Stale");
+  });
+  it("hides an expired image on a display-control redraw before periodic cleanup", async () => {
+    const s = await start();
+    await s.image.receive(preview(pose()));
+    vi.advanceTimersByTime(1510);
+    renderer.drawFrame.mockClear();
+    renderer.drawStandby.mockClear();
+    el("mirror").dispatchEvent(new Event("input"));
+    expect(renderer.drawFrame).not.toHaveBeenCalled();
+    expect(renderer.drawStandby).toHaveBeenCalledOnce();
+  });
   it.each(["image", "poses"] as const)(
     "rejects an unexpected epoch on %s",
     async (kind) => {

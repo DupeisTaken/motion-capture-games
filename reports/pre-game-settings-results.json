@@ -1,12 +1,12 @@
 {
   "checks": [
     [
-      "Focused integration and menu lifecycle",
-      "79 tests passed"
+      "Viewer and menu coverage",
+      "82 tests passed within the full TypeScript run, including the merged camera/rehearsal Flick tests."
     ],
     [
       "pnpm check",
-      "Passed: 416 TypeScript tests across 21 files; 120 Python tests; generated contracts, types, lint, formatting, repository links/whitespace/report assets and Python byte compilation."
+      "Passed on the combined revision: 448 TypeScript tests across 22 files; 196 Python tests; generated contracts, types, lint, formatting, repository links/whitespace/report assets and Python byte compilation."
     ],
     [
       "pnpm build",
@@ -14,7 +14,7 @@
     ],
     [
       "Real-server browser checks",
-      "Passed for both games at 1440×1000, 390×844 and 320×740 (English). Initial setup, no automatic capture, camera selection, Escape/focus, retained choices, Start/replay confirmation, locked active settings, pause/resume and no overflow/page errors. Separate live game windows and return verified at desktop."
+      "Passed for both games at 1440×1000, 390×844 and 320×740 (English). Initial setup, no automatic capture, camera selection, Escape/focus, retained choices, Start/replay confirmation, locked active settings, pause/resume and no overflow/page errors. Separate live game windows and return verified at desktop. Merged Flick selection and retention verified in camera setup and rehearsal."
     ],
     [
       "Self-contained report rendering",
@@ -112,5 +112,7 @@
       "pageErrors": 0,
       "externalRequests": 0
     }
-  ]
+  ],
+  "generatedOn": "11 November 2026",
+  "integrationBase": "3a4337ff249b1c5610b2e74f2aa90d5f14641d2d"
 }
