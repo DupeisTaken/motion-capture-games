@@ -8,11 +8,9 @@ Explain the problem, final change and rationale. Include relevant before/after s
 
 Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.local/`.
 
-
 [Continuous integration](continuous-integration.html) records repository conventions, component/build coverage, actual local and hosted checks, and remaining packaging/hardware limits.
 
 [Dodgeball](dodgeball.html) records the experimental virtual-obstacle game, independent Sol review, actual software checks, real-server desktop/mobile synthetic evidence and remaining physical playtest gates.
-
 
 [The motion runner report](motion-runner.html) records the single-player runner scaffold update, its documentation checks and report-rendering evidence. No game implementation or physical recognition result is claimed.
 

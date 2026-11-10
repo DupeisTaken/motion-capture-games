@@ -29,7 +29,7 @@ Run `pnpm check` and `pnpm build` before review. `pnpm build` builds declared wo
 
 ## Contracts and replay
 
-Keep one canonical wire schema when the protocol is implemented. Generate or validate language bindings from it. CI should reject schema/client drift once generation exists. Document compatibility and migration effects when changing messages; do not hand-maintain parallel Python and TypeScript definitions.
+Keep one canonical wire schema and generate or validate language bindings from it. CI rejects schema/client drift with `pnpm contracts:check`. Document compatibility and migration effects when changing messages; do not hand-maintain parallel Python and TypeScript definitions.
 
 Include meaningful examples and fixtures for missing joints, stale frames, identity uncertainty, and clock resets. Preserve replay compatibility or document the version boundary explicitly. See [coordinates and timing](docs/coordinates-and-timing.md).
 
