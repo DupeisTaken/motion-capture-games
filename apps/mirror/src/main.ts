@@ -19,7 +19,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <a class="skip-link" href="#workspace">Skip to viewer</a>
   <header class="app-header">
     <a class="brand" href="/" aria-label="Motion Studio home"><span class="brand-symbol">${icon("body")}</span><span>Motion<span class="brand-light">Studio</span></span></a>
-    <span class="header-section">Body tracking / Diagnostic workspace · <a href="/mole.html">Play Mole Motion ↗</a></span>
+    <span class="header-section">Body tracking / Diagnostic workspace · <a href="/mole.html">Mole Motion ↗</a> · <a href="/dodgeball.html">Dodgeball ↗</a></span>
     <span class="local-indicator"><span></span> Local processing</span>
   </header>
   <main id="workspace">

@@ -77,6 +77,8 @@ All six remain open. [ADR 0004](decisions/0004-proposed-vision-experiment.md) re
 
 ## M4: Dodgeball
 
+**Early software slice:** [Issue #18](https://github.com/DupeisTaken/motion-capture-games/issues/18) adds the experimental single-player [Dodgeball game](games/dodgeball.md), using canonical full-body input, telegraphed virtual obstacles, confidence-aware pause/recovery and the Mole Motion framing warning. [The delivery report](../reports/dodgeball.html) owns actual software and UI evidence. This user-requested early slice does not close M1 or M4: real participant trials at different heights/positions, physical collision/framing accuracy and installation tuning remain open.
+
 **Problem:** Make virtual obstacle avoidance understandable with confidence-aware body collision shapes.
 
 **Owns:** Body-region collision rules, obstacle timing, avoidance feedback and play-space tuning. Depends on M2; reuse M3 work only where relevant.
