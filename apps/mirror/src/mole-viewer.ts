@@ -30,7 +30,7 @@ export function mountMoleGame(
   const now = deps.now || (() => performance.now());
   root.innerHTML = `
   <a class="skip" href="#game-stage">Skip to game</a>
-  <header class="mm-header"><a class="mm-brand" href="/">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/">Tracking console</a><a class="current" href="/mole.html" aria-current="page">Arcade</a></nav><span class="local-pill"><i></i> Local & private</span></header>
+  <header class="mm-header"><a class="mm-brand" href="/">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/">Tracking console</a><a class="current" href="/mole.html" aria-current="page">Mole Motion</a><a href="/dodgeball.html">Dodgeball</a></nav><span class="local-pill"><i></i> Local & private</span></header>
   <main class="mm-main"><div class="mm-heading"><div><p class="eyebrow">THE MOTION ARCADE <span>/</span> GAME 01</p><h1>Mole Motion<span class="heading-dot">.</span></h1><p class="intro">A little reach. A little rhythm. A whole lot of moles.</p></div><span class="experiment">Single player <span>Experimental</span></span></div>
   <div class="mm-layout"><aside class="mm-settings" aria-label="Game settings">
     <div class="settings-title"><h2>Make it your game</h2><span>01</span></div>
