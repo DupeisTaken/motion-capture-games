@@ -172,13 +172,11 @@ export class RunnerGame {
         "Player identity is uncertain. Start a new round.",
         this.owner !== null,
       );
-    // A second person must not mask simultaneous loss of the score owner's identity.
-    if (input.participantCount !== 1)
-      return failure(
-        input.participantCount > 1
-          ? "Another player detected. Only one person may be in view."
-          : "Player missing. Return to the play area.",
-      );
+    if (
+      !Number.isSafeInteger(input.participantCount) ||
+      input.participantCount < 1
+    )
+      return failure("Player missing. Return to the play area.");
     if (input.valid !== true)
       return failure(input.reason || "Keep the required body joints in view.");
     if (

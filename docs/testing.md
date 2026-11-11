@@ -60,7 +60,7 @@ These [M6](roadmap.md#m6-single-player-motion-runner) requirements have an exper
 
 | Area | Required scenarios and evidence |
 | --- | --- |
-| One-player admission | A second join is rejected; spectator entry/exit and crossing do not change the controlling slot or transfer its score. Ambiguous identity pauses the runner. |
+| One-player admission | A second join is rejected; spectator entry/exit and crossing leave gameplay running when the joined track stays confident. The controlling slot and score stay with that track. Ambiguous identity pauses the runner. |
 | Lane selection | Left/center/right holds, return from either side to center, direct side-to-side movement, boundary jitter and different body sizes/depths. A held lane produces no repeated relative shifts. Check the same participant-relative mapping with mirrored practice video and rendered-world gameplay. |
 | Jump | One event per valid takeoff/landing cycle; repeated samples, small bobbing, squatting, missing feet and landing gaps cannot invent a second jump. Lane changes during a jump follow the documented rule. |
 | Squat/duck | Enter, hold and release; distinguish crouching from tracking loss, leaning, head motion and jump preparation/landing. No repeated rewards from a held squat. Conflicting vertical evidence produces no invented action. |

@@ -86,7 +86,7 @@ function observation(sequence: number, people = 1): Observation {
       ...value.people[0],
       trackId: `runner-track-${index}`,
       identity: "confident",
-      joints,
+      joints: structuredClone(joints),
     })),
   };
 }
@@ -219,24 +219,23 @@ describe("runner application", () => {
     toggle("fast-start", false);
     expect(state().speed).toBe(10);
   });
-  it("freezes the world, distance and score when a second participant appears", () => {
+  it("continues rehearsal when a spectator enters and pauses on lost tracking with the spectator still present", () => {
     click("start-round");
     advance(3300);
+    const distance = state().distance;
     now += 16;
     toggle("demo-extra", true);
+    advance(1500);
+    expect(state().phase).toBe("playing");
+    expect(state().distance).toBeGreaterThan(distance);
+    expect(element("player-badge").textContent).toBe("1 PLAYER · READY");
+    now += 16;
+    toggle("demo-missing", true);
     const frozen = state();
     advance(1500);
     expect(state().phase).toBe("paused");
-    expect(state().score).toBe(frozen.score);
     expect(state().distance).toBe(frozen.distance);
-    expect(state().obstacles).toEqual(frozen.obstacles);
-    expect(element("overlay-title").textContent).toBe("One runner at a time.");
-    now += 16;
-    toggle("demo-extra", false);
-    expect(state().phase).toBe("countdown");
-    expect(state().countdownMs).toBe(2000);
-    advance(2100);
-    expect(state().phase).toBe("playing");
+    expect(state().score).toBe(frozen.score);
   });
   it("does not automatically resume a manual pause and starts a fresh score on New run", () => {
     click("start-round");
@@ -384,7 +383,7 @@ describe("runner application", () => {
     expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
     expect(element<HTMLButtonElement>("overlay-start").disabled).toBe(true);
   });
-  it("admits a camera run only after movement practice, pauses on an extra person and refuses a replacement owner", async () => {
+  it("admits a camera run only after movement practice, keeps the owner in control with a spectator and refuses a replacement owner", async () => {
     const socket = await startCamera();
     let sequence = 0;
     function send(x = 0, y = 0, duck = false, people = 1, replacement = false) {
@@ -406,6 +405,7 @@ describe("runner application", () => {
         value.people[0].joints.left_knee!.x! -= 0.1;
         value.people[0].joints.right_knee!.x! += 0.1;
       }
+      if (people > 1) value.people.reverse();
       if (replacement) value.people[0].trackId = "replacement-player";
       socket.onmessage?.({ data: packet(value) });
     }
@@ -448,18 +448,13 @@ describe("runner application", () => {
     expect(state().phase).toBe("countdown");
     for (let index = 0; index < 65; index++) send();
     expect(state().phase).toBe("playing");
-    send(0, 0, false, 2);
-    const frozen = state();
-    for (let index = 0; index < 20; index++) send(0, 0, false, 2);
-    expect(state().phase).toBe("paused");
-    expect(state().score).toBe(frozen.score);
-    expect(state().distance).toBe(frozen.distance);
-    expect(element("overlay-title").textContent).toBe("One runner at a time.");
+    const before = state();
+    for (let index = 0; index < 20; index++) send(0.14, 0, false, 2);
+    expect(state().phase).toBe("playing");
+    expect(state().score).toBeGreaterThan(before.score);
+    expect(state().distance).toBeGreaterThan(before.distance);
+    expect(state().avatarX).toBe(-1);
     send();
-    send();
-    send();
-    expect(state().phase).toBe("countdown");
-    for (let index = 0; index < 45; index++) send();
     expect(state().phase).toBe("playing");
     send(0, 0, false, 1, true);
     expect(state().phase).toBe("paused");

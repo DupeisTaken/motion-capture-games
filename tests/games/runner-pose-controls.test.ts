@@ -29,7 +29,12 @@ class Pose {
   value = observation();
   now = 0;
   frame() {
-    return observationToGameFrame(this.value, this.value.people[0], this.now);
+    return observationToGameFrame(
+      this.value,
+      this.value.people.find((person) => person.trackId === "joined-player") ??
+        this.value.people[0],
+      this.now,
+    );
   }
   calibrate() {
     expect(
@@ -160,23 +165,31 @@ describe("experimental runner body controls", () => {
     pose.translate(0);
     expect(pose.sample()).toMatchObject({ duck: false, jump: false });
   });
-  it("pauses on extra players without transferring calibration, and rejects replacements, uncertainty and geometry changes", () => {
+  it("reads only the calibrated track when spectators enter, and rejects duplicate, uncertain or missing owners", () => {
     const pose = new Pose();
     pose.calibrate();
-    pose.value.people.push({
-      ...structuredClone(pose.value.people[0]),
-      trackId: "spectator",
+    pose.translate(0.14);
+    const owner = pose.value.people[0];
+    const spectator = observation().people[0];
+    spectator.trackId = "spectator";
+    pose.value.people = [spectator, owner];
+    expect(pose.sample()).toMatchObject({
+      valid: true,
+      participantCount: 2,
+      lane: -1,
     });
-    expect(pose.sample()).toMatchObject({ valid: false, participantCount: 2 });
-    pose.value.people.pop();
-    expect(pose.sample().valid).toBe(true);
-    pose.value.people[0].identity = "ambiguous";
+    pose.value.people.push(structuredClone(owner));
     expect(pose.sample()).toMatchObject({
       valid: false,
       identity: "uncertain",
     });
-    pose.value.people[0].identity = "confident";
-    pose.value.people[0].trackId = "replacement";
+    pose.value.people.pop();
+    owner.identity = "ambiguous";
+    expect(pose.sample()).toMatchObject({
+      valid: false,
+      identity: "uncertain",
+    });
+    pose.value.people = [spectator];
     expect(pose.sample()).toMatchObject({ valid: false, identity: "missing" });
     const another = new Pose();
     another.calibrate();

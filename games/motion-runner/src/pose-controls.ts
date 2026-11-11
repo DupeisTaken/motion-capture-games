@@ -13,6 +13,7 @@ export interface RunnerInput {
   epoch: string;
   spaceRevision: string;
   identity: "confident" | "uncertain" | "missing";
+  /** All visible detections. Only the bound track supplies controls. */
   participantCount: number;
   lane: Lane;
   jump: boolean;
@@ -82,22 +83,16 @@ function angle(a: Point, b: Point, c: Point): number {
 function pose(
   observation: Observation,
   frame: GameMotionFrame,
-  trackId: string,
+  person: Observation["people"][number],
 ): Pose | null {
-  const matches = observation.people.filter(
-    (person) => person.trackId === trackId,
-  );
   if (
-    observation.people.length !== 1 ||
-    matches.length !== 1 ||
-    matches[0].identity !== "confident" ||
+    person.identity !== "confident" ||
     frame.identity !== "confident" ||
     !frame.feetVisible ||
     observation.epoch !== frame.epoch ||
     observation.sequence !== frame.sequence
   )
     return null;
-  const person = matches[0];
   const names = [
     "left_shoulder",
     "right_shoulder",
@@ -181,7 +176,10 @@ export class RunnerPoseControls {
     frame: GameMotionFrame,
     trackId: string,
   ): boolean {
-    const current = pose(observation, frame, trackId);
+    const [person] = observation.people;
+    if (observation.people.length !== 1 || person.trackId !== trackId)
+      return false;
+    const current = pose(observation, frame, person);
     if (
       !current ||
       current.leftKneeAngle < RUNNER_POSE_TUNING.standingKneeAngleDegrees ||
@@ -259,23 +257,17 @@ export class RunnerPoseControls {
         "Player or camera space changed. Start a new round and calibrate again.",
       );
     }
-    if (observation.people.length !== 1)
-      return fail(
-        observation.people.length > 1
-          ? "Another player detected. Only one person may be in view."
-          : "Player missing. Return to the play area.",
-      );
-    if (
-      observation.people[0].trackId !== trackId ||
-      observation.people[0].identity !== "confident"
-    ) {
-      result.identity =
-        observation.people[0].trackId === trackId ? "uncertain" : "missing";
+    // Calibration and gestures belong to the bound track, independent of detection order.
+    const matches = observation.people.filter(
+      (person) => person.trackId === trackId,
+    );
+    if (matches.length !== 1 || matches[0].identity !== "confident") {
+      result.identity = matches.length ? "uncertain" : "missing";
       return fail(
         "Player identity changed or became uncertain. Start a new round.",
       );
     }
-    const current = pose(observation, frame, trackId);
+    const current = pose(observation, frame, matches[0]);
     if (!current)
       return fail(
         "Keep both shoulders, hips, knees and feet confidently in view.",

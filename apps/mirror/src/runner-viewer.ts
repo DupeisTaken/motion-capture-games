@@ -42,7 +42,7 @@ export function mountRunnerGame(
     </div>
     <div class="runner-toolbar"><p id="game-status" role="status" aria-live="polite">Choose your input, then start your run.</p><div><button id="start-round" class="runner-primary">Start run →</button><button id="pause-round" hidden>Pause</button><button id="resume-round" class="runner-primary" hidden>Resume →</button><button id="new-round" hidden>New run</button><button id="end-round" hidden>End run</button></div></div>
     <div class="runner-controls" id="demo-controls"><span>REHEARSAL CONTROLS</span><div class="lane-buttons" role="group" aria-label="Choose lane"><button id="lane-left" aria-label="Select left lane">← <span>Left</span></button><button id="lane-center" aria-label="Select center lane">● <span>Center</span></button><button id="lane-right" aria-label="Select right lane"><span>Right</span> →</button></div><div class="action-buttons"><button id="jump-action">↑ <span>Jump</span></button><button id="duck-action" aria-pressed="false">↓ <span>Roll</span></button></div><p>Keyboard: ← / C / → lanes · Space jump · hold ↓ to roll.<br>Touch: tap a lane or Jump; hold Roll.</p></div>
-    <div class="runner-principles"><p><strong>Move to a lane</strong><span>Left, center or right. Holding a position keeps your lane.</span></p><p><strong>Jump & roll</strong><span>Jump low hurdles. Duck under the overhead gates.</span></p><p><strong>Your run stays yours</strong><span>A second player or lost tracking pauses the entire world.</span></p></div>
+    <div class="runner-principles"><p><strong>Move to a lane</strong><span>Left, center or right. Holding a position keeps your lane.</span></p><p><strong>Jump & roll</strong><span>Jump low hurdles. Duck under the overhead gates.</span></p><p><strong>Your run stays yours</strong><span>Spectators can enter the frame. The game pauses if it loses your tracking.</span></p></div>
   </section><aside class="runner-settings" aria-label="Run setup"><div class="runner-section-label"><span>MAKE IT YOURS</span><span>01</span></div><h2>Choose your escape.</h2>
     <label for="world-select">World</label><select id="world-select"><option value="rail">Neon Rails · the mint skyline</option><option value="gold">Gold Rush · a sunlit getaway</option></select><p class="field-note" id="world-description">A mint skyline, railway runs and colorful city streets.</p>
     <label for="skin-select">Runner skin</label><select id="skin-select"><option value="nova">Nova · cobalt & mint</option><option value="moss">Moss · forest explorer</option><option value="ember">Ember · sunset sprint</option></select><div class="skin-swatches" aria-hidden="true"><i class="nova"></i><i class="moss"></i><i class="ember"></i><span>All skins included. Same abilities.</span></div>
@@ -50,7 +50,7 @@ export function mountRunnerGame(
     <label class="runner-check"><input id="practice-mode" type="checkbox"> Practice · no penalties</label>
     <div class="runner-section-label input-section"><span>YOUR CONTROLLER</span><span>02</span></div><label for="source-select">Input</label><select id="source-select"><option value="demo">Rehearsal · keyboard & touch</option><option value="camera">Camera · body tracking</option></select>
     <div id="camera-controls">${cameraChoiceMarkup}<div class="camera-actions"><button id="source-connect">Start camera</button><button id="source-stop" disabled>Stop camera</button></div><p class="field-note" id="camera-status" role="status">Camera stays off until you choose Start camera. Gameplay never displays camera images.</p><div id="camera-release" hidden><p id="camera-release-message" role="status"></p><button id="retry-camera-stop">Retry camera stop</button></div><button id="calibrate-player" disabled>Set standing center</button><p class="field-note">Stand comfortably at center, whole body and both feet in view. Then rehearse each move below.</p><div id="practice-checklist" aria-label="Camera movement practice">${practiceLabels.map((label, index) => `<span id="practice-${index}">${label}</span>`).join("")}</div><p class="field-note" id="practice-status" role="status">Practice all moves before starting your first run.</p></div>
-    <div id="rehearsal-note" hidden><p class="rehearsal-note">Camera-free simulation. Choose Start run, then use the keyboard or touch controls.</p><details><summary>Tracking pause rehearsal</summary><label class="runner-check"><input id="demo-extra" type="checkbox"> Simulate another player</label><label class="runner-check"><input id="demo-missing" type="checkbox"> Simulate lost tracking</label></details></div>
+    <div id="rehearsal-note" hidden><p class="rehearsal-note">Camera-free simulation. Choose Start run, then use the keyboard or touch controls.</p><details><summary>Tracking rehearsal</summary><label class="runner-check"><input id="demo-extra" type="checkbox"> Simulate a spectator</label><label class="runner-check"><input id="demo-missing" type="checkbox"> Simulate lost tracking</label></details></div>
     <div class="runner-safety"><strong>A little room to move.</strong><p>One player only. Clear space for small side steps, jumping and ducking. Tracking accuracy and physical timing are experimental.</p></div>
   </aside></div><footer class="runner-footer">Original worlds & characters · Local play · English <span>No recording. No camera image on the game screen.</span></footer></main>`;
   const get = <T extends HTMLElement = HTMLElement>(id: string) => {
@@ -189,12 +189,7 @@ export function mountRunnerGame(
     return input;
   }
   function recordPractice(input: RunnerInput) {
-    if (
-      !input.valid ||
-      input.identity !== "confident" ||
-      input.participantCount !== 1
-    )
-      return;
+    if (!input.valid || input.identity !== "confident") return;
     practiced.add(input.lane + 1);
     if (input.jump) practiced.add(3);
     if (input.duck) practiced.add(4);
@@ -227,7 +222,7 @@ export function mountRunnerGame(
       cameraInput = null;
       cameraMessage(
         value.people.length > 1
-          ? "One player only. Ask the other person to leave the camera view."
+          ? "Stand alone in view to set up body controls."
           : "Keep one clearly tracked player and both feet in view.",
       );
       return;
@@ -252,11 +247,9 @@ export function mountRunnerGame(
     cameraInput = pose.ingest(value, base, participant.trackId);
     recordPractice(cameraInput);
     cameraMessage(
-      cameraInput.participantCount > 1
-        ? "Another player detected. The entire world is paused."
-        : cameraInput.valid
-          ? "Body controls ready. Your image stays off the game screen."
-          : (cameraInput.reason ?? "Keep your whole body in view."),
+      cameraInput.valid
+        ? "Body controls ready. Your image stays off the game screen."
+        : (cameraInput.reason ?? "Keep your whole body in view."),
     );
   }
   function currentInput(t: number) {
@@ -287,7 +280,7 @@ export function mountRunnerGame(
       setText(
         "game-status",
         isDemo()
-          ? "Keep exactly one ready player and release Jump or Roll before starting."
+          ? "Release Jump or Roll and make sure tracking is ready before starting."
           : !pose.calibrated || practiced.size < practiceLabels.length
             ? "Start the camera, set your standing center and rehearse all six movement checks first."
             : !input?.standing
@@ -354,14 +347,7 @@ export function mountRunnerGame(
       `${["LEFT", "CENTER", "RIGHT"][(input?.lane ?? 0) + 1]} · ${state.jumpHeight > 0 ? "JUMPING" : state.duck ? "ROLLING" : "STANDING"}`,
     );
     const ready = game.readiness(t, input).ready && !ownershipChanged;
-    setText(
-      "player-badge",
-      input?.participantCount && input.participantCount > 1
-        ? "ANOTHER PLAYER · PAUSED"
-        : ready
-          ? "1 PLAYER · READY"
-          : "WAITING FOR PLAYER",
-    );
+    setText("player-badge", ready ? "1 PLAYER · READY" : "WAITING FOR PLAYER");
     get("game-overlay").hidden = state.phase === "playing";
     get("overlay-start").hidden = state.phase !== "ready";
     get<HTMLButtonElement>("overlay-start").disabled = renderingUnavailable;
@@ -396,9 +382,7 @@ export function mountRunnerGame(
         "overlay-title",
         ownershipChanged || state.requiresNewRound
           ? "A fresh run is needed."
-          : input?.participantCount && input.participantCount > 1
-            ? "One runner at a time."
-            : "Taking a breather.",
+          : "Taking a breather.",
       );
       setText(
         "overlay-copy",

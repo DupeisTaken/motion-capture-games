@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { createServer } from "vite";
 
 // Source-only modules are loaded through their existing Vite consumer, with no
@@ -57,7 +57,13 @@ try {
             if (occupied.has(lane))
               lane = [-1, 0, 1].find((value) => !occupied.has(value));
             if (lane === undefined) throw new Error("Unsolvable runner row.");
-            game.step(time, input());
+            const spectatorPresent = frame >= 20 * hz && frame < 22 * hz;
+            game.step(time, {
+              ...input(),
+              participantCount: spectatorPresent ? 2 : 1,
+            });
+            if (spectatorPresent && game.state.phase !== "playing")
+              throw new Error("Spectator entry interrupted the joined runner.");
             maximumObstacles = Math.max(
               maximumObstacles,
               state.obstacles.length,
@@ -74,18 +80,28 @@ try {
             elapsedMs: state.elapsedMs,
           };
           time += 1000 / hz;
-          game.step(time, { ...input(), participantCount: 2 });
+          game.step(time, {
+            ...input(),
+            identity: "missing",
+            participantCount: 1,
+          });
           for (let frame = 0; frame < hz * 2; frame++) {
             time += 1000 / hz;
-            game.step(time, { ...input(), participantCount: 2 });
+            game.step(time, {
+              ...input(),
+              identity: "missing",
+              participantCount: 1,
+            });
           }
           const paused = game.state;
           if (
+            paused.phase !== "paused" ||
+            !paused.requiresNewRound ||
             paused.distance !== beforePause.distance ||
             paused.score !== beforePause.score ||
             paused.elapsedMs !== beforePause.elapsedMs
           )
-            throw new Error("Alternate-player pause advanced outcomes.");
+            throw new Error("Losing the joined player did not freeze the run.");
           cases.push({
             variant,
             fastStart,
@@ -97,30 +113,30 @@ try {
             coins: state.coins,
             hits: state.hits,
             maximumObstacles,
-            alternatePlayerFreeze: true,
+            spectatorContinuity: true,
+            ownerLossFreeze: true,
           });
         }
       }
     }
   }
   const evidence = {
-    version: 2,
+    version: 3,
     date: "2026-11-11",
     method: "Vite source-module runner simulation, synthetic semantic controls",
     workload:
-      "48 cases: 2 worlds × Standard/Fast start × 4 seeds × 30/60/120 Hz; approximately 60 active seconds each, followed by 2 seconds with another player",
+      "48 cases: 2 worlds × Standard/Fast start × 4 seeds × 30/60/120 Hz; approximately 60 active seconds each, including 2 seconds with a spectator, followed by loss of the joined player",
     result:
-      "All declared safe-lane oracle cases completed with zero hits; alternate-player freeze preserved distance, score and game time exactly.",
+      "All declared safe-lane oracle cases completed with zero hits. Spectator entry preserved play; loss of the joined player froze distance, score and game time exactly.",
     limits:
       "No physical cameras, reference-game timing, browser frame rate, motion accuracy or end-to-end latency measured. Oracle solvability is not participant difficulty testing.",
     cases,
   };
-  await writeFile(
-    "reports/runner-motion-pace-results.json",
-    JSON.stringify(evidence, null, 2) + "\n",
-  );
+  const output = "reports/local/runner-spectator-results.json";
+  await mkdir("reports/local", { recursive: true });
+  await writeFile(output, JSON.stringify(evidence, null, 2) + "\n");
   console.log(
-    `${cases.length} runner simulation cases passed; results in reports/runner-motion-pace-results.json`,
+    `${cases.length} runner simulation cases passed; results in ${output}`,
   );
 } finally {
   await server.close();

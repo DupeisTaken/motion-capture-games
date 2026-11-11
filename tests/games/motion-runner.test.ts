@@ -102,7 +102,7 @@ describe("single-player motion runner timeline", () => {
       play.start();
       play.advance(1000);
       const before = play.game.state;
-      play.controls.participantCount = 2;
+      play.controls.valid = false;
       play.tick();
       play.advance(1000);
       expect(play.game.state).toMatchObject({
@@ -112,7 +112,7 @@ describe("single-player motion runner timeline", () => {
         distance: before.distance,
         options: { fastStart },
       });
-      play.controls.participantCount = 1;
+      play.controls.valid = true;
       expect(play.game.resume(play.now, play.input())).toBe(true);
       play.advance(TUNING.resumeCountdownMs);
       expect(play.game.state.speed).toBe(before.speed);
@@ -146,7 +146,6 @@ describe("single-player motion runner timeline", () => {
   it("requires one fresh standing participant before admission", () => {
     const play = new Play();
     for (const changes of [
-      { participantCount: 2 },
       { participantCount: 0 },
       { identity: "uncertain" as const },
       { valid: false },
@@ -186,31 +185,25 @@ describe("single-player motion runner timeline", () => {
     expect(play.game.state.phase).toBe("playing");
     expect(play.game.state.distance).toBeGreaterThan(0);
   });
-  it("freezes hazards, timers, action position, distance and score together when an alternate person appears", () => {
-    const play = new Play();
-    play.start();
-    play.advance(600);
-    const before = play.game.state;
-    play.controls.participantCount = 2;
-    play.tick();
-    expect(play.game.state).toMatchObject({
-      phase: "paused",
-      elapsedMs: before.elapsedMs,
-      distance: before.distance,
-      score: before.score,
-      avatarX: before.avatarX,
-      jumpHeight: before.jumpHeight,
-      obstacles: before.obstacles,
-    });
-    play.advance(2000);
-    expect(play.game.state.obstacles).toEqual(before.obstacles);
-    expect(play.game.state.reason).toMatch(/Another player/);
-    play.controls.participantCount = 1;
-    expect(play.game.resume(play.now, play.input())).toBe(true);
-    play.advance(TUNING.resumeCountdownMs);
-    expect(play.game.state.distance).toBe(before.distance);
-    play.tick();
-    expect(play.game.state.distance - before.distance).toBeLessThan(0.3);
+  it("keeps the same world, score and controls when a spectator enters during countdown and leaves during play", () => {
+    const solo = new Play({ practice: true });
+    const withSpectator = new Play({ practice: true });
+    for (const play of [solo, withSpectator]) {
+      expect(play.game.start(play.now, play.input())).toBe(true);
+      play.advance(1000);
+    }
+    withSpectator.controls.participantCount = 2;
+    for (const play of [solo, withSpectator]) {
+      play.advance(TUNING.startCountdownMs);
+      play.controls.lane = -1;
+      play.controls.jump = true;
+      play.advance(200);
+    }
+    expect(withSpectator.game.state.phase).toBe("playing");
+    expect(withSpectator.game.state).toEqual(solo.game.state);
+    withSpectator.controls.participantCount = 1;
+    for (const play of [solo, withSpectator]) play.advance(1000);
+    expect(withSpectator.game.state).toEqual(solo.game.state);
   });
   it.each([
     { epoch: "replacement" },
@@ -429,10 +422,10 @@ describe("single-player motion runner timeline", () => {
     play.game.start(play.now, play.input());
     play.advance(1000);
     const countdown = play.game.state.countdownMs;
-    play.controls.participantCount = 2;
+    play.controls.valid = false;
     play.advance(500);
     expect(play.game.state.countdownMs).toBe(countdown);
-    play.controls.participantCount = 1;
+    play.controls.valid = true;
     expect(play.game.resume(play.now, play.input())).toBe(true);
     play.advance(TUNING.resumeCountdownMs);
     play.controls.lane = play.game.state.obstacles.find(
