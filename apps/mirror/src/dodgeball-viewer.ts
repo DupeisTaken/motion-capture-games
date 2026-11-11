@@ -137,6 +137,8 @@ export function mountDodgeballGame(
   let lastHits = 0,
     lastDodges = 0,
     feedbackUntil = 0;
+  let configurationLocked = false;
+  const navigationStartup = new NavigationStartup();
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
   const setup = createPreGameSettings(root, () => {
@@ -167,14 +169,18 @@ export function mountDodgeballGame(
   function updateReleaseControls() {
     if (disposed) return;
     const release = releases.state;
-    cameraChoice.setLocked(connecting || !!epoch || release.pendingCount > 0);
+    const startupBlocker = navigationStartup.blocker;
+    // Local Stop does not resolve a pending Start or prove camera release.
+    const sourceLocked =
+      connecting || !!epoch || release.pendingCount > 0 || !!startupBlocker;
+    cameraChoice.setLocked(sourceLocked);
+    select("source-select").disabled = configurationLocked || sourceLocked;
     get("camera-release").hidden = release.pendingCount === 0;
     const message = get("camera-release-message");
     if (message.textContent !== release.message)
       message.textContent = release.message;
     get<HTMLButtonElement>("retry-camera-stop").disabled = release.releasing;
-    get<HTMLButtonElement>("source-connect").disabled =
-      connecting || !!epoch || release.pendingCount > 0;
+    get<HTMLButtonElement>("source-connect").disabled = sourceLocked;
     get<HTMLButtonElement>("source-stop").disabled = !epoch && !connecting;
     get<HTMLButtonElement>("setup-stop-camera").disabled =
       !epoch && !connecting;
@@ -182,7 +188,8 @@ export function mountDodgeballGame(
     get("setup-release-message").textContent = release.message;
     get<HTMLButtonElement>("setup-retry-camera-stop").disabled =
       release.releasing;
-    if (!isDemo() && !epoch) setMessage(release.message || cameraMessage);
+    if (startupBlocker) setMessage(release.message || startupBlocker);
+    else if (!isDemo() && !epoch) setMessage(release.message || cameraMessage);
   }
   function updatePlayerBinding() {
     get("player-binding").hidden = isDemo() || !owner;
@@ -400,7 +407,7 @@ export function mountDodgeballGame(
       state.phase === "paused" &&
       (readiness.requiresNewRound || ownershipChanged);
     const locked = active() || armed;
-    const configurationLocked = locked && !needsNewRound;
+    configurationLocked = locked && !needsNewRound;
     for (const id of ["mode-select", "difficulty-select", "source-select"])
       get<HTMLSelectElement>(id).disabled = configurationLocked;
     get<HTMLButtonElement>("start-round").disabled =
@@ -420,7 +427,6 @@ export function mountDodgeballGame(
     get("restart-round").textContent = needsNewRound
       ? "Set up new round ↗"
       : "Play again ↗";
-    updateReleaseControls();
     get("game-overlay").hidden =
       state.phase === "playing" ||
       (!isDemo() && state.phase === "ready" && previewFresh && !armed);
@@ -504,6 +510,8 @@ export function mountDodgeballGame(
     get("dodge-feedback").hidden =
       t > feedbackUntil || feedbackUntil === 0 || state.phase !== "playing";
     resumeControl.update();
+    // Ownership/release recovery takes precedence over ordinary round status.
+    updateReleaseControls();
   }
   function tick() {
     if (disposed) return;
@@ -570,9 +578,15 @@ export function mountDodgeballGame(
     if (!disposed) render();
     return released;
   }
-  const navigationStartup = new NavigationStartup();
   async function startCamera() {
-    if (connecting || epoch || releases.state.pendingCount > 0) return;
+    if (
+      disposed ||
+      connecting ||
+      epoch ||
+      releases.state.pendingCount > 0 ||
+      navigationStartup.blocker
+    )
+      return;
     let camera: CameraSelection;
     try {
       camera = cameraChoice.selection();
@@ -597,6 +611,7 @@ export function mountDodgeballGame(
     get<HTMLButtonElement>("source-stop").disabled = false;
     let decoding = false;
     const navigationAttempt = navigationStartup.begin();
+    updateReleaseControls();
     try {
       const response = await fetch("/api/start", {
         method: "POST",
@@ -613,18 +628,20 @@ export function mountDodgeballGame(
       });
       const result = await response.json();
       navigationAttempt.acknowledge(response.ok, result);
-      if (!response.ok || result.state === "error")
-        throw new Error(
-          result.detail || result.message || "Camera could not start.",
-        );
+      const returnedEpoch =
+        typeof result?.epoch === "string" ? result.epoch : "";
       if (own !== generation || disposed) {
-        if (typeof result.epoch === "string")
-          await releases.release(result.epoch);
+        if (returnedEpoch) await releases.release(returnedEpoch);
         return;
       }
-      if (typeof result.epoch !== "string" || !result.epoch)
-        throw new Error("Camera did not acknowledge a source epoch.");
-      epoch = result.epoch;
+      // A fast worker failure can acknowledge an owned epoch with state:error.
+      // Retain that owner before handling the error so Stop remains scoped/retryable.
+      epoch = returnedEpoch;
+      if (!response.ok || result?.state === "error")
+        throw new Error(
+          result?.detail || result?.message || "Camera could not start.",
+        );
+      if (!epoch) throw new Error("Camera did not acknowledge a source epoch.");
       const ws = new WebSocket(
         `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/stream`,
       );
@@ -717,8 +734,9 @@ export function mountDodgeballGame(
         );
     } finally {
       navigationAttempt.finish();
+      // Cancelled/disposed starts return from try; their cleanup must refresh here.
+      if (!disposed) render();
     }
-    if (!disposed) render();
   }
 
   listen(get("open-game-window"), "click", () => {
