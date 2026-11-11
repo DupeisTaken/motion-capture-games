@@ -18,6 +18,8 @@ Flick uses mapped **source** intervals, with at least 0.018 normalized image tra
 
 Timed lasts 60 active seconds; Challenge aims for 15 hits in 60 active seconds; Survival ends on the third expired mole; Practice is untimed without miss penalties. Pause, framing/tracking loss and readiness freeze round and target time. A transient joint/framing interruption recovers automatically after fresh input is steady for 600ms, followed by a two-second countdown. Operator pauses and hidden displays require Resume. Recovery clears gesture history and never catches up missed time. The 600ms hold is proposed software tuning, not measured physical identity certification.
 
+Camera play requests the paired image and pose stream only, so the vision service can skip the additional JPEG stream used by the tracking console.
+
 Easy/normal/hard vary target size and lifetime. Hard samples 32 candidates and favors the greatest minimum distance from currently available eligible contacts; missing contacts are excluded. The full target radius stays inside the configured play area; that image-space boundary is not yet a measured participant reach calibration. Difficulty never enlarges it. Defaults are unmeasured tuning proposals owned by `TUNING` in the game module.
 
 | Setting                                | Easy  | Normal | Hard  |
@@ -38,6 +40,8 @@ The default play rectangle is x=0.12, y=0.16, width=0.76, height=0.68. Push arms
 Hit regions are circular in normalized image coordinates, so their displayed boundary is elliptical on rectangular images. Video, contact indicators and that boundary use the same contain-fit rectangle and one mirror transform; anatomical labels remain stable. The camera image is mirrored and contain-fitted without a full-frame tint or mask. Skeletons, track labels, contact markers and the play-area guide are hidden by default; the operator can enable tracking diagnostics. Rehearsal retains its aiming cursor. A separate game window moves the existing stage, targets and live score/time HUD to another display without opening another camera or game runtime. Diagnostics stay out of that player display; closing it returns the stage to the operator page. The app never imports a model or opens a camera; `/api/start` delegates acquisition to the existing vision process.
 
 ## Framing and failure policy
+
+The [two-camera operator workspace](../two-camera-workspace.md#keep-operator-diagnostics-separate-from-gameplay) also composes this engine in fixed Practice/Touch mode. Both source diagnostics stay with the operator; one selected recorded source supplies the player's synthetic background. A separate current-time pointer/keyboard controller drives hits. Recorded bodies and rig XYZ do not become game inputs, and changing the background does not rebind the player or reset the round. This composition starts no capture and does not change the standalone camera/session policies below.
 
 Both feet must be confidently observed in frame. Otherwise show “Step back — keep both feet in view” and suspend scoring/timers. Foot loss alone does not establish camera distance: explain that the participant may also need camera adjustment or to clear an occlusion. Missing eligible contacts, stale/future/non-monotonic samples, ambiguous identity and unavailable push depth cannot score. Clear motion history across all such discontinuities. Spectators never inherit the slot or score. A tab becoming hidden pauses play.
 

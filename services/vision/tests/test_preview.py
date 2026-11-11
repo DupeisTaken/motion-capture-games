@@ -4,6 +4,7 @@ import json
 import threading
 from copy import deepcopy
 
+import cv2
 import fastjsonschema
 import pytest
 from motion_vision import runtime
@@ -11,8 +12,10 @@ from motion_vision.runtime import MAX_CAPTURE_AGE_NS, StartRequest, VisionRuntim
 from motion_vision.sources import CapturedFrame, demo_frame
 
 
-def test_preview_advances_while_inference_is_blocked(monkeypatch):
+@pytest.mark.parametrize("independent_preview", [True, False])
+def test_camera_preview_mode_preserves_full_resolution_inference(monkeypatch, independent_preview):
     image, people = demo_frame(0, "three")
+    image = cv2.resize(image, (1280, 720))
     entered = threading.Event()
     release = threading.Event()
 
@@ -46,7 +49,8 @@ def test_preview_advances_while_inference_is_blocked(monkeypatch):
     class Provider:
         model_id = "synthetic-blocked-provider"
 
-        def infer(self, _image, _timestamp):
+        def infer(self, image, _timestamp):
+            assert image.shape == (720, 1280, 3)
             entered.set()
             assert release.wait(2)
             return people
@@ -59,19 +63,24 @@ def test_preview_advances_while_inference_is_blocked(monkeypatch):
     vision = VisionRuntime()
     try:
         assert StartRequest().algorithm == "rtmpose"
-        vision.start(StartRequest(source="camera"))
+        vision.start(StartRequest(source="camera", independentPreview=independent_preview))
         assert entered.wait(1)
-        first, packet = vision.next_preview(0, timeout=1)
-        assert first == 1 and packet is not None
+        if independent_preview:
+            first, packet = vision.next_preview(0, timeout=1)
+            assert first == 1 and packet is not None
+            vision.camera.advance()
+            second, next_packet = vision.next_preview(first, timeout=1)
+            assert second == 2 and next_packet is not None
+            assert vision.preview is next_packet  # exactly one current published image
+        else:
+            assert vision.preview_worker is None
+            assert vision.next_preview(0, timeout=0)[1] is None
         assert vision.next_observation(0, timeout=0.01)[1] is None
-        vision.camera.advance()
-        second, next_packet = vision.next_preview(first, timeout=1)
-        assert second == 2 and next_packet is not None
-        assert vision.preview is next_packet  # exactly one current published image
-        assert vision.observation is None
         release.set()
         _, observation = vision.next_observation(0, timeout=1)
         assert observation is not None and observation["algorithm"] == "rtmpose"
+        assert observation["image"] == {"width": 960, "height": 540}
+        assert vision.next_packet(0, timeout=1)[1] is not None
     finally:
         release.set()
         vision.stop()

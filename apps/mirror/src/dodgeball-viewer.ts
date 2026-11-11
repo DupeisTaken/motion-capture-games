@@ -590,6 +590,7 @@ export function mountDodgeballGame(
           tracker: "pose",
           ...camera,
           maxPeople: 3,
+          independentPreview: false,
           demoScenario: "three",
         }),
       });
