@@ -821,13 +821,15 @@ describe("Dodgeball operator integration", () => {
     expect(element("warning-life").textContent).toMatch(/NEXT BALL/);
   });
 
-  it("shows an actionable backend error and permits a retry", async () => {
+  it("keeps unknown startup locked with explicit service restart recovery", async () => {
     await selectCamera();
     fetchMock.mockRejectedValueOnce(new Error("Service offline"));
     element<HTMLButtonElement>("source-connect").click();
     await flushPromises();
-    expect(element("game-status").textContent).toMatch(/offline.*pnpm dev/i);
-    expect(element<HTMLButtonElement>("source-connect").disabled).toBe(false);
+    expect(element("game-status").textContent).toMatch(
+      /Restart the local vision service.*reload/i,
+    );
+    expect(element<HTMLButtonElement>("source-connect").disabled).toBe(true);
     expect(element<HTMLButtonElement>("source-stop").disabled).toBe(true);
   });
 
@@ -917,6 +919,7 @@ describe("Dodgeball operator integration", () => {
     element<HTMLButtonElement>("source-connect").click();
     await flushPromises();
     choose("source-select", "demo");
+    expect(app.navigationBlocker()).toMatch(/startup is still pending/i);
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 409,
@@ -929,6 +932,7 @@ describe("Dodgeball operator integration", () => {
     await flushPromises();
     expect(FakeWebSocket.instances).toHaveLength(0);
     expect(element("camera-release").hidden).toBe(false);
+    expect(app.navigationBlocker()).toMatch(/Retry camera stop/i);
     expect(element("setup-camera-release").hidden).toBe(false);
     expect(
       element("pre-game-settings").contains(element("setup-retry-camera-stop")),
@@ -939,6 +943,7 @@ describe("Dodgeball operator integration", () => {
     element<HTMLButtonElement>("setup-retry-camera-stop").click();
     await flushPromises();
     expect(element("camera-release").hidden).toBe(true);
+    expect(app.navigationBlocker()).toBeNull();
     expect(element("setup-camera-release").hidden).toBe(true);
     const stops = fetchMock.mock.calls.filter(([path]) => path === "/api/stop");
     expect(
@@ -995,5 +1000,230 @@ describe("Dodgeball operator integration", () => {
     finishStop({ ok: true });
     await flushPromises();
     expect(element("camera-release").hidden).toBe(true);
+  });
+});
+
+describe("camera acquisition ownership barrier", () => {
+  function starts() {
+    return fetchMock.mock.calls.filter(([path]) => path === "/api/start");
+  }
+  function expectSourceLocked(locked: boolean) {
+    for (const id of [
+      "source-connect",
+      "source-select",
+      "camera-choice",
+      "refresh-cameras",
+    ])
+      expect(
+        (element(id) as HTMLButtonElement | HTMLSelectElement).disabled,
+        id,
+      ).toBe(locked);
+  }
+  function forgeStart() {
+    element("source-connect").dispatchEvent(new Event("click"));
+  }
+  it("blocks replacement after repeated Stop through late acknowledgement and pending scoped cleanup", async () => {
+    await selectCamera();
+    let finishStart!: (value: object) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishStart = resolve;
+        }),
+    );
+    element<HTMLButtonElement>("source-connect").click();
+    await flushPromises();
+    expect(element<HTMLButtonElement>("source-stop").disabled).toBe(false);
+    element<HTMLButtonElement>("source-stop").click();
+    element("source-stop").dispatchEvent(new Event("click"));
+    await flushPromises();
+    expectSourceLocked(true);
+    expect(app.navigationBlocker()).toMatch(/startup is still pending/i);
+    forgeStart();
+    await flushPromises();
+    expect(starts()).toHaveLength(1);
+    let finishStop!: (value: object) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishStop = resolve;
+        }),
+    );
+    finishStart({
+      ok: true,
+      json: async () => ({ state: "running", epoch: "late-acquisition-owner" }),
+    });
+    await flushPromises();
+    expectSourceLocked(true);
+    forgeStart();
+    await flushPromises();
+    expect(starts()).toHaveLength(1);
+    finishStop({ ok: true });
+    await flushPromises();
+    expectSourceLocked(false);
+    expect(app.navigationBlocker()).toBeNull();
+    expect(FakeWebSocket.instances).toHaveLength(0);
+    element<HTMLButtonElement>("source-connect").click();
+    await flushPromises();
+    expect(starts()).toHaveLength(2);
+  });
+  it("retains acquisition locks after failed late release and unlocks only after retry acknowledgement", async () => {
+    await selectCamera();
+    let finishStart!: (value: object) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishStart = resolve;
+        }),
+    );
+    element<HTMLButtonElement>("source-connect").click();
+    await flushPromises();
+    element<HTMLButtonElement>("source-stop").click();
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ detail: "Synthetic driver still stopping" }),
+    });
+    finishStart({
+      ok: true,
+      json: async () => ({ state: "running", epoch: "late-failed-owner" }),
+    });
+    await flushPromises();
+    expectSourceLocked(true);
+    expect(app.navigationBlocker()).toMatch(/Retry camera stop/i);
+    forgeStart();
+    await flushPromises();
+    expect(starts()).toHaveLength(1);
+    element<HTMLButtonElement>("setup-retry-camera-stop").click();
+    await flushPromises();
+    expectSourceLocked(false);
+    element<HTMLButtonElement>("source-connect").click();
+    await flushPromises();
+    expect(starts()).toHaveLength(2);
+    expect(
+      fetchMock.mock.calls
+        .filter(([path]) => path === "/api/stop")
+        .map(([, init]) => JSON.parse(String(init.body)).epoch),
+    ).toEqual(["late-failed-owner", "late-failed-owner"]);
+  });
+  it.each([
+    "lost",
+    "invalid-json",
+    "missing-epoch",
+    "error-missing-epoch",
+    "blank-epoch",
+    "null-body",
+  ])(
+    "keeps %s startup ownership unknown and refuses forged acquisition after Stop",
+    async (failure) => {
+      await selectCamera();
+      if (failure === "lost")
+        fetchMock.mockRejectedValueOnce(
+          new Error("Synthetic lost acknowledgement"),
+        );
+      else
+        fetchMock.mockResolvedValueOnce({
+          ok: true,
+          json: async () => {
+            if (failure === "invalid-json")
+              throw new SyntaxError("Synthetic malformed acknowledgement");
+            return failure === "null-body"
+              ? null
+              : {
+                  state:
+                    failure === "error-missing-epoch" ? "error" : "running",
+                  ...(failure === "blank-epoch" ? { epoch: "   " } : {}),
+                };
+          },
+        });
+      element<HTMLButtonElement>("source-connect").click();
+      await flushPromises();
+      expectSourceLocked(true);
+      expect(app.navigationBlocker()).toMatch(/ownership is unknown/i);
+      expect(element("setup-input-status").textContent).toMatch(
+        /Restart the local vision service.*reload/i,
+      );
+      element("source-stop").dispatchEvent(new Event("click"));
+      forgeStart();
+      await flushPromises();
+      expectSourceLocked(true);
+      expect(starts()).toHaveLength(1);
+      expect(
+        fetchMock.mock.calls.filter(([path]) => path === "/api/stop"),
+      ).toHaveLength(0);
+    },
+  );
+  it("unlocks acquisition after an explicit rejected start without an acknowledged owner", async () => {
+    await selectCamera();
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ detail: "Synthetic camera unavailable" }),
+    });
+    element<HTMLButtonElement>("source-connect").click();
+    await flushPromises();
+    expectSourceLocked(false);
+    expect(app.navigationBlocker()).toBeNull();
+    expect(
+      fetchMock.mock.calls.filter(([path]) => path === "/api/stop"),
+    ).toHaveLength(0);
+    element<HTMLButtonElement>("source-connect").click();
+    await flushPromises();
+    expect(starts()).toHaveLength(2);
+  });
+  it("retains an owned epoch from a fast startup error until failed scoped release is retried", async () => {
+    await selectCamera();
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        state: "error",
+        epoch: "fast-error-owner",
+        message: "Synthetic worker failed",
+      }),
+    });
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ detail: "Synthetic release not confirmed" }),
+    });
+    element<HTMLButtonElement>("source-connect").click();
+    await flushPromises();
+    expectSourceLocked(true);
+    expect(FakeWebSocket.instances).toHaveLength(0);
+    forgeStart();
+    await flushPromises();
+    expect(starts()).toHaveLength(1);
+    element<HTMLButtonElement>("retry-camera-stop").click();
+    await flushPromises();
+    expectSourceLocked(false);
+    expect(
+      fetchMock.mock.calls
+        .filter(([path]) => path === "/api/stop")
+        .map(([, init]) => JSON.parse(String(init.body)).epoch),
+    ).toEqual(["fast-error-owner", "fast-error-owner"]);
+  });
+  it("releases a disposed startup's late acknowledged epoch without opening a stream", async () => {
+    await selectCamera();
+    let finishStart!: (value: object) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishStart = resolve;
+        }),
+    );
+    element<HTMLButtonElement>("source-connect").click();
+    await flushPromises();
+    app.dispose();
+    finishStart({
+      ok: true,
+      json: async () => ({ state: "running", epoch: "disposed-owner" }),
+    });
+    await flushPromises();
+    expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(
+      fetchMock.mock.calls
+        .filter(([path]) => path === "/api/stop")
+        .map(([, init]) => JSON.parse(String(init.body)).epoch),
+    ).toEqual(["disposed-owner"]);
   });
 });

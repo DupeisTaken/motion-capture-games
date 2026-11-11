@@ -100,3 +100,7 @@ A small speed-dependent field-of-view change (up to three degrees) and lateral c
 Resetting a run also restores the ready-state instructions, preventing an old pause or result message from directing a new run to Resume. Failed-start guidance remains visible until an explicit reset or a successful start.
 
 [The timestamped gait inspector](../../scripts/fixtures/runner-gait-inspection.html) renders an exact synthetic full stride through the real renderer; it does not open cameras or claim to be a physical recording. [The follow-up HTML report](../../reports/runner-motion-pace.html) records fresh before/after GUI evidence, phase images, actual checks, post-change timing and independent review. The earlier implementation report and measurements remain historical snapshots of the previous rig.
+
+## Pending camera ownership
+
+Runner acquisition and camera/input-source controls consume the shared pending/unknown startup barrier as well as independent startup/release guards. Local Stop cannot unlock a second Start while acknowledgement or scoped cleanup is unresolved. Successful error-state responses without a nonblank owned epoch require explicit vision-service restart and page reload; Stop and forged clicks cannot clear that uncertainty. Explicit ownerless HTTP rejection remains retryable. See [operator navigation](../operator-navigation.md) and [the playtest report](../../reports/playtest-operator-navigation.html) for synthetic regression and browser evidence.

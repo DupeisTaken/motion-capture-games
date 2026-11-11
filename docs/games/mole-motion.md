@@ -66,3 +66,7 @@ Seeded replay version 3 records palm and foot region collisions. Version 2 retai
 The two-camera workspace selects version 2 for its synthetic pointer controller.
 
 The [palm and foot contact report](../../reports/slap-a-mole-palm-contact.html) records synthetic desktop, mobile and player-window checks.
+
+### Pending or unknown camera startup
+
+Camera Start, named/manual camera selection and input-source selection remain locked while a cancelled Start still awaits acknowledgement or scoped cleanup. Repeated Stop does not clear that ownership barrier. Failed late release keeps Retry camera stop available; confirmed release permits another explicit Start. A lost or malformed successful response cannot prove ownership, so restart the local vision service and reload before starting another source; this affects all tabs sharing the service. A fast worker error with an acknowledged epoch still requires scoped cleanup. See [operator navigation and acquisition](../operator-navigation.md) and [the playtest report](../../reports/playtest-operator-navigation.html).

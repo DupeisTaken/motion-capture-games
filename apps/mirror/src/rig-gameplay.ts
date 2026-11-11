@@ -591,6 +591,11 @@ export function createRigGameplay(
   render();
   return {
     setSource: sourceChanged,
+    navigationBlocker() {
+      return display.isOpen
+        ? "Return the participant game window to controls (or close it) before switching pages."
+        : null;
+    },
     setEnabled(value: boolean) {
       if (disposed) return;
       enabled = value;

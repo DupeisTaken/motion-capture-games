@@ -1,3 +1,4 @@
+import type { NavigationOwner } from "./app-navigation";
 import { createResumeControl } from "./resume-control";
 import {
   generateMaze,
@@ -25,7 +26,9 @@ import {
 } from "./maze-display";
 import { mountMazePhotoCorners } from "./maze-photo-corners";
 
-export function mountMaze(root: HTMLElement) {
+export function mountMaze(
+  root: HTMLElement,
+): NavigationOwner & { dispose(): void } {
   root.innerHTML = `
   <a class="skip-link" href="#maze-map">Skip to maze</a>
   <header class="maze-header"><a class="brand" href="/">Motion<span class="brand-light">Studio</span></a><a href="/">All games ↗</a><a href="/rig.html">Two-camera workspace ↗</a><a href="/mole.html">Slap a Mole ↗</a><span class="maze-badge">Synthetic rehearsal</span></header>
@@ -616,5 +619,12 @@ export function mountMaze(root: HTMLElement) {
   }
   listen(window, "pagehide", onPageHide);
   openSetup();
-  return { dispose };
+  return {
+    dispose,
+    navigationBlocker() {
+      return participantWindow && !participantWindow.closed
+        ? "Close the participant window before switching pages."
+        : null;
+    },
+  };
 }

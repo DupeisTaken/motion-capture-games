@@ -54,6 +54,9 @@ export class CameraSetup {
   get busy() {
     return this.pending;
   }
+  get active() {
+    return this.pending || this.stream !== null;
+  }
   setLocked(locked: boolean) {
     this.locked = locked;
     if (locked) this.release();

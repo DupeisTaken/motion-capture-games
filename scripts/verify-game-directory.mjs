@@ -165,7 +165,9 @@ try {
       });
       page.on("pageerror", (error) => result.errors.push(error.message));
       await page.goto(url);
-      await page.locator(`a[href="/${path}"]`).click();
+      await page
+        .locator(`.game-card[href="/${path}"], .tool-link[href="/${path}"]`)
+        .click();
       assert.equal(new URL(page.url()).pathname, `/${path}`);
       await page.locator("main").waitFor();
       if (await page.locator("dialog[open]").count())
@@ -192,6 +194,7 @@ try {
       if (path === "diagnostics.html")
         assert.equal(await page.locator("#workspace").count(), 1);
       if (["mole.html", "dodgeball.html", "runner.html"].includes(path)) {
+        await page.getByRole("button", { name: "Switch view" }).click();
         await page
           .getByRole("link", { name: "Tracking console", exact: true })
           .click();

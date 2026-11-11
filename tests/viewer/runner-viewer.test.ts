@@ -367,6 +367,14 @@ describe("runner application", () => {
     click("source-stop");
     await flush();
     expect(acknowledge).not.toBeNull();
+    expect(app.navigationBlocker()).toMatch(/startup is still pending/i);
+    expect(element<HTMLButtonElement>("source-connect").disabled).toBe(true);
+    expect(element<HTMLSelectElement>("source-select").disabled).toBe(true);
+    element("source-connect").dispatchEvent(new Event("click"));
+    await flush();
+    expect(
+      fetchMock.mock.calls.filter(([url]) => url === "/api/start"),
+    ).toHaveLength(1);
     (acknowledge as unknown as (value: unknown) => void)({
       ok: true,
       json: async () => ({ epoch: "late-runner", state: "running" }),
@@ -376,6 +384,9 @@ describe("runner application", () => {
     expect(stops).toHaveLength(1);
     expect(JSON.parse(stops[0][1].body)).toEqual({ epoch: "late-runner" });
     expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(app.navigationBlocker()).toBeNull();
+    expect(element<HTMLButtonElement>("source-connect").disabled).toBe(false);
+    expect(element<HTMLSelectElement>("source-select").disabled).toBe(false);
   });
   it("pauses immediately on lost WebGL, freezes outcomes and waits for explicit Resume after restoration", () => {
     click("start-round");
@@ -491,5 +502,75 @@ describe("runner application", () => {
     for (let index = 0; index < 60; index++) send(0, 0, false, 1, true);
     expect(state().score).toBe(ownedScore);
     expect(state().phase).toBe("paused");
+  });
+});
+
+describe("runner shared ownership barrier", () => {
+  it.each(["missing", "empty", "blank"])(
+    "blocks acquisition after successful error-state with %s epoch",
+    async (shape) => {
+      fetchMock.mockImplementation(async (url: string) => ({
+        ok: true,
+        json: async () =>
+          url === "/api/start"
+            ? {
+                state: "error",
+                ...(shape === "missing"
+                  ? {}
+                  : { epoch: shape === "blank" ? "   " : "" }),
+                message: "Synthetic worker error without ownership",
+              }
+            : url === "/api/cameras"
+              ? { cameras: [] }
+              : { state: "idle" },
+      }));
+      choose("source-select", "camera");
+      await flush();
+      choose("camera-choice", "manual");
+      click("source-connect");
+      await flush();
+      for (const id of [
+        "source-connect",
+        "camera-choice",
+        "refresh-cameras",
+        "source-select",
+      ])
+        expect(
+          (element(id) as HTMLButtonElement | HTMLSelectElement).disabled,
+        ).toBe(true);
+      expect(app.navigationBlocker()).toMatch(/ownership is unknown/i);
+      expect(element("camera-status").textContent).toMatch(
+        /Restart the local vision service.*reload/i,
+      );
+      element("source-stop").dispatchEvent(new Event("click"));
+      element("source-connect").dispatchEvent(new Event("click"));
+      await flush();
+      expect(
+        fetchMock.mock.calls.filter(([url]) => url === "/api/start"),
+      ).toHaveLength(1);
+      expect(
+        fetchMock.mock.calls.filter(([url]) => url === "/api/stop"),
+      ).toHaveLength(0);
+      expect(element<HTMLButtonElement>("source-connect").disabled).toBe(true);
+    },
+  );
+  it("permits explicit retry after an ownerless HTTP rejection", async () => {
+    fetchMock.mockImplementation(async (url: string) => ({
+      ok: url !== "/api/start",
+      json: async () =>
+        url === "/api/start"
+          ? { detail: "Synthetic camera unavailable" }
+          : url === "/api/cameras"
+            ? { cameras: [] }
+            : { state: "idle" },
+    }));
+    choose("source-select", "camera");
+    await flush();
+    choose("camera-choice", "manual");
+    click("source-connect");
+    await flush();
+    expect(app.navigationBlocker()).toBeNull();
+    expect(element<HTMLButtonElement>("source-connect").disabled).toBe(false);
+    expect(element<HTMLSelectElement>("source-select").disabled).toBe(false);
   });
 });

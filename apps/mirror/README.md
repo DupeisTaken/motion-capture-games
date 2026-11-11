@@ -4,7 +4,7 @@
 
 The root URL and `/index.html` serve the game directory. It links to all four implemented games: `/mole.html` (Slap a Mole), `/dodgeball.html`, `/runner.html` and `/maze.html` (Virtual Maze), plus `/diagnostics.html` (tracking console) and `/rig.html` (two-camera workspace). Game headers expose **All games**; the Motion Studio brand returns to the directory. Console links explicitly target `/diagnostics.html`, replacing the old root route.
 
-Directory content is static HTML, with local CSS and a CSS-only module entry for the Vite artifact check. Links remain usable with JavaScript disabled. Loading it imports no game, camera, inference or diagnostics runtime and makes no vision-service requests. Each game keeps its own input setup and scoring. Virtual Maze is clearly labeled synthetic rehearsal with physical input pending.
+Directory content is static HTML, with local CSS and a lightweight presentation/navigation module entry. Links remain usable with JavaScript disabled. Loading it imports no game, camera, inference or diagnostics runtime and makes no vision-service requests. Each game keeps its own input setup and scoring. Virtual Maze is clearly labeled synthetic rehearsal with physical input pending.
 
 Run `pnpm exec vite` for frontend-only browsing after installing dependencies, or `pnpm dev` for the complete application. Run `pnpm verify:directory` for real-server desktop/mobile navigation evidence and `pnpm verify:directory --production` after `pnpm build` to verify emitted routes. See [the delivery report](../../reports/game-directory.html).
 
@@ -44,3 +44,5 @@ Operator telemetry updates at most four times per second, using a bounded 120-po
 `pre-game-settings.ts` owns the shared native setup dialog and confirmation/focus lifecycle for both games. Video/input and game options share one menu, opened on load and before every new round. The viewer resets ownership/score only on Start confirmation, retains selections, locks setup during ordinary active play, and keeps Pause and camera stop/release retry on the operator page, with Resume on the paused game stage. The same camera release controller serves the menu and game page; no additional capture, inference or session runtime is created. [The setup report](../../reports/pre-game-settings.html) records actual behavior tests and browser evidence.
 
 The production frontend includes [third-party runtime notices](public/THIRD-PARTY-NOTICES.txt) for bundled dependencies. The procedural runner worlds and character models are original assets.
+
+Shared operator navigation is mounted at each HTML entrypoint, outside participant stages. See [operator navigation](../../docs/operator-navigation.md) for route ownership, source departure barriers and the additive app-local veto event.
