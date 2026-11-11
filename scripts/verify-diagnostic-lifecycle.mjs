@@ -222,7 +222,9 @@ try {
     });
     const page = await context.newPage();
     page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto(url, { waitUntil: "networkidle" });
+    await page.goto(new URL("diagnostics.html", url).href, {
+      waitUntil: "networkidle",
+    });
     await page.locator("#source-demo").click();
     await page.locator("#start").click();
     await page.waitForFunction(() => window.__lifecycleFixture.sockets === 2);
@@ -287,7 +289,9 @@ try {
     currentEpoch = "other-tab-epoch";
     const crossTab = await context.newPage();
     crossTab.on("pageerror", (error) => errors.push(error.message));
-    await crossTab.goto(url, { waitUntil: "networkidle" });
+    await crossTab.goto(new URL("diagnostics.html", url).href, {
+      waitUntil: "networkidle",
+    });
     await crossTab.locator("#start").click();
     await crossTab.waitForFunction(
       () =>
@@ -310,7 +314,9 @@ try {
       const requestReached = new Promise((resolve) => {
         startReached = resolve;
       });
-      await pending.goto(url, { waitUntil: "networkidle" });
+      await pending.goto(new URL("diagnostics.html", url).href, {
+        waitUntil: "networkidle",
+      });
       await pending.locator("#source-demo").click();
       await pending.locator("#start").click();
       await requestReached;
@@ -353,7 +359,9 @@ try {
       deferStart = false;
       const rendering = await context.newPage();
       rendering.on("pageerror", (error) => errors.push(error.message));
-      await rendering.goto(url, { waitUntil: "networkidle" });
+      await rendering.goto(new URL("diagnostics.html", url).href, {
+        waitUntil: "networkidle",
+      });
       await rendering.locator("#source-demo").click();
       await rendering.locator("#start").click();
       await rendering.waitForFunction(

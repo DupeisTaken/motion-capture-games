@@ -286,7 +286,9 @@ try {
         body: JSON.stringify(metadataFailure ? { cameras: null } : { cameras }),
       });
     });
-    await page.goto(url, { waitUntil: "networkidle" });
+    await page.goto(new URL("diagnostics.html", url).href, {
+      waitUntil: "networkidle",
+    });
     await capture(page, "before-console");
     assert.equal(await page.evaluate(() => window.__rigAcquisitionAttempts), 0);
     result.baselineRequests = [...result.requests];
