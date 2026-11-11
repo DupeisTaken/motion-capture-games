@@ -1,0 +1,788 @@
+@import "./mole.css";
+
+.mm-header {
+  gap: 44px;
+}
+.mm-header nav {
+  gap: 25px;
+}
+.runner-main {
+  max-width: 1500px;
+  margin: auto;
+  padding: 32px 32px 0;
+}
+.runner-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+.runner-heading h1 {
+  margin: 0 0 9px;
+  font-size: clamp(34px, 3.3vw, 48px);
+  letter-spacing: -1.8px;
+  line-height: 1.1;
+}
+.runner-heading h1 > span {
+  color: #cc7850;
+}
+.runner-heading > div > p:last-child {
+  margin: 0;
+  font-size: 14px;
+  color: #657260;
+}
+.runner-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 11px 14px;
+  border: 1px solid #d8ddd1;
+  border-radius: 6px;
+}
+.runner-tag span {
+  font-weight: 500;
+  color: #667361;
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px solid #d8ddd1;
+}
+.runner-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 285px;
+  gap: 25px;
+  align-items: start;
+}
+.runner-play {
+  min-width: 0;
+}
+.runner-stage {
+  position: relative;
+  aspect-ratio: 1.48;
+  overflow: hidden;
+  background: #102a37;
+  border-radius: 14px;
+  color: white;
+  isolation: isolate;
+}
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.runner-top {
+  position: absolute;
+  top: 21px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+.runner-top > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: #102a37e8;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+.stage-eyebrow {
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  color: #c5e8e4;
+}
+.runner-top strong {
+  font-size: 19px;
+  letter-spacing: -0.4px;
+}
+#player-badge {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  background: #0d232bcc;
+  border: 1px solid #77b8a766;
+  border-radius: 20px;
+  padding: 9px 11px;
+  color: #e2f4ec;
+}
+.runner-hud {
+  position: absolute;
+  top: 85px;
+  left: 24px;
+  display: flex;
+  gap: 28px;
+  pointer-events: none;
+  padding: 12px 16px;
+  background: #102a37e8;
+  border: 1px solid #c7e6e344;
+  border-radius: 10px;
+  box-shadow: 0 4px 18px #0b26341f;
+}
+.runner-hud > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.runner-hud > div > span {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #c5dbe0;
+  font-weight: 650;
+}
+.runner-hud strong {
+  font-size: 23px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 8px #00191f;
+}
+.runner-hud small {
+  font-size: 12px;
+  font-weight: 400;
+}
+.runner-overlay {
+  position: absolute;
+  inset: 145px 0 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.runner-overlay-card {
+  width: min(420px, 95%);
+  padding: 28px;
+  text-align: center;
+  border-radius: 16px;
+  background: #0c2439d9;
+  box-shadow: 0 16px 50px #00152633;
+  border: 1px solid #b8e0dc33;
+  backdrop-filter: blur(10px);
+}
+.runner-overlay-card > p:first-child {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: #91dfd2;
+  font-weight: 700;
+  margin: 0 0 15px;
+}
+.runner-overlay-card h2 {
+  font-size: clamp(27px, 3.6vw, 43px);
+  line-height: 1.05;
+  letter-spacing: -1.3px;
+  margin: 0 0 16px;
+}
+#overlay-copy {
+  font-size: 12px;
+  color: #d0e0e6;
+  line-height: 1.7;
+  margin: 0 0 22px;
+}
+.runner-primary {
+  background: #c3f36b;
+  color: #203423;
+  border-color: #c3f36b;
+  font-weight: 750;
+}
+.runner-primary:hover:not(:disabled) {
+  background: #a8df4c;
+}
+.runner-overlay-card button {
+  padding: 12px 23px;
+  min-width: 170px;
+}
+.runner-bottom {
+  position: absolute;
+  bottom: 16px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  color: #edf7f1;
+  text-shadow: 0 1px 5px #031823;
+}
+.runner-toolbar {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 73px;
+}
+.runner-toolbar > p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #52664f;
+  max-width: 500px;
+  margin: 10px 0;
+}
+.runner-toolbar > div {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.runner-main button,
+.runner-main select {
+  min-height: 42px;
+  border: 1px solid #cdd6c8;
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 9px 12px;
+}
+.runner-main button {
+  background: #fafbf5;
+  color: #2c483a;
+}
+.runner-main button.runner-primary {
+  background: #c3f36b;
+  border-color: #a8d85e;
+  color: #223923;
+}
+.runner-controls {
+  padding: 15px 18px;
+  border: 1px solid #d7ddd1;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #fbfaf5;
+}
+.runner-controls > span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  width: 100%;
+  color: #5f705a;
+}
+.lane-buttons,
+.action-buttons {
+  display: flex;
+  gap: 5px;
+}
+.runner-controls button {
+  min-width: 63px;
+}
+.runner-controls button[aria-pressed="true"] {
+  background: #e2ecca;
+  border-color: #95ae70;
+}
+.runner-controls p {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #61725d;
+  margin: 0 0 0 auto;
+}
+.runner-principles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 23px;
+  margin: 23px 0 0;
+}
+.runner-principles p {
+  margin: 0;
+}
+.runner-principles strong {
+  font-size: 12px;
+  display: block;
+  margin-bottom: 7px;
+}
+.runner-principles span {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #60715b;
+  display: block;
+}
+.runner-settings {
+  border: 1px solid #d7ddd1;
+  border-radius: 12px;
+  background: #fcfbf7;
+  padding: 22px;
+}
+.runner-section-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #64735e;
+}
+.runner-section-label > span:last-child {
+  color: #85937b;
+}
+.runner-settings h2 {
+  font-size: 21px;
+  letter-spacing: -0.6px;
+  margin: 12px 0 23px;
+}
+.runner-settings label:not(.runner-check) {
+  display: block;
+  font-size: 11px;
+  font-weight: 650;
+  margin: 17px 0 7px;
+}
+.runner-settings select {
+  width: 100%;
+  background: #fffefa;
+  color: #314c3b;
+  font-size: 11px;
+  max-width: 100%;
+}
+.runner-settings .field-note {
+  font-size: 10px;
+  line-height: 1.65;
+  margin: 9px 0 12px;
+  color: #62705d;
+}
+.skin-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 22px;
+}
+.skin-swatches i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px #ccd8c8;
+  flex-shrink: 0;
+}
+.skin-swatches i.nova {
+  background: #63c9e2;
+}
+.skin-swatches i.moss {
+  background: #81a66c;
+}
+.skin-swatches i.ember {
+  background: #e28c67;
+}
+.skin-swatches span {
+  font-size: 9px;
+  color: #63745d;
+  line-height: 1.5;
+  margin-left: 4px;
+}
+.runner-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  cursor: pointer;
+  margin: 13px 0;
+}
+.runner-check input {
+  accent-color: #507d51;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+}
+.runner-pace {
+  padding: 10px 12px;
+  border: 1px solid #d8dfcf;
+  border-radius: 8px;
+  background: #f0f5e8;
+}
+.runner-pace .pace-option {
+  min-height: 44px;
+  margin: 0;
+  gap: 12px;
+}
+.pace-option input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.pace-option span {
+  display: grid;
+  gap: 2px;
+}
+.pace-option strong {
+  font-size: 12px;
+}
+.pace-option small {
+  color: #60715b;
+  font-size: 10px;
+}
+.runner-pace .field-note {
+  margin: 5px 0 0;
+}
+.input-section {
+  border-top: 1px solid #e0e3d9;
+  padding-top: 22px;
+  margin-top: 22px;
+}
+.camera-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+.camera-actions button {
+  flex: 1;
+  font-size: 10px;
+}
+#calibrate-player {
+  width: 100%;
+  margin: 5px 0;
+}
+#practice-checklist {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+#practice-checklist span {
+  font-size: 9px;
+  padding: 5px 7px;
+  border: 1px solid #d9ded0;
+  border-radius: 4px;
+  color: #63735b;
+}
+#practice-checklist span.complete {
+  background: #e2efcf;
+  color: #31512b;
+  border-color: #aac88d;
+}
+.runner-settings details {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #5c7058;
+}
+.runner-settings summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.rehearsal-note {
+  font-size: 11px;
+  line-height: 1.65;
+  color: #496b42;
+  background: #edf3e3;
+  border-radius: 6px;
+  padding: 12px;
+}
+.runner-safety {
+  margin-top: 22px;
+  border-top: 1px solid #e0e3d9;
+  padding-top: 19px;
+}
+.runner-safety strong {
+  font-size: 11px;
+}
+.runner-safety p {
+  font-size: 10px;
+  line-height: 1.7;
+  color: #66745d;
+  margin: 8px 0 0;
+}
+.runner-footer {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #dce1d4;
+  margin-top: 30px;
+  padding: 18px 0;
+  font-size: 10px;
+  color: #6a7862;
+  gap: 15px;
+}
+#camera-release {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #8c4e35;
+  padding: 10px;
+  background: #faeee7;
+  border-radius: 6px;
+}
+@media (min-width: 1600px) {
+  .runner-stage {
+    aspect-ratio: 1.65;
+  }
+}
+@media (max-width: 1150px) {
+  .runner-main {
+    padding: 25px 22px 0;
+  }
+  .runner-layout {
+    grid-template-columns: minmax(0, 1fr) 255px;
+    gap: 18px;
+  }
+  .runner-settings {
+    padding: 18px;
+  }
+  .runner-stage {
+    aspect-ratio: 1.1;
+  }
+  .runner-hud {
+    gap: 20px;
+  }
+  .runner-toolbar {
+    align-items: flex-start;
+  }
+  .runner-controls p {
+    margin-left: 0;
+    width: 100%;
+  }
+  .mm-header {
+    gap: 28px;
+  }
+  .mm-header nav {
+    gap: 18px;
+  }
+}
+@media (max-width: 820px) {
+  .runner-layout {
+    grid-template-columns: 1fr;
+  }
+  .runner-stage {
+    aspect-ratio: 1.35;
+  }
+  .runner-settings {
+    display: block;
+  }
+  .runner-settings h2 {
+    margin-bottom: 16px;
+  }
+  .runner-heading {
+    gap: 15px;
+  }
+  .runner-tag {
+    white-space: nowrap;
+  }
+  .mm-header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 66px;
+    padding: 15px 22px 0;
+    gap: 10px 20px;
+  }
+  .mm-header nav {
+    order: 3;
+    width: 100%;
+    height: 42px;
+    justify-content: space-between;
+  }
+  .local-pill {
+    font-size: 10px;
+  }
+  .runner-principles {
+    margin-bottom: 23px;
+  }
+  .runner-controls p {
+    width: auto;
+    margin-left: auto;
+  }
+  .runner-settings {
+    max-width: none;
+  }
+}
+@media (max-width: 520px) {
+  .runner-main {
+    padding: 22px 14px calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+  .runner-heading h1 {
+    font-size: 34px;
+  }
+  .runner-heading > div > p:last-child {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .runner-heading {
+    display: block;
+  }
+  .runner-tag {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 8px;
+    padding: 7px 10px;
+  }
+  .runner-stage {
+    aspect-ratio: 0.71;
+    border-radius: 10px;
+  }
+  .runner-top {
+    top: 17px;
+    left: 16px;
+    right: 16px;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .runner-top strong {
+    font-size: 17px;
+  }
+  .stage-eyebrow {
+    font-size: 7px;
+    max-width: 135px;
+    line-height: 1.5;
+  }
+  #player-badge {
+    font-size: 7px;
+    padding: 7px 8px;
+    max-width: 122px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .runner-hud {
+    left: 16px;
+    right: 16px;
+    top: 76px;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .runner-hud > div > span {
+    font-size: 7px;
+  }
+  .runner-hud strong {
+    font-size: 20px;
+  }
+  .runner-overlay {
+    inset: 131px 0 42px;
+    padding: 12px;
+  }
+  .runner-overlay-card {
+    padding: 25px 19px;
+  }
+  .runner-overlay-card h2 {
+    font-size: 32px;
+  }
+  #overlay-copy {
+    font-size: 11px;
+  }
+  .runner-bottom {
+    left: 16px;
+    right: 16px;
+    font-size: 8px;
+  }
+  .runner-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding-bottom: 14px;
+  }
+  .runner-toolbar > div {
+    justify-content: flex-start;
+  }
+  .runner-toolbar > p {
+    margin: 12px 0;
+  }
+  .runner-principles {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+  .runner-principles p {
+    padding-left: 12px;
+    border-left: 2px solid #ceddb9;
+  }
+  .runner-principles strong {
+    margin-bottom: 3px;
+  }
+  .runner-controls {
+    padding: 13px;
+    gap: 9px;
+  }
+  .runner-controls button {
+    min-width: 49px;
+    padding: 8px;
+    font-size: 11px;
+  }
+  .runner-controls p {
+    width: 100%;
+    margin-left: 0;
+  }
+  .runner-footer {
+    flex-direction: column;
+    gap: 7px;
+    font-size: 9px;
+    line-height: 1.6;
+  }
+  .mm-header {
+    padding: 12px 14px 0;
+  }
+  .mm-header nav a {
+    font-size: 10px;
+  }
+  .mm-header nav {
+    gap: 10px;
+  }
+  .runner-settings {
+    padding: 19px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+}
+.runner-feedback {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border: 1px solid #efffa7aa;
+  border-radius: 30px;
+  color: #f7ffd4;
+  background: #214237e8;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px #132e3066;
+}
+.runner-feedback[data-kind="hit"] {
+  background: #7c3033e8;
+  border-color: #ffb7a6;
+  color: #fff4ec;
+}
+.runner-main .stage-pause {
+  position: absolute;
+  right: 20px;
+  bottom: 48px;
+  min-height: 44px;
+  min-width: 74px;
+  border-color: #c7e6e388;
+  color: #edf7f1;
+  background: #102a37ed;
+  box-shadow: 0 4px 16px #0b263433;
+}
+.runner-stage[data-phase="paused"] .runner-overlay {
+  inset: 150px 0 auto;
+  align-items: flex-start;
+}
+.runner-stage[data-phase="paused"] .runner-overlay-card {
+  padding: 15px 22px;
+}
+.runner-stage[data-phase="paused"] .runner-overlay-card h2 {
+  font-size: 25px;
+  margin-bottom: 8px;
+}
+.runner-stage[data-phase="paused"] #overlay-copy {
+  margin-bottom: 0;
+}
+@media (max-width: 520px) {
+  .runner-top > div {
+    padding: 7px 9px;
+  }
+  .runner-stage[data-phase="paused"] .runner-overlay {
+    inset: 145px 0 auto;
+  }
+  [data-runner-phase="playing"] .runner-controls {
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    z-index: 20;
+    width: auto;
+    padding: 10px;
+    justify-content: center;
+    gap: 7px;
+    box-shadow: 0 5px 30px #132e3033;
+  }
+  [data-runner-phase="playing"] .runner-controls > span,
+  [data-runner-phase="playing"] .runner-controls > p {
+    display: none;
+  }
+}

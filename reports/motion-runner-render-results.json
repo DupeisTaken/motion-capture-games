@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "complete": true,
+  "method": "Visible browser rAF scheduling and CPU render-submission timing; original Three.js renderer and seeded synthetic game. Four serial cases; 5s warm-up and 15s sampling each. Both interval endpoints must be post-warm-up.",
+  "devicePixelRatio": 1,
+  "rendererPixelRatioCap": 1.5,
+  "visibility": "visible",
+  "hiddenEvents": 0,
+  "limits": "Short renderer-only harness; excludes full GUI, cameras and inference. rAF scheduling is not verified display presentation or physical action-to-display latency. Concurrent desktop workloads and the in-app browser can affect results. CPU submission timing includes the immutable game-state copy evaluated inside the timed call.",
+  "results": [
+    {
+      "variant": "rail",
+      "width": 1066,
+      "height": 720,
+      "samples": 2610,
+      "measuredSeconds": 14.991400000000002,
+      "frameIntervalMs": {
+        "p50": 5.900000000000546,
+        "p95": 6.100000000000364,
+        "p99": 6.400000000001455,
+        "max": 11.199999999998909
+      },
+      "renderSubmissionMs": {
+        "p50": 0.8999999994412065,
+        "p95": 1.5,
+        "p99": 1.900000000372529,
+        "max": 2.6000000005587935
+      },
+      "framesOver33_4ms": 0,
+      "interruptions": 0,
+      "warmupInterruptions": 0,
+      "samplePhases": {
+        "playing": 2610
+      },
+      "canvasCss": {
+        "width": 1066,
+        "height": 720
+      },
+      "canvasPixels": {
+        "width": 1066,
+        "height": 720
+      },
+      "averageCallbackHz": 174.09981722854434
+    },
+    {
+      "variant": "gold",
+      "width": 1066,
+      "height": 720,
+      "samples": 2599,
+      "measuredSeconds": 14.992700000000001,
+      "frameIntervalMs": {
+        "p50": 5.900000000001455,
+        "p95": 6.099999999998545,
+        "p99": 6.400000000001455,
+        "max": 33.60000000000218
+      },
+      "renderSubmissionMs": {
+        "p50": 0.8999999994412065,
+        "p95": 1.6000000005587935,
+        "p99": 2.2000000001862645,
+        "max": 3.400000000372529
+      },
+      "framesOver33_4ms": 1,
+      "interruptions": 0,
+      "warmupInterruptions": 0,
+      "samplePhases": {
+        "playing": 2599
+      },
+      "canvasCss": {
+        "width": 1066,
+        "height": 720
+      },
+      "canvasPixels": {
+        "width": 1066,
+        "height": 720
+      },
+      "averageCallbackHz": 173.35103083500636
+    },
+    {
+      "variant": "rail",
+      "width": 362,
+      "height": 510,
+      "samples": 2619,
+      "measuredSeconds": 14.996799999999995,
+      "frameIntervalMs": {
+        "p50": 5.900000000001455,
+        "p95": 6.099999999998545,
+        "p99": 6.19999999999709,
+        "max": 6.600000000005821
+      },
+      "renderSubmissionMs": {
+        "p50": 0.7000000001862645,
+        "p95": 1.400000000372529,
+        "p99": 1.7000000001862645,
+        "max": 2.8999999994412065
+      },
+      "framesOver33_4ms": 0,
+      "interruptions": 0,
+      "warmupInterruptions": 0,
+      "samplePhases": {
+        "playing": 2619
+      },
+      "canvasCss": {
+        "width": 362,
+        "height": 510
+      },
+      "canvasPixels": {
+        "width": 362,
+        "height": 510
+      },
+      "averageCallbackHz": 174.6372559479356
+    },
+    {
+      "variant": "gold",
+      "width": 362,
+      "height": 510,
+      "samples": 2602,
+      "measuredSeconds": 14.992600000000007,
+      "frameIntervalMs": {
+        "p50": 5.900000000008731,
+        "p95": 6.100000000005821,
+        "p99": 6.400000000008731,
+        "max": 6.600000000005821
+      },
+      "renderSubmissionMs": {
+        "p50": 1,
+        "p95": 1.8999999994412065,
+        "p99": 2.300000000745058,
+        "max": 3.6000000005587935
+      },
+      "framesOver33_4ms": 0,
+      "interruptions": 0,
+      "warmupInterruptions": 0,
+      "samplePhases": {
+        "playing": 2602
+      },
+      "canvasCss": {
+        "width": 362,
+        "height": 510
+      },
+      "canvasPixels": {
+        "width": 362,
+        "height": 510
+      },
+      "averageCallbackHz": 173.55228579432514
+    }
+  ],
+  "browser": "Chrome/157.0.0.0",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "preliminaryRun": "An initial pass had a1004.8ms scheduler gap and four interruptions in its first case. It also allowed a warm-up-crossing interval into the sample. That pass was rejected; this run requires both interval endpoints after a five-second warm-up and records sample phases."
+}

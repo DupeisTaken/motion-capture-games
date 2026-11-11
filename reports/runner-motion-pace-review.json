@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "reviewer": "Independent harsh-review subagent",
+  "scope": "Follow-up review of articulated running, optional Fast start, motion presentation, responsive GUI and preservation of the existing runner's deterministic rules and identity safety.",
+  "verdict": "No known blocking software or visual defect remains in the reviewed follow-up after the foot-sliding and stale ready-message fixes. The requested pace choice and a materially more natural procedural sprint are implemented. The lead reports that final integrated local checks and the build passed; the change is ready for PR review, with latest-commit hosted CI required before merge. This is not a perfect-score claim, commercial-game parity or physical motion certification.",
+  "perfectInAllDimensions": false,
+  "ratings": [
+    {
+      "dimension": "Opening pace choice and configuration fidelity",
+      "scoreOutOf10": 9,
+      "basis": "Fast start defaults off at 10 m/s; explicit opt-in starts at 14 m/s. Both opening values and the 18 m/s cap are visible before selection. The boolean is validated, snapshotted and locked during countdown/play/pause; a new run retains the choice without changing the seeded obstacle layout."
+    },
+    {
+      "dimension": "Procedural sprint articulation and readability",
+      "scoreOutOf10": 8.5,
+      "basis": "The timestamped stride sheet shows alternating contact, push-off, flight and folded recovery with opposing bent arms. Articulated hip/knee/ankle and shoulder/elbow chains, mild lean and belt/shoulder counterturn are materially better than the previous rigid pendulums. The art remains stylized low-poly animation rather than motion-captured or biomechanically calibrated movement."
+    },
+    {
+      "dimension": "Ground contact and visual geometry",
+      "scoreOutOf10": 9,
+      "basis": "The corrected stance path follows the scrolling track. Reviewed tests check pure and actual transformed ankle velocity at 10/14/18 m/s, the acceleration ramp, finite shoe vertices, rig reach and all three skins. Decorative pelvis yaw is separated from the leg targets to avoid reintroducing skating."
+    },
+    {
+      "dimension": "Determinism, pause and existing safety preservation",
+      "scoreOutOf10": 9,
+      "basis": "Pose and camera derive from game time, distance and state rather than render-history integration. Tests compare different renderer histories and the first playing-to-paused frame. The lead additionally reports exact canvas-pixel equality for an unchanged playing/paused inspection pose. Lane/collision/identity policy is unchanged; both pace profiles retain simulation pause invariants in the declared oracle workload."
+    },
+    {
+      "dimension": "Desktop and mobile GUI clarity",
+      "scoreOutOf10": 9,
+      "basis": "Fresh screenshots show the default off switch, locked Fast selection during an active run, visible Fast speed feedback, in-stage Pause and the mobile touch dock. A confirmed stale pause instruction after New run was fixed and the corrected ready-state screenshot was inspected. A full assistive-technology compliance audit was not performed."
+    },
+    {
+      "dimension": "Reference gameplay pattern readability",
+      "scoreOutOf10": 9,
+      "basis": "Compared with the selected documented reference frames, the updated game retains clear three-lane depth, visible coin routes, distinguishable train/hurdle/overhead hazards and an uncluttered rear chase silhouette. The stride sequence adds temporal articulation evidence that a single gameplay screenshot could not provide."
+    },
+    {
+      "dimension": "Commercial reference polish and breadth",
+      "scoreOutOf10": 6.5,
+      "basis": "Subway Surfers and Talking Tom Gold Run still show substantially richer scenery, materials, character-animation variety, audiovisual feedback and gameplay-content breadth. The new animation and selectable pace do not establish commercial parity or a measured match to their speed or cadence."
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "G1",
+      "finding": "The previous rigid limb pendulums lacked articulated knees/elbows and distinct contact/recovery phases.",
+      "resolution": "Added a procedural articulated rig with inverse-kinematic leg targets, bent opposing arms, torso lean and counterturn. The real-renderer stride sheet and source geometry were inspected."
+    },
+    {
+      "id": "G2",
+      "finding": "The first articulated draft moved a flat stance foot at approximately 2 m/s while the track advanced at 10-18 m/s, producing skating despite a planted-foot claim.",
+      "resolution": "Use continuous cycle = 1.8 * activeSeconds + 0.04 * distanceM, a 0.76 m stance path and contact fraction = 0.76 * cadence / speed. Active hip height remains reachable; idle height is preserved. Tests inspect actual transformed ankle travel and bound ramp error below 0.05 m/s."
+    },
+    {
+      "id": "G3",
+      "finding": "After pause and New run, the ready screen could retain a toolbar instruction to Resume.",
+      "resolution": "Reset the ready instruction only on explicit run reset, preserving actionable failed-start guidance during ordinary ready renders. A DOM regression was added and the corrected mobile setup screenshot was independently accepted."
+    },
+    {
+      "id": "G4",
+      "finding": "The initial off-state pace description did not disclose the Fast opening value before selection.",
+      "resolution": "Show Off: 10 m/s and On: 14 m/s together with the common 18 m/s cap."
+    }
+  ],
+  "unresolvedSoftwareFindings": [],
+  "acceptedVisualEvidence": [
+    {
+      "file": "reports/local/runner-motion-pace/after-standard-desktop.jpg",
+      "observation": "Desktop ready screen, Fast start visibly off, 10.0 m/s, zero score and distance, and both opening values disclosed."
+    },
+    {
+      "file": "reports/local/runner-motion-pace/after-fast-desktop.jpg",
+      "observation": "Paused Fast run at 14.2 m/s with the selected switch locked, readable pause message and an articulated frozen stride."
+    },
+    {
+      "file": "reports/local/runner-motion-pace/after-fast-playing-desktop.jpg",
+      "observation": "Actual playing scene at 14.4 m/s: 408 points, 10 coins, 158 meters, distinct hazards and an in-stage Pause button."
+    },
+    {
+      "file": "reports/local/runner-motion-pace/after-fast-mobile-setup.jpg",
+      "observation": "Corrected final mobile setup after New run: retained Fast selection is unlocked, score and distance reset, and the toolbar correctly says Choose your input, then start your run."
+    },
+    {
+      "file": "reports/local/runner-motion-pace/after-fast-playing-mobile.jpg",
+      "observation": "Requested 390x844 browser viewport, Fast gameplay at 14.0 m/s, visible in-stage Pause and all five touch actions in the dock."
+    },
+    {
+      "file": "reports/local/runner-motion-pace/stride-contact-sheet.jpg",
+      "observation": "Eight labeled phases across one synthetic 14 m/s stride show alternating contact and recovery. These are exact renderer inspection poses, not a physical capture or a normal gameplay recording."
+    }
+  ],
+  "strideEvidence": {
+    "poseData": "reports/local/runner-motion-pace/stride-poses.json",
+    "animation": "reports/local/runner-motion-pace/stride-inspection.gif",
+    "method": "Nine exact synthetic poses, including the repeated cycle endpoint, captured through the real renderer at approximately 52.97 ms of active-time separation; the contact sheet shows the eight distinct phases.",
+    "qualification": "The reviewer inspected the sheet and saved source frames. The GIF is a derived inspection loop; its playback rate is not certified as an exact real-time game recording."
+  },
+  "referenceComparison": {
+    "method": "For this follow-up, re-opened the three saved official gameplay crops alongside the new Fast desktop screenshot and stride sheet. This is selected-frame composition/readability comparison plus synthetic stride evidence, not synchronized frame-by-frame replay of the full original trailers.",
+    "references": [
+      {
+        "title": "Subway Surfers World Tour Hollywood 2024 official trailer",
+        "url": "https://www.youtube.com/watch?v=yyRHfdq9vD0",
+        "frame": "reports/local/motion-runner/ref-subway-18s-gameplay.jpg",
+        "comparison": "Three rail lanes, large train blockers, foreshortening and rear chase silhouette remain legible in the local game; the reference has richer environment geometry and character presentation."
+      },
+      {
+        "title": "Talking Tom Gold Run official gameplay trailer",
+        "url": "https://www.youtube.com/watch?v=31TH0htM6I0",
+        "frames": [
+          "reports/local/motion-runner/ref-gold-14s-gameplay.jpg",
+          "reports/local/motion-runner/ref-gold-29s-gameplay.jpg"
+        ],
+        "comparison": "The local game preserves coin-route guidance, alternate lane blockers and a clear runner silhouette. The new stride shows alternating contact/recovery, while the commercial reference remains substantially more polished and varied."
+      }
+    ],
+    "limits": "No original-game distance scale, speed, cadence, response time or physical accuracy was measured. The original implementation benchmark remains historical context; the follow-up adds explicit temporal gait and two-pace simulation evidence."
+  },
+  "virtualReactionBudgets": {
+    "qualification": "Constant-speed approximations from the declared virtual distances, not measured human reaction or physical safety results. Actual gradual acceleration makes intervals slightly shorter.",
+    "rowSpacingSecondsAt10_14_18Mps": [
+      3,
+      2.143,
+      1.667
+    ],
+    "firstHurdleContactSecondsAt10_14_18Mps": [
+      3.335,
+      2.382,
+      1.853
+    ],
+    "fullTwoLaneInterpolationSeconds": 0.32,
+    "resumeToTrainFrontSecondsAt10_14_18Mps": [
+      2.2,
+      1.571,
+      1.222
+    ],
+    "assessment": "Fast start increases the opening challenge without changing the authored row spacing, at-least-one-open-lane policy or safe-resume placement. Physical tuning remains deferred."
+  },
+  "simulationEvidence": {
+    "file": "reports/runner-motion-pace-results.json",
+    "observedResults": "48 declared cases: two worlds, Standard/Fast opening profiles, four seeds and 30/60/120 Hz. All safe-lane oracle runs recorded zero hits and exact extra-player timeline freeze. Standard traveled approximately 663.00875 m and Fast approximately 903.00875 m over 60 active seconds; maximum world population was 34 objects in both profiles.",
+    "limits": "The oracle establishes bounded seeded solvability and pause invariants, not human difficulty, physical recognition or reference-game parity."
+  },
+  "renderTimingEvidence": {
+    "file": "reports/runner-motion-pace-render-results.json",
+    "status": "Accepted as qualified short post-change scheduling and CPU submission evidence.",
+    "method": "Six serial real-renderer cases: both worlds at 1066x720 and 362x510 in Standard, plus both Fast desktop worlds. Five-second warm-up, approximately 15 seconds sampled per case, both interval endpoints after warm-up, device pixel ratio 1.",
+    "qualificationsVerified": "All 15748 samples were in playing phase. Hidden events, warm-up interruptions and sampled interruptions were zero. Actual CSS and buffer dimensions match the declared cases.",
+    "observedResults": {
+      "schedulerCallbackHzRange": [
+        173.685,
+        176.44
+      ],
+      "schedulerIntervalP95MsRange": [
+        6.1,
+        6.2
+      ],
+      "cpuStateCopyAndRenderSubmissionP95MsRange": [
+        1.3,
+        1.7
+      ],
+      "largestSchedulerIntervalMs": 17.8,
+      "schedulerIntervalsOver33_4Ms": 0
+    },
+    "limits": "Short renderer-only samples exclude the full GUI, cameras and inference. CPU submission includes the immutable state copy and does not measure GPU completion. Callback frequency is not verified display FPS. GPU hardware and monitor presentation are unknown; Fast mobile did not have a separate timing case. Historical timing differences are not a controlled performance-improvement result."
+  },
+  "validation": {
+    "reviewerActivity": "Read-only source, assertion, artifact and screenshot review; no competing tests, build or browser run was launched by the reviewer during the lead's verification sessions.",
+    "focusedChecksReportedByImplementer": "Focused animation and existing renderer tests passed, including actual geometry, track-relative stance travel, different render histories and first paused-frame matrices. The lead also reports 13 GUI tests passed, including the corrected ready-status regression.",
+    "pnpmCheck": "Passed, reported by the lead with exit code 0: 563 Vitest tests in 29 files, 208 pytest tests, and required TypeScript/Python types, lint, format, contract and repository checks.",
+    "pnpmBuild": "Passed, reported by the lead with exit code 0: five application entries built and emitted asset references verified. The runner bundle was 548.96 KB, 146.05 KB gzip; Vite emitted a chunk-size advisory. This is not a measured startup or GPU performance result.",
+    "latestCommitSoftwareChecks": "pending"
+  },
+  "unratedAndDeferred": [
+    "Physical camera/gesture accuracy, participant comfort and spectator occlusion; live testing deferred by the user.",
+    "Physical action-to-display latency and verified exposure timing.",
+    "Sustained GPU/display performance and integrated-graphics capacity.",
+    "Biomechanical or motion-capture fidelity."
+  ],
+  "remainingDeliveryGates": [
+    "Require the latest PR commit's software-checks gate before merge.",
+    "Keep the deferred physical tests separate from completed software verification."
+  ]
+}

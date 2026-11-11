@@ -31,9 +31,7 @@ function scene() {
       "quadraticCurveTo",
     ].map((name) => [name, vi.fn()]),
   );
-  vi.spyOn(canvas, "getContext").mockReturnValue(
-    methods as unknown as CanvasRenderingContext2D,
-  );
+  Object.defineProperty(canvas, "getContext", { value: vi.fn(() => methods) });
   return {
     canvas,
     methods,

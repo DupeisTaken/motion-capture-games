@@ -57,7 +57,7 @@ export function mountMoleGame(
   );
   root.innerHTML = `
   <a class="skip" href="#game-stage">Skip to game</a>
-  <header class="mm-header"><a class="mm-brand" href="/">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/">Tracking console</a><a class="current" href="/mole.html" aria-current="page">Slap a Mole</a><a href="/dodgeball.html">Dodgeball</a></nav><span class="local-pill"><i></i> Local & private</span></header>
+  <header class="mm-header"><a class="mm-brand" href="/">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/">Tracking console</a><a class="current" href="/mole.html" aria-current="page">Slap a Mole</a><a href="/dodgeball.html">Dodgeball</a><a href="/runner.html">Runner</a></nav><span class="local-pill"><i></i> Local & private</span></header>
   <main class="mm-main"><div class="mm-heading"><div><p class="eyebrow">THE MOTION ARCADE <span>/</span> GAME 01</p><h1>Slap a Mole<span class="heading-dot">.</span></h1><p class="intro">A little reach. A little rhythm. A whole lot of moles.</p></div><span class="experiment">Single player <span>Experimental</span></span></div>
   <div class="mm-layout play-layout">
   <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="player-readiness" role="status">Press Start round. We’ll wait until your input is ready.</p><button id="source-stop" class="mm-text" disabled>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>

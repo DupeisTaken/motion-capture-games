@@ -123,6 +123,8 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 
 ## M6: Single-player motion runner
 
+**Experimental software slice:** [Issue #39](https://github.com/DupeisTaken/motion-capture-games/issues/39) / [PR #44](https://github.com/DupeisTaken/motion-capture-games/pull/44) implements Neon Rails / Gold Rush with single-player pause rules, calibrated image-space jump/duck controls, original 3D worlds/skins, camera-free rehearsal and deterministic simulation tests. [The report](../reports/motion-runner-game.html) records actual checks, reference-footage comparisons and independent review. This early implementation does not close M1 hardware or M6 physical accuracy/latency gates. Next issue-ready scope: participant trials for lane reach/hysteresis, jump/duck confusion, varied heights, spectator occlusion and external visible-latency measurement.
+
 **Problem:** Let one participant control an on-screen runner with left/center/right movement, jumping and squatting, without confusing tracking gaps with player mistakes.
 
 **Owns:** The [runner design](games/motion-runner.md), a future `games/motion-runner/` module, rendered-world presentation, lane/action calibration, obstacles, scoring and replay. Depends on the relevant M1 gates and M2's session/replay foundation. M3/M4 and final M5 packaging are not prerequisites; M6 preserves existing milestone IDs rather than forcing a new release order.
@@ -138,7 +140,7 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 - Measure recognition errors and action-to-visible timing for each control on the supported installation, including different participant heights and movement ranges. Perspective graphics alone do not justify calibrated 3D input.
 - Verify rendered gameplay and setup/recovery UI from a real server at the supported display aspect ratio and relevant desktop/mobile operator sizes; deliver tests, owning docs and the HTML report.
 
-**Current status:** Documentation scaffold only. Runtime controls, gesture thresholds, obstacle tuning, hardware capability and performance remain unimplemented and unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
+**Current status:** Experimental software controls, seeded obstacles, rendered worlds and source-timed pause/recovery are implemented. The gait/pace follow-up adds an articulated runner and an opt-in faster opening; [its report](../reports/runner-motion-pace.html) owns actual evidence. Physical recognition accuracy, camera hardware capability and end-to-end latency remain unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
 
 **Scaffold delivery:** [Issue #5](https://github.com/DupeisTaken/motion-capture-games/issues/5) and [PR #6](https://github.com/DupeisTaken/motion-capture-games/pull/6) track this documentation update; [the runner report](../reports/motion-runner.html) records its actual checks. M6 implementation needs its own issue when work begins; completing the scaffold does not close the game milestone.
 
