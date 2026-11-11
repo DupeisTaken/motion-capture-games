@@ -18,6 +18,9 @@ Open **http://127.0.0.1:5173**. The compact test console keeps controls, skeleto
 
 Console Stop releases only its acknowledged source. Failed capture release keeps **Retry camera stop** available and blocks replacement until confirmed. A cancelled pending start is cleaned up when its acknowledgment arrives. If startup ownership cannot be identified after a lost response, the console explains service restart/reload recovery. See [capture ownership](docs/diagnostic-viewer.md#capture-ownership-and-retry) and [the lifecycle report](reports/diagnostic-capture-lifecycle.html).
 
+
+Paused games offer a prominent **Resume** button on the game screen: click, tap or press Enter/Space once. Camera games wait for ready input and their existing countdown without another confirmation. Virtual Maze also resumes directly from its participant preview. See [the resume report](reports/game-resume.html).
+
 ## Evaluate camera-free XYZ
 
 Open **http://127.0.0.1:5173/rig.html** for the [two-camera operator workspace](docs/two-camera-workspace.md): paired synthetic views, estimated X/Y/Z, a rig-volume map and explicit rejection/evidence states. A physical planning mode assigns camera roles without starting capture. It prepares a possible maze input workflow; live two-camera XYZ and physical accuracy remain separate work.

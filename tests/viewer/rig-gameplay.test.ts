@@ -330,9 +330,10 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
         ?.getAttribute("data-camera-id"),
     ).toBe("camera-1");
     click("rig-game-pause");
-    popup.document.querySelector<HTMLButtonElement>("button")!.focus();
-    get<HTMLButtonElement>("rig-game-resume").focus();
-    click("rig-game-resume");
+    const resume =
+      popup.document.querySelector<HTMLButtonElement>("#rig-game-resume")!;
+    expect(popup.document.activeElement).toBe(resume);
+    resume.click();
     expect(popup.document.activeElement).toBe(stage);
     advance(2000);
     Object.defineProperty(document, "hidden", {

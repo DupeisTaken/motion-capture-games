@@ -1,0 +1,273 @@
+{
+  "date": "2026-11-11",
+  "issue": "https://github.com/DupeisTaken/motion-capture-games/issues/53",
+  "baseline": "6fb1185813242a27b26e1c86f75a2f4baa5d71f3",
+  "browser": "157.0.4341.42",
+  "language": "English",
+  "syntheticOnly": true,
+  "checks": {
+    "status": "passed",
+    "commands": [
+      "pnpm check",
+      "pnpm build"
+    ],
+    "typeScriptTests": 743,
+    "pythonTests": 209,
+    "node": "24.16.0",
+    "python": "3.12.14",
+    "pnpm": "11.25.0",
+    "buildEntries": 6
+  },
+  "cases": [
+    {
+      "game": "mole",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "action": "Enter",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "000"
+    },
+    {
+      "game": "dodgeball",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "action": "Enter",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "000"
+    },
+    {
+      "game": "runner",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "action": "Enter",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "00000"
+    },
+    {
+      "game": "maze",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "action": "Enter",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": null
+    },
+    {
+      "game": "rig",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "action": "Enter",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "0"
+    },
+    {
+      "game": "mole",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "action": "Space",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "000"
+    },
+    {
+      "game": "dodgeball",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "action": "Space",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "000"
+    },
+    {
+      "game": "runner",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "action": "Space",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "00000"
+    },
+    {
+      "game": "maze",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "action": "Space",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": null
+    },
+    {
+      "game": "rig",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "action": "Space",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "0"
+    },
+    {
+      "game": "mole",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "action": "tap",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "000"
+    },
+    {
+      "game": "dodgeball",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "action": "tap",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "000"
+    },
+    {
+      "game": "runner",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "action": "tap",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "00000"
+    },
+    {
+      "game": "maze",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "action": "tap",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": null
+    },
+    {
+      "game": "rig",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "action": "tap",
+      "geometry": {
+        "height": 48,
+        "width": 170,
+        "insideViewport": true,
+        "hit": true
+      },
+      "preservedScore": "0"
+    },
+    {
+      "game": "mole",
+      "popup": true,
+      "action": "Enter",
+      "resumeInPlayWindow": true
+    },
+    {
+      "game": "dodgeball",
+      "popup": true,
+      "action": "Enter",
+      "resumeInPlayWindow": true
+    },
+    {
+      "game": "maze",
+      "popup": true,
+      "action": "Enter",
+      "resumeInPlayWindow": true
+    },
+    {
+      "game": "rig",
+      "popup": true,
+      "action": "Enter",
+      "resumeInPlayWindow": true
+    }
+  ],
+  "uncaughtBrowserErrors": []
+}

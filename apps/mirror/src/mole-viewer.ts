@@ -1,3 +1,4 @@
+import { createResumeControl } from "./resume-control";
 import { moleArt } from "./mole-art";
 import {
   CameraChoice,
@@ -70,9 +71,9 @@ export function mountMoleGame(
   <div class="mm-layout play-layout">
   <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="player-readiness" role="status">Press Start round. We’ll wait until your input is ready.</p><button id="source-stop" class="mm-text" disabled>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
   <section class="mm-game" aria-label="Slap a Mole game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>HITS</span><strong id="hits-value">0</strong></div><div class="score-item"><span>BEST STREAK</span><strong id="streak-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
-    <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Game play area. Rehearsal: move pointer or arrow keys to aim; Space to push."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera and game view"></canvas><div class="display-hud" aria-label="Live round score"><span>SCORE <strong id="display-score">000</strong></span><span>TIME <strong id="display-time">1:00</strong></span></div><div class="stage-label"><i></i><span id="stage-mode">TOUCH TO WHACK</span></div><div class="player-label">P1 <span id="stage-player">NOT JOINED</span></div>${targetSlots.map(targetMarkup).join("")}<div id="hit-feedback" class="hit-feedback" aria-hidden="true"></div><div class="mm-overlay" id="game-overlay"><div class="overlay-mole">${moleArt}</div><p id="overlay-kicker">READY, SET, REACH</p><h2 id="overlay-title">Small moles.<br>Big moves.</h2><p id="overlay-copy">Press Start round and make your first move.<br>Keep your whole body inside the camera view.</p></div><div class="stage-bottom"><span id="stage-help">Rehearsal · move your cursor or use arrow keys</span><span class="bomb-warning">${bombWarning}</span></div></div>
+    <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Game play area. Rehearsal: move pointer or arrow keys to aim; Space to push."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera and game view"></canvas><div class="display-hud" aria-label="Live round score"><span>SCORE <strong id="display-score">000</strong></span><span>TIME <strong id="display-time">1:00</strong></span></div><div class="stage-label"><i></i><span id="stage-mode">TOUCH TO WHACK</span></div><div class="player-label">P1 <span id="stage-player">NOT JOINED</span></div>${targetSlots.map(targetMarkup).join("")}<div id="hit-feedback" class="hit-feedback" aria-hidden="true"></div><div class="mm-overlay" id="game-overlay"><div class="overlay-mole">${moleArt}</div><p id="overlay-kicker">READY, SET, REACH</p><h2 id="overlay-title">Small moles.<br>Big moves.</h2><p id="overlay-copy">Press Start round and make your first move.<br>Keep your whole body inside the camera view.</p><button id="resume-round" class="mm-primary" hidden>Resume</button></div><div class="stage-bottom"><span id="stage-help">Rehearsal · move your cursor or use arrow keys</span><span class="bomb-warning">${bombWarning}</span></div></div>
     <div class="target-track"><span id="target-life"></span><span id="misses-value">0 escaped</span></div>
-    <div class="game-actions"><button id="start-round" class="mm-primary">Set up round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="resume-round" class="mm-primary" hidden>Resume · countdown</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start round. Input checks happen automatically.</span></div>
+    <div class="game-actions"><button id="start-round" class="mm-primary">Set up round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start round. Input checks happen automatically.</span></div>
     <p class="source-disclosure" id="source-disclosure">Synthetic controls, including simulated depth. This rehearsal does not measure camera or push accuracy.</p>
   </section></div>
   <section class="how-grid" aria-label="How to play"><article><span class="how-number">01</span><div><h2>Meet your mole</h2><p>Touch with a hand or foot, or choose Flick and flap your wrist near a mole. Push needs depth input.</p></div></article><article><span class="how-number">02</span><div><h2>Move, reset, repeat</h2><p>Each mole counts once. Move away after a touch, settle your hand after a flick, or bring your push back.</p></div></article><article><span class="how-number">03</span><div><h2>Stay in the picture</h2><p>Missing feet? Step back, check framing or clear an occlusion. Play pauses fairly.</p></div></article></section>
@@ -94,6 +95,11 @@ export function mountMoleGame(
   const listeners = new AbortController();
   const listen = (target: EventTarget, event: string, handler: EventListener) =>
     target.addEventListener(event, handler, { signal: listeners.signal });
+  const resumeControl = createResumeControl(
+    get<HTMLButtonElement>("resume-round"),
+    get("game-stage"),
+    listeners.signal,
+  );
   const session = new SinglePlayerSession();
   const nextSeed = () => deps.seed ?? Math.floor(Math.random() * 4_294_967_296);
   let game = new MoleGame({}, nextSeed());
@@ -420,6 +426,10 @@ export function mountMoleGame(
           : state.phase === "countdown"
             ? "FIND YOUR SPACE"
             : "READY, SET, REACH";
+    get("game-overlay").classList.toggle(
+      "resume-menu",
+      state.phase === "paused",
+    );
     const title = get("overlay-title"),
       copy = get("overlay-copy");
     if (state.phase === "countdown") {
@@ -497,6 +507,7 @@ export function mountMoleGame(
       hitUntil === 0 ||
       t > hitUntil ||
       (state.phase !== "playing" && state.phase !== "results");
+    resumeControl.update();
   }
   function ingestCamera() {
     if (!observation) return;
@@ -831,9 +842,17 @@ export function mountMoleGame(
     tick();
   });
   listen(get("resume-round"), "click", () => {
+    if (
+      !viewVisible() ||
+      needsNewOwner ||
+      game.state.phase !== "paused" ||
+      game.readiness(now(), frame).requiresNewRound
+    )
+      return;
     manualPaused = false;
     readySince = null;
     tick();
+    get("game-stage").focus({ preventScroll: true });
   });
   listen(get("end-round"), "click", () => {
     if (requested) resetGame();

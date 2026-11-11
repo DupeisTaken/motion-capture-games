@@ -1,3 +1,4 @@
+import { createResumeControl } from "./resume-control";
 import "./rig-gameplay.css";
 import { MoleGame, type GameState } from "../../../games/mole-motion/src/index";
 import {
@@ -56,7 +57,7 @@ export function createRigGameplay(
     // The rig display rehearses the original single-target Practice round.
     1,
   );
-  host.innerHTML = `<div class="rig-game-controls"><div><h3>Slap a Mole · pointer rehearsal</h3><p class="rig-game-disclosure">Pointer or arrow keys control the aim cursor. The recorded person and XYZ do not control the score.</p></div><button id="rig-game-start" type="button">Start practice</button><button id="rig-game-pause" type="button">Pause</button><button id="rig-game-resume" type="button">Resume · countdown</button><button id="rig-game-end" type="button">End practice</button><button id="rig-game-open" type="button" aria-expanded="false">Open game display</button></div><p id="rig-game-location" class="rig-game-location" role="status">Both camera diagnostics stay in the operator workspace.</p><details id="rig-game-inline" class="rig-game-inline"><summary>Show inline gameplay preview</summary><div id="rig-game-stage" class="rig-game-stage" tabindex="0" role="group" aria-label="Slap a Mole pointer rehearsal. Move the pointer or use arrow keys. Recorded poses do not control scoring."><div class="rig-game-heading"><div><p id="rig-game-source-label" class="rig-game-source-label">Recorded synthetic scene · pointer controlled</p><h3>Slap a Mole</h3></div><div class="rig-game-hud"><span>SCORE <strong id="rig-game-score">0</strong></span><span>HITS <strong id="rig-game-hits">0</strong></span><span id="rig-game-phase">Ready</span></div></div><div class="rig-game-image"><svg id="rig-game-scene" role="img" aria-label="Selected synthetic camera scene and Slap a Mole gameplay" preserveAspectRatio="xMidYMid meet"></svg><div id="rig-game-notice" class="rig-game-notice" role="status"></div></div><p id="rig-game-reason" class="rig-game-reason" role="status"></p><p class="rig-game-limit">Synthetic pointer practice · no camera footage or body-controlled scoring · physical XYZ and maze input unavailable</p></div></details>`;
+  host.innerHTML = `<div class="rig-game-controls"><div><h3>Slap a Mole · pointer rehearsal</h3><p class="rig-game-disclosure">Pointer or arrow keys control the aim cursor. The recorded person and XYZ do not control the score.</p></div><button id="rig-game-start" type="button">Start practice</button><button id="rig-game-pause" type="button">Pause</button><button id="rig-game-end" type="button">End practice</button><button id="rig-game-open" type="button" aria-expanded="false">Open game display</button></div><p id="rig-game-location" class="rig-game-location" role="status">Both camera diagnostics stay in the operator workspace.</p><details id="rig-game-inline" class="rig-game-inline"><summary>Show inline gameplay preview</summary><div id="rig-game-stage" class="rig-game-stage" tabindex="0" role="group" aria-label="Slap a Mole pointer rehearsal. Move the pointer or use arrow keys. Recorded poses do not control scoring."><div class="rig-game-heading"><div><p id="rig-game-source-label" class="rig-game-source-label">Recorded synthetic scene · pointer controlled</p><h3>Slap a Mole</h3></div><div class="rig-game-hud"><span>SCORE <strong id="rig-game-score">0</strong></span><span>HITS <strong id="rig-game-hits">0</strong></span><span id="rig-game-phase">Ready</span></div></div><div class="rig-game-image"><svg id="rig-game-scene" role="img" aria-label="Selected synthetic camera scene and Slap a Mole gameplay" preserveAspectRatio="xMidYMid meet"></svg><div id="rig-game-notice" class="rig-game-notice" role="status"></div><button id="rig-game-resume" type="button" hidden>Resume</button></div><p id="rig-game-reason" class="rig-game-reason" role="status"></p><p class="rig-game-limit">Synthetic pointer practice · no camera footage or body-controlled scoring · physical XYZ and maze input unavailable</p></div></details>`;
   const elements = new Map(
     [...host.querySelectorAll<HTMLElement>("[id]")].map((node) => [
       node.id,
@@ -69,6 +70,11 @@ export function createRigGameplay(
   const scene = get("rig-game-scene") as unknown as SVGSVGElement;
   const inline = get<HTMLDetailsElement>("rig-game-inline");
   const events = new homeWindow.AbortController();
+  const resumeControl = createResumeControl(
+    get<HTMLButtonElement>("rig-game-resume"),
+    stage,
+    events.signal,
+  );
   let enabled = true;
   let disposed = false;
   let source: RigDisplayedCameraState | null = null;
@@ -371,7 +377,7 @@ export function createRigGameplay(
       (state.phase === "ready"
         ? "Start pointer practice"
         : state.phase === "paused"
-          ? "Paused · aim, then Resume"
+          ? "Practice paused"
           : state.phase === "countdown"
             ? String(Math.ceil(state.countdownMs / 1000))
             : state.phase === "results"
@@ -393,6 +399,7 @@ export function createRigGameplay(
       "playing",
       "countdown",
     ].includes(state.phase);
+    get("rig-game-resume").hidden = state.phase !== "paused";
     get<HTMLButtonElement>("rig-game-resume").disabled =
       !ready || state.phase !== "paused";
     get<HTMLButtonElement>("rig-game-end").disabled = [
@@ -400,6 +407,7 @@ export function createRigGameplay(
       "results",
     ].includes(state.phase);
     get<HTMLButtonElement>("rig-game-open").disabled = !enabled;
+    resumeControl.update();
   }
   function tick() {
     if (disposed) return;
