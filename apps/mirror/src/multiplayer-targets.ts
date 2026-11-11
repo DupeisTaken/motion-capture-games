@@ -43,7 +43,9 @@ export function renderMultiplayerTargets(
     }
     const cue =
       target.phase === "warning"
-        ? "READY"
+        ? target.kind === "bomb"
+          ? "BOMB SOON"
+          : "READY"
         : target.kind === "bomb"
           ? "AVOID"
           : "HIT";

@@ -31,14 +31,31 @@ describe("multiplayer target presentation across game versions", () => {
     expect(element.getAttribute("aria-label")).toBe("mole: ready");
     renderMultiplayerTargets(
       container,
+      [{ ...target, kind: "bomb", phase: "warning", warningMs: 300 }],
+      rect,
+    );
+    expect(element.dataset.phase).toBe("warning");
+    expect(element.querySelector(".multiplayer-cue")?.textContent).toBe(
+      "BOMB SOON",
+    );
+    expect(element.getAttribute("aria-label")).toBe("bomb: bomb soon");
+    renderMultiplayerTargets(
+      container,
       [{ ...target, kind: "bomb", phase: "active" }],
       rect,
       [{ id: 1, x: 0.3, y: 0.5, kind: "mole", outcome: "hit", points: 100 }],
     );
     expect(element.textContent).toContain("AVOID");
+    expect(element.getAttribute("aria-label")).toBe("bomb: avoid");
     expect(stage.querySelector(".multiplayer-outcome")?.textContent).toBe(
       "+100",
     );
+    renderMultiplayerTargets(container, [{ ...target, kind: "bomb" }], rect);
+    expect(element.dataset.phase).toBe("active");
+    expect(element.querySelector(".multiplayer-cue")?.textContent).toBe(
+      "AVOID",
+    );
+    expect(element.getAttribute("aria-label")).toBe("bomb: avoid");
     renderMultiplayerTargets(container, [], rect);
     expect(element.hidden).toBe(true);
     expect(stage.querySelector(".multiplayer-outcome")).toBeNull();
