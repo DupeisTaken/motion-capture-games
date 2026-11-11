@@ -20,6 +20,8 @@ Flick uses mapped **source** intervals, with at least 0.018 normalized image tra
 
 Timed lasts 60 active seconds. Challenge aims for 15 mole hits in 60 active seconds. Survival ends on the third expired mole. Practice is untimed without miss penalties. Pause, framing/tracking loss and readiness freeze round and target time. A transient joint/framing interruption recovers automatically after fresh input is steady for 600ms, followed by a two-second countdown. Operator pauses and hidden displays require Resume. Recovery clears gesture history and never catches up missed time. The 600ms hold is proposed software tuning, not measured physical identity certification.
 
+Camera play requests the paired image and pose stream only, so the vision service can skip the additional JPEG stream used by the tracking console.
+
 Easy/normal/hard vary target size and lifetime. Hard samples 32 positions per mole and favors the valid position with the greatest minimum distance from currently available eligible contacts. Bomb placement is random across difficulties. Targets stay within the configured play area and their collision regions stay clear of one another. A small custom area can show fewer targets if placement runs out of room. The default area fits all three at each difficulty. Defaults are unmeasured tuning proposals owned by `TUNING` in the game module.
 
 | Setting                                | Easy  | Normal | Hard  |
