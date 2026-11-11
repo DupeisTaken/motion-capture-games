@@ -1,13 +1,17 @@
 import { createResumeControl } from "./resume-control";
 import "./rig-gameplay.css";
-import { MoleGame, type GameState } from "../../../games/mole-motion/src/index";
+import {
+  MoleGame,
+  TUNING,
+  type GameState,
+} from "../../../games/mole-motion/src/index";
 import {
   containRect,
   mapJoint,
   type GameMotionFrame,
 } from "../../../packages/motion/src/index";
 import { createGameDisplay } from "./game-display";
-import { moleArt } from "./mole-art";
+import { bombArt, moleArt } from "./mole-art";
 import {
   resolveDisplayedCamera,
   type RigDisplayedCameraState,
@@ -16,6 +20,7 @@ import type { RigFrame, RigView } from "./rig-state";
 
 const NS = "http://www.w3.org/2000/svg";
 const MIRROR = true;
+const TARGET_IDS = ["rig-game-target", "rig-game-target-2", "rig-game-bomb"];
 const SOURCE_FAILURES: Record<string, string> = {
   camera_unavailable: "The chosen recorded camera is unavailable.",
   primary_unavailable: "Choose an available recorded camera.",
@@ -54,8 +59,6 @@ export function createRigGameplay(
   const game = new MoleGame(
     { mode: "practice", interaction: "touch", difficulty: "easy" },
     options.seed ?? 42,
-    // The rig display rehearses the original single-target Practice round.
-    1,
   );
   host.innerHTML = `<div class="rig-game-controls"><div><h3>Slap a Mole · pointer rehearsal</h3><p class="rig-game-disclosure">Pointer or arrow keys control the aim cursor. The recorded person and XYZ do not control the score.</p></div><button id="rig-game-start" type="button">Start practice</button><button id="rig-game-pause" type="button">Pause</button><button id="rig-game-end" type="button">End practice</button><button id="rig-game-open" type="button" aria-expanded="false">Open game display</button></div><p id="rig-game-location" class="rig-game-location" role="status">Both camera diagnostics stay in the operator workspace.</p><details id="rig-game-inline" class="rig-game-inline"><summary>Show inline gameplay preview</summary><div id="rig-game-stage" class="rig-game-stage" tabindex="0" role="group" aria-label="Slap a Mole pointer rehearsal. Move the pointer or use arrow keys. Recorded poses do not control scoring."><div class="rig-game-heading"><div><p id="rig-game-source-label" class="rig-game-source-label">Recorded synthetic scene · pointer controlled</p><h3>Slap a Mole</h3></div><div class="rig-game-hud"><span>SCORE <strong id="rig-game-score">0</strong></span><span>HITS <strong id="rig-game-hits">0</strong></span><span id="rig-game-phase">Ready</span></div></div><div class="rig-game-image"><svg id="rig-game-scene" role="img" aria-label="Selected synthetic camera scene and Slap a Mole gameplay" preserveAspectRatio="xMidYMid meet"></svg><div id="rig-game-notice" class="rig-game-notice" role="status"></div><button id="rig-game-resume" type="button" hidden>Resume</button></div><p id="rig-game-reason" class="rig-game-reason" role="status"></p><p class="rig-game-limit">Synthetic pointer practice · no camera footage or body-controlled scoring · physical XYZ and maze input unavailable</p></div></details>`;
   const elements = new Map(
@@ -88,9 +91,10 @@ export function createRigGameplay(
   let inputTime = -Infinity;
   let round = 0;
   let needsResume = false;
-  let presentation: SVGGElement | null = null;
-  let targetNode: SVGSVGElement | null = null;
+  let targetNodes: { sprite: SVGSVGElement; lifetime: SVGRectElement }[] = [];
   let cursorNode: SVGGElement | null = null;
+  let lastStrikeSequence: number | null = null;
+  let bombFeedbackUntil = -Infinity;
   let lastClient: { x: number; y: number; document: Document } | null = null;
   const write = (id: string, value: string) => {
     const node = get(id);
@@ -182,7 +186,7 @@ export function createRigGameplay(
     scene.dataset.cameraId = view.cameraId;
     scene.dataset.frameId = view.frameId;
     scene.replaceChildren();
-    presentation = svg("g", {
+    const presentation = svg("g", {
       "data-game-layer": "presentation",
       transform: MIRROR ? `translate(${width} 0) scale(-1 1)` : "",
     });
@@ -274,15 +278,26 @@ export function createRigGameplay(
         }),
       );
     presentation.append(artwork);
-    targetNode = svg("svg", {
-      id: "rig-game-target",
-      viewBox: "0 0 120 110",
-      "data-game-layer": "target",
+    targetNodes = TARGET_IDS.map((id) => {
+      const bomb = id === "rig-game-bomb";
+      const sprite = svg("svg", {
+        id,
+        viewBox: "0 0 120 110",
+        "data-game-layer": "target",
+        "data-target-kind": bomb ? "bomb" : "mole",
+      });
+      // The artwork and lifetime bar share the same transform as the hit region.
+      sprite.innerHTML = bomb ? bombArt : moleArt;
+      sprite.replaceChildren(...sprite.querySelector("svg")!.childNodes);
+      const bar = { x: 28, y: 103, width: 64, height: 6, rx: 3 };
+      const lifetime = svg("rect", {
+        ...bar,
+        fill: bomb ? "#ffba78" : "#cde995",
+      });
+      sprite.append(svg("rect", { ...bar, fill: "#102722" }), lifetime);
+      presentation.append(sprite);
+      return { sprite, lifetime };
     });
-    // Reuse the actual game's art, while the engine owns its hit region and score.
-    targetNode.innerHTML = moleArt;
-    const art = targetNode.querySelector("svg")!;
-    targetNode.replaceChildren(...art.childNodes);
     cursorNode = svg("g", {
       id: "rig-game-cursor",
       "data-game-layer": "cursor",
@@ -295,7 +310,7 @@ export function createRigGameplay(
       }),
       svg("path", { stroke: "#fff3a3", "stroke-width": width * 0.002 }),
     );
-    presentation.append(targetNode, cursorNode);
+    presentation.append(cursorNode);
     scene.append(presentation);
   }
   function render() {
@@ -325,35 +340,35 @@ export function createRigGameplay(
     if (unavailable) {
       scene.replaceChildren();
       renderedKey = "";
-      targetNode = null;
+      targetNodes = [];
       cursorNode = null;
     } else if (source?.view && sourceKey !== renderedKey) {
       paintSource(source.view);
       renderedKey = sourceKey;
     }
     const playing = !unavailable && state.phase === "playing";
-    if (targetNode) {
-      const target = state.targets[0];
-      targetNode.toggleAttribute("hidden", !playing || !target);
-      if (target) {
-        targetNode.setAttribute(
-          "x",
-          String((target.x - target.radius) * width),
-        );
-        targetNode.setAttribute(
-          "y",
-          String((target.y - target.radius) * height),
-        );
-        targetNode.setAttribute("width", String(target.radius * 2 * width));
-        targetNode.setAttribute("height", String(target.radius * 2 * height));
-        // Override the application's generic 20px icon SVG rule for this game sprite.
-        targetNode.style.width = `${target.radius * 2 * width}px`;
-        targetNode.style.height = `${target.radius * 2 * height}px`;
-        targetNode.dataset.x = String(target.x);
-        targetNode.dataset.y = String(target.y);
-        targetNode.dataset.radius = String(target.radius);
-      }
-    }
+    const moles = state.targets.filter((target) => target.kind === "mole");
+    const bomb = state.targets.find((target) => target.kind === "bomb");
+    const targets = [moles[0], moles[1], bomb];
+    targetNodes.forEach(({ sprite, lifetime }, index) => {
+      const target = targets[index];
+      sprite.toggleAttribute("hidden", !playing || !target);
+      if (!target) return;
+      sprite.setAttribute("x", String((target.x - target.radius) * width));
+      sprite.setAttribute("y", String((target.y - target.radius) * height));
+      sprite.setAttribute("width", String(target.radius * 2 * width));
+      sprite.setAttribute("height", String(target.radius * 2 * height));
+      // Override the application's generic 20px icon SVG rule.
+      sprite.style.width = `${target.radius * 2 * width}px`;
+      sprite.style.height = `${target.radius * 2 * height}px`;
+      sprite.dataset.x = String(target.x);
+      sprite.dataset.y = String(target.y);
+      sprite.dataset.radius = String(target.radius);
+      const fill =
+        (64 * target.remainingMs) / TUNING[state.options.difficulty].lifetimeMs;
+      lifetime.setAttribute("width", String(fill));
+      lifetime.setAttribute("x", String(MIRROR ? 92 - fill : 28));
+    });
     if (cursorNode) {
       cursorNode.toggleAttribute("hidden", !pointerActive || !!unavailable);
       const p = mapJoint(pointer, { x: 0, y: 0, width, height }, false);
@@ -385,12 +400,19 @@ export function createRigGameplay(
               : "");
     write("rig-game-notice", notice);
     get("rig-game-notice").hidden = !notice;
+    const strike = state.lastStrike;
+    if (lastStrikeSequence !== (strike?.sequence ?? null)) {
+      lastStrikeSequence = strike?.sequence ?? null;
+      bombFeedbackUntil = strike?.bombPenalty ? now() + 850 : -Infinity;
+    }
     write(
       "rig-game-reason",
       unavailable ??
         (state.phase === "paused"
           ? (state.reason ?? "Resume when ready.")
-          : "Touch a mole with the aim cursor. Move away before the next hit."),
+          : playing && strike && now() <= bombFeedbackUntil
+            ? `Bomb hit · −${strike.bombPenalty} points`
+            : `Touch a mole with the aim cursor. Avoid bombs · −${TUNING.bombPenalty} points.`),
     );
     const ready = !unavailable && visible();
     get<HTMLButtonElement>("rig-game-start").disabled =

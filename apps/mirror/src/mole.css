@@ -461,43 +461,6 @@ button:disabled {
   border-color: #ffba78aa;
   background: #e674432b;
 }
-.bomb-art {
-  position: absolute;
-  inset: 22% 22% 15%;
-  border: 2px solid #f4aa66;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 35% 35%, #56566c, #1a1a28 65%);
-}
-.bomb-art::before {
-  content: "";
-  position: absolute;
-  width: 40%;
-  height: 40%;
-  top: -26%;
-  left: 51%;
-  border-top: 2px solid #ffd384;
-  border-left: 2px solid #ffd384;
-  border-radius: 70% 0 0;
-}
-.bomb-art::after {
-  content: "";
-  position: absolute;
-  width: 24%;
-  height: 24%;
-  top: -35%;
-  left: 80%;
-  background: #ffcf78;
-  clip-path: polygon(
-    50% 0,
-    62% 37%,
-    100% 50%,
-    62% 63%,
-    50% 100%,
-    38% 63%,
-    0 50%,
-    38% 37%
-  );
-}
 .mole-lifetime {
   position: absolute;
   bottom: 0;
@@ -523,8 +486,7 @@ button:disabled {
 .mole-bomb .mole-lifetime::-webkit-progress-value {
   background: #ffba78;
 }
-.bomb-warning,
-.bomb-feedback {
+.bomb-warning {
   color: #ffca92;
 }
 .hit-feedback {
@@ -538,6 +500,8 @@ button:disabled {
   letter-spacing: 1px;
   pointer-events: none;
   text-shadow: 0 2px 12px #122e25;
+}
+#hit-feedback {
   white-space: nowrap;
 }
 .hit-feedback.bomb-feedback {
@@ -823,7 +787,7 @@ button:disabled {
     font-size: 9px;
     flex-wrap: wrap;
   }
-  .hit-feedback {
+  #hit-feedback {
     font-size: clamp(14px, 4.5vw, 22px);
   }
   .mm-overlay {

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Window as TestWindow } from "happy-dom";
 import fixture from "../../apps/mirror/src/rig-rehearsal.json";
 import { createRigGameplay } from "../../apps/mirror/src/rig-gameplay";
-import { MoleGame } from "../../games/mole-motion/src/index";
+import { MoleGame, type GameState } from "../../games/mole-motion/src/index";
 import { containRect } from "../../packages/motion/src/index";
 import {
   loadRigDataset,
@@ -14,6 +14,8 @@ import {
 const data = loadRigDataset(fixture);
 const sample = (id = "nominal") =>
   structuredClone(selectRigFrame(data, id, 0).frame);
+const firstMole = (state: GameState) =>
+  state.targets.find((target) => target.kind === "mole")!;
 let controller: ReturnType<typeof createRigGameplay>;
 let clock: number;
 let host: HTMLElement;
@@ -68,7 +70,7 @@ function start(cameraId = "camera-0", frame = sample()) {
   expect(controller.state.phase).toBe("playing");
 }
 function hit(cameraId = "camera-0", frame = sample()) {
-  const target = controller.state.targets[0]!;
+  const target = firstMole(controller.state);
   aim(0.02, 0.98, frame, cameraId);
   advance(50);
   aim(target.x, target.y, frame, cameraId);
@@ -101,14 +103,36 @@ afterEach(() => {
 });
 
 describe("genuine Slap a Mole with selected synthetic presentation", () => {
+  it("draws both moles and the bomb and shows the penalty in the rig stage", () => {
+    start();
+    const before = controller.state;
+    const bomb = before.targets.find((target) => target.kind === "bomb")!;
+    const targets = [
+      ...get("rig-game-scene").querySelectorAll("[data-target-kind]"),
+    ];
+    expect(
+      targets.map((node) => node.getAttribute("data-target-kind")),
+    ).toEqual(["mole", "mole", "bomb"]);
+    expect(targets.every((node) => !node.hasAttribute("hidden"))).toBe(true);
+    aim(0.02, 0.98);
+    advance(50);
+    aim(bomb.x, bomb.y);
+    advance(50);
+    expect(get("rig-game-score").textContent).toBe("-50");
+    expect(get("rig-game-hits").textContent).toBe("0");
+    expect(get("rig-game-reason").textContent).toContain("Bomb hit · −50");
+    expect(
+      controller.state.targets.find((target) => target.kind === "bomb")?.id,
+    ).not.toBe(bomb.id);
+    advance(100);
+    expect(controller.state.score).toBe(-50);
+  });
+
   it.each(["camera-0", "camera-1"])(
     "counts a genuine pointer hit once in %s and preserves held-touch rules",
     (cameraId) => {
       start(cameraId);
       expect(document.activeElement).toBe(get("rig-game-stage"));
-      expect(controller.state.targets.map(({ kind }) => kind)).toEqual([
-        "mole",
-      ]);
       hit(cameraId);
       expect(controller.state.score).toBe(100);
       expect(controller.state.hits).toBe(1);
@@ -151,7 +175,9 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
     expect(pause).not.toHaveBeenCalled();
     controller.tick();
     expect(controller.state.score).toBe(before.score);
-    expect(controller.state.targets[0]?.id).toBe(before.targets[0]?.id);
+    expect(controller.state.targets.map(({ id }) => id)).toEqual(
+      before.targets.map(({ id }) => id),
+    );
   });
 
   it("uses the exact 4:3 selected-image fit and clears contact in letterboxing", () => {
@@ -159,7 +185,7 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
     frame.views[0].imageSize = [800, 600];
     bounds = { left: 25, top: 15, width: 1000, height: 500 };
     start("camera-0", frame);
-    const target = controller.state.targets[0]!;
+    const target = firstMole(controller.state);
     aim(0.02, 0.98, frame);
     advance(50);
     aim(target.x, target.y, frame);
@@ -189,7 +215,7 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
       expect(controller.state.phase).toBe("paused");
       expect(get("rig-game-scene").children).toHaveLength(0);
       expect(controller.state.score).toBe(before.score);
-      expect(controller.state.targets[0]).toEqual(before.targets[0]);
+      expect(controller.state.targets).toEqual(before.targets);
       controller.setSource(sample(), "camera-0");
       advance(100);
       expect(controller.state.phase).toBe("paused");
@@ -245,14 +271,14 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
     expect(get("rig-game-cursor").hasAttribute("hidden")).toBe(true);
     advance(100);
     expect(controller.state.score).toBe(before.score);
-    expect(controller.state.targets[0]).toEqual(before.targets[0]);
+    expect(controller.state.targets).toEqual(before.targets);
   });
 
   it("can Resume from operator controls after leaving the image without scoring a held target", () => {
     start();
     hit();
     const before = controller.state;
-    const target = before.targets[0]!;
+    const target = firstMole(before);
     get<HTMLButtonElement>("rig-game-pause").focus();
     click("rig-game-pause");
     aim(target.x, target.y);
@@ -270,7 +296,7 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
     advance(2050);
     expect(controller.state.phase).toBe("playing");
     expect(controller.state.score).toBe(before.score);
-    expect(controller.state.targets[0]?.id).toBe(target.id);
+    expect(firstMole(controller.state).id).toBe(target.id);
     aim(0.02, 0.98);
     advance(50);
     aim(target.x, target.y);
@@ -357,7 +383,7 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
     get<HTMLDetailsElement>("rig-game-inline").open = false;
     get("rig-game-inline").dispatchEvent(new Event("toggle"));
     expect(controller.state.phase).toBe("paused");
-    expect(controller.state.targets[0]).toEqual(before.targets[0]);
+    expect(controller.state.targets).toEqual(before.targets);
     get<HTMLDetailsElement>("rig-game-inline").open = true;
     advance(100);
     expect(controller.state.phase).toBe("paused");
