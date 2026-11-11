@@ -1,0 +1,62 @@
+.maze-camera-guide {
+  margin-top: 24px;
+  color: #24344b;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.maze-camera-guide > summary {
+  cursor: pointer;
+  min-height: 42px;
+  padding: 5px 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+.maze-camera-guide > summary:focus-visible {
+  outline: 3px solid #5685ef;
+  outline-offset: 4px;
+}
+.maze-camera-guide p {
+  margin: 10px 0;
+}
+.maze-camera-guide figure {
+  margin: 16px 0;
+  padding: 10px;
+  background: #f2f6fb;
+  border: 1px solid #c6d3e2;
+  border-radius: 8px;
+}
+.maze-camera-guide svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.maze-camera-guide figcaption {
+  margin-top: 8px;
+  color: #465b76;
+  font-size: 12px;
+}
+.maze-camera-steps {
+  padding-left: 22px;
+  margin: 12px 0;
+}
+.maze-camera-steps li {
+  margin: 10px 0;
+  padding-left: 3px;
+}
+.maze-camera-details {
+  border-top: 1px solid #c6d3e2;
+  padding-top: 12px;
+}
+.maze-camera-details summary {
+  cursor: pointer;
+  font-weight: 650;
+  min-height: 32px;
+}
+.maze-camera-details summary:focus-visible {
+  outline: 3px solid #5685ef;
+  outline-offset: 4px;
+}
+.maze-camera-sources {
+  font-size: 12px;
+}

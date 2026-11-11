@@ -39,6 +39,7 @@
     "rig:generate": "node scripts/tasks.mjs rig-rehearsal && prettier --write apps/mirror/src/rig-rehearsal.json",
     "rig:check": "node scripts/tasks.mjs rig-rehearsal --check",
     "verify:rig": "node scripts/verify-rig-workspace.mjs",
+    "verify:maze": "node scripts/verify-maze.mjs",
     "verify:displayed-camera": "node scripts/verify-displayed-camera.mjs"
   },
   "dependencies": {

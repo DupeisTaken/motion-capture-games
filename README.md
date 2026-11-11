@@ -2,7 +2,7 @@
 
 A collection of local games played through body movement, with immediate on-screen feedback in a mirrored camera view or a rendered game world.
 
-**Status: diagnostic viewer plus experimental Slap a Mole and Dodgeball games.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Slap a Mole](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both offer a combined pre-game setup menu, raw mirrored camera pictures and an optional separate game window. Production model selection, calibrated push input, physical collision tuning, multiplayer games, multi-view reconstruction and hardware certification remain open.
+**Status: diagnostic viewer, experimental Slap a Mole and Dodgeball games, and Virtual Maze rehearsal.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Slap a Mole](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both offer a combined pre-game setup menu, raw mirrored camera pictures and an optional separate game window. [Virtual Maze](docs/games/virtual-maze.md) adds camera-free metric maze generation and directional sound. Production model selection, calibrated push input, physical collision tuning, multiplayer games, live multi-view reconstruction and hardware certification remain open.
 
 ## Run the diagnostic viewer
 
@@ -41,6 +41,10 @@ Both games default to **Camera** and list connected devices on load. Choose a de
 Open [Slap a Mole](http://127.0.0.1:5173/mole.html) or [Dodgeball](http://127.0.0.1:5173/dodgeball.html) after starting the local server. Both offer camera-free rehearsal and a combined video/game setup menu before every new round. Its Start confirmation waits for usable input. Dodgeball previews each virtual ball with a warning ring: move your body clear before impact. Missing feet, joints or uncertain tracking pause the round fairly. See [the dodgeball design](docs/games/dodgeball.md) and [delivery report](reports/dodgeball.html).
 
 These are early experimental game slices. Physical framing/collision accuracy, participant height and movement tuning, hardware capacity and latency still require M1/M4 evidence.
+
+## Rehearse Virtual Maze
+
+Virtual Maze now has a [camera-free rehearsal](docs/games/virtual-maze.md) at **http://127.0.0.1:5173/maze.html**. The shared setup menu opens automatically: choose independent 5–10 m width/depth, Easy/Medium/Hard difficulty and optional internal loops, then confirm Start round. New round returns to setup; Pause/Resume stays outside it. The input section includes a two-camera placement diagram and practical calibration/accuracy checks. Loop mode verifies that both canonical hand followers miss its reachable interior goal. Choose **Head** or **Torso** orientation (Torso is the default), start rehearsal and move/turn through the map and controls. **Enable sound** activates the directional wall cue. The admin retains the map while the participant view/window shows buzzer intensity only. Local photos support four named corner annotations; physical XYZ, cone detection and hardware buzzer integration remain open. See [issue #40](https://github.com/DupeisTaken/motion-capture-games/issues/40), [M7](docs/roadmap.md#m7-single-player-virtual-maze) and the [report](reports/virtual-maze.html). `pnpm verify:maze` verifies the real server; `pnpm exec vite --host 127.0.0.1` serves rehearsal without Python.
 
 ## Agreed scope
 

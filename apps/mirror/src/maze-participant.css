@@ -1,0 +1,119 @@
+.maze-button {
+  min-height: 42px;
+  padding: 9px 13px;
+  border: 1px solid #bbc9db;
+  background: white;
+  color: #24344b;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.maze-cue {
+  text-align: center;
+  padding: 10px 0;
+}
+.maze-cue strong {
+  display: block;
+  font-size: 52px;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  margin: 12px 0;
+}
+.maze-cue strong small {
+  font-size: 20px;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.maze-meter {
+  display: flex;
+  align-items: end;
+  gap: 5px;
+  height: 64px;
+  justify-content: center;
+  margin: 17px 0;
+}
+.maze-meter i {
+  width: 14px;
+  border-radius: 3px;
+  background: #e3eaf2;
+  height: var(--bar-height);
+}
+.maze-meter i.on {
+  background: #278c8d;
+}
+.maze-meter i.hot {
+  background: #c46f29;
+}
+
+.maze-participant {
+  min-height: 75vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 18px;
+  text-align: center;
+  background: #12233a;
+  color: white;
+  border-radius: 12px;
+}
+.maze-participant h1,
+.maze-participant h2 {
+  font-size: clamp(28px, 5vw, 50px);
+  margin: 10px 0;
+}
+.maze-participant .maze-cue strong {
+  font-size: clamp(70px, 13vw, 130px);
+}
+.maze-participant p {
+  color: #cad6e6;
+}
+.maze-participant .maze-meter i {
+  width: 22px;
+}
+.maze-participant .maze-meter i.on {
+  background: #55cec5;
+}
+.maze-participant .maze-cue strong small {
+  color: #cad6e6;
+}
+.maze-participant .maze-button {
+  margin-top: 20px;
+}
+
+.maze-participant .maze-button:focus-visible {
+  outline: 3px solid #8bbcff;
+  outline-offset: 4px;
+}
+.maze-participant .maze-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.maze-popup-page {
+  margin: 0;
+  background: #12233a;
+  font:
+    16px/1.5 "Segoe UI",
+    system-ui,
+    sans-serif;
+}
+.maze-popup-page * {
+  box-sizing: border-box;
+}
+.maze-popup-page .maze-participant {
+  min-height: 100vh;
+  border-radius: 0;
+}
+.maze-popup-page .maze-eyebrow {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+.maze-popup-page .maze-button {
+  font: inherit;
+  cursor: pointer;
+}
+@media (max-width: 720px) {
+  .maze-participant {
+    padding: 28px 12px;
+  }
+}

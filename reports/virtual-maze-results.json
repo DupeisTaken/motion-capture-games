@@ -1,0 +1,44 @@
+{
+  "scope": "camera-free virtual-maze rehearsal",
+  "checkPassed": true,
+  "buildPassed": true,
+  "typescriptTests": 599,
+  "pythonTests": 208,
+  "newTests": 107,
+  "viewerTests": 22,
+  "sharedConfirmationGuardTests": 1,
+  "mazeJsKB": 39.34,
+  "mazeJsGzipKB": 14.05,
+  "node": "v24.16.0",
+  "pnpm": "11.25.0",
+  "python": "3.12.16",
+  "checkedAt": "2026-11-11 01:59 Asia/Shanghai",
+  "integrationBase": "999fb92 (Slap a Mole rename preserved)",
+  "reportVerified": true,
+  "ciState": "See the pull request for the latest-head software-checks result",
+  "prUrl": "https://github.com/DupeisTaken/motion-capture-games/pull/45",
+  "reviews": [
+    {
+      "name": "Maze engine and final integration reviewer",
+      "dimensions": "Requirements, correctness, robustness, lifecycle, accessibility, maintainability, verification",
+      "score": "10/10 in all seven dimensions"
+    },
+    {
+      "name": "Design and documentation reviewer",
+      "dimensions": "UX/accessibility, requirements/docs/architecture, generation/pose integration, browser verification; report accuracy, evidence integrity, standalone visual delivery",
+      "score": "10/10 in all seven dimensions"
+    },
+    {
+      "name": "Input, lifecycle and audio reviewer",
+      "dimensions": "Correctness, input safety, lifecycle, audio, maintainability, UX/accessibility, verification",
+      "score": "10/10 in all seven dimensions"
+    }
+  ],
+  "limitations": [
+    "Physical-origin input is unconditionally rejected; simultaneous live acquisition and physical calibration/facing validation remain open.",
+    "Endpoint contact queries do not verify a continuously traversed path.",
+    "Browser audio gain is normalized; acoustic SPL, audibility and end-to-end latency were not measured.",
+    "Local Node 24.16.0 differs from the repository 24.21.0 pin; hosted CI provisions the pin.",
+    "Automatic approval review blocked removal of empty directories left outside the repository by a corrected path typo."
+  ]
+}
