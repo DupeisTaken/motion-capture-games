@@ -139,7 +139,12 @@ describe("source navigation safety", () => {
     expect(sourceNavigationBlocker(false, 0)).toBeNull();
   });
   it("blocks unknown delivery or missing epoch, but treats explicit rejected starts as acknowledged", () => {
-    for (const body of [null, { state: "running" }]) {
+    for (const body of [
+      null,
+      { state: "running" },
+      { state: "error" },
+      { state: "error", epoch: "" },
+    ]) {
       const startup = new NavigationStartup();
       const attempt = startup.begin();
       if (body) attempt.acknowledge(true, body);

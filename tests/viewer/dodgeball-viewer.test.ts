@@ -1106,7 +1106,13 @@ describe("camera acquisition ownership barrier", () => {
         .map(([, init]) => JSON.parse(String(init.body)).epoch),
     ).toEqual(["late-failed-owner", "late-failed-owner"]);
   });
-  it.each(["lost", "invalid-json", "missing-epoch", "null-body"])(
+  it.each([
+    "lost",
+    "invalid-json",
+    "missing-epoch",
+    "error-missing-epoch",
+    "null-body",
+  ])(
     "keeps %s startup ownership unknown and refuses forged acquisition after Stop",
     async (failure) => {
       await selectCamera();
@@ -1120,7 +1126,12 @@ describe("camera acquisition ownership barrier", () => {
           json: async () => {
             if (failure === "invalid-json")
               throw new SyntaxError("Synthetic malformed acknowledgement");
-            return failure === "null-body" ? null : { state: "running" };
+            return failure === "null-body"
+              ? null
+              : {
+                  state:
+                    failure === "error-missing-epoch" ? "error" : "running",
+                };
           },
         });
       element<HTMLButtonElement>("source-connect").click();

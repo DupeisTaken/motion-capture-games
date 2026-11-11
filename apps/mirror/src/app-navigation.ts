@@ -40,10 +40,9 @@ export class NavigationStartup {
           !ok ||
           (!!body &&
             typeof body === "object" &&
-            (("state" in body && body.state === "error") ||
-              ("epoch" in body &&
-                typeof body.epoch === "string" &&
-                !!body.epoch)));
+            "epoch" in body &&
+            typeof body.epoch === "string" &&
+            !!body.epoch);
       },
       finish: () => {
         this.pending--;
