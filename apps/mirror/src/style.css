@@ -68,7 +68,7 @@ svg {
   top: 8px;
 }
 .app-header {
-  height: 52px;
+  min-height: 52px;
   display: flex;
   align-items: center;
   gap: 26px;
@@ -99,10 +99,17 @@ svg {
   font-size: 10px;
   letter-spacing: 1px;
 }
-.header-section {
-  color: var(--muted);
+.app-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
   border-left: 1px solid var(--border);
   padding-left: 24px;
+}
+.app-navigation a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
 }
 .local-indicator {
   margin-left: auto;
@@ -806,7 +813,7 @@ footer {
   .page-heading > p {
     display: none;
   }
-  .header-section {
+  .app-navigation {
     font-size: 11px;
   }
 }
@@ -815,11 +822,15 @@ footer {
     padding: 12px;
   }
   .app-header {
-    padding: 0 12px;
-    gap: 12px;
+    padding: 8px 12px 4px;
+    flex-wrap: wrap;
+    gap: 4px 12px;
   }
-  .header-section {
-    display: none;
+  .app-navigation {
+    order: 1;
+    flex-basis: 100%;
+    padding: 0;
+    border: 0;
   }
   .local-indicator {
     font-size: 10px;
