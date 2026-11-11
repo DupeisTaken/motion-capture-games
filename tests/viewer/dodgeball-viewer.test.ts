@@ -499,6 +499,44 @@ describe("Dodgeball operator integration", () => {
     await socket.receive(packet(observation(2)));
     expect(element("overlay-title").textContent).toBe("3");
   });
+  it("advances the hazard with a spectator present and uses only the joined body", async () => {
+    const socket = await startCamera();
+    await socket.receive(packet(observation()));
+    element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
+    expect(element("overlay-title").textContent).toBe("3");
+
+    let sequence = 1;
+    const sendSpectatorFrame = async (ownerPresent = true) => {
+      const value = observation(++sequence);
+      const spectator = structuredClone(value.people[0]);
+      spectator.trackId = "spectator";
+      spectator.joints.nose!.x = 0.8;
+      if (ownerPresent) value.people.splice(sequence % 2, 0, spectator);
+      else value.people = [spectator];
+      value.detectedCount = value.people.length;
+      now += 50;
+      await socket.receive(packet(value));
+    };
+
+    for (let frame = 0; frame < 65; frame++) await sendSpectatorFrame();
+    expect(element("game-overlay").hidden).toBe(true);
+    expect(drawnBall()?.phase).toBe("warning");
+    const warningTime = drawnBall()!.remainingMs;
+    const initialTime = element("time-value").textContent;
+    for (let frame = 0; frame < 25; frame++) await sendSpectatorFrame();
+    expect(element("game-overlay").hidden).toBe(true);
+    expect(drawnBall()!.remainingMs).toBeLessThan(warningTime);
+    expect(element("time-value").textContent).not.toBe(initialTime);
+    expect(drawnBody().find((point) => point.name === "nose")?.x).toBe(0.5);
+    expect(element("player-binding").textContent).toContain("camera-track-1");
+
+    const score = element("score-value").textContent;
+    await sendSpectatorFrame(false);
+    expect(element("game-overlay").hidden).toBe(false);
+    expect(element("restart-round").hidden).toBe(false);
+    expect(element("score-value").textContent).toBe(score);
+  });
   it("freezes active time and automatically counts down after confident framing recovery", () => {
     startDemo();
     const ball = drawnBall();

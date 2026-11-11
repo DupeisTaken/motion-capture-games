@@ -848,6 +848,64 @@ describe("Slap a Mole operator integration", () => {
     expect(element("time-value").textContent).toBe("1:00");
   });
 
+  it("keeps the round running and scores only the joined player when a spectator enters", async () => {
+    const socket = await startCamera();
+    element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
+    let sequence = 0;
+    const send = async (value: Observation) => {
+      now += 50;
+      await socket.receive(packet(value));
+    };
+    const outside = (value: Observation) => {
+      const wrist = value.people[0].joints.left_wrist!;
+      wrist.x = 0.01;
+      wrist.y = 0.01;
+      return wrist;
+    };
+    for (let frame = 0; frame < 80; frame++) {
+      const value = observation(++sequence);
+      outside(value);
+      await send(value);
+    }
+    const target = targetPosition();
+    const initialTime = element("time-value").textContent;
+    const initialScore = element("score-value").textContent;
+    const joinedWrist = { x: 1 - target.x / 960, y: target.y / 600 };
+    function withSpectator(hit: boolean): Observation {
+      const value = observation(++sequence);
+      const wrist = outside(value);
+      const spectator = structuredClone(value.people[0]);
+      spectator.trackId = "spectator";
+      Object.assign(spectator.joints.left_wrist!, joinedWrist);
+      if (hit) Object.assign(wrist, joinedWrist);
+      value.people.splice(sequence % 2, 0, spectator);
+      value.detectedCount = 2;
+      return value;
+    }
+    for (let frame = 0; frame < 25; frame++) await send(withSpectator(false));
+    expect(element("time-value").textContent).not.toBe(initialTime);
+    expect(element("score-value").textContent).toBe(initialScore);
+    expect(element("mole-target").hidden).toBe(false);
+    expect(element("player-binding").textContent).toContain("camera-track-1");
+    await send(withSpectator(true));
+    expect(Number(element("score-value").textContent)).toBe(
+      Number(initialScore) + 100,
+    );
+
+    const departed = withSpectator(false);
+    departed.people = departed.people.filter(
+      (person) => person.trackId === "spectator",
+    );
+    departed.detectedCount = 1;
+    await send(departed);
+    expect(element("restart-round").hidden).toBe(false);
+    expect(element("mole-target").hidden).toBe(true);
+    expect(Number(element("score-value").textContent)).toBe(
+      Number(initialScore) + 100,
+    );
+  });
+
   it("supports an optional explicit override before Start for a crowded camera view", async () => {
     const socket = await startCamera();
     const value = observation();
