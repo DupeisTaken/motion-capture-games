@@ -22,7 +22,7 @@ The root manifest currently owns dependencies. Directory boundaries are not inde
 
 | Component | Current form | Required validation/build |
 | --- | --- | --- |
-| `apps/mirror` | One Vite application with diagnostic, two-camera operator workspace and game HTML entries | Strict types, viewer/state/selector tests, selected-scene gameplay scoring/transform/ownership and window lifecycle tests, production build of all four entries; artifact reference verification |
+| `apps/mirror` | One Vite application with diagnostic, two-camera operator workspace, Slap a Mole, Dodgeball and Virtual Maze HTML entries | Strict types, viewer/state/selector/audio tests, selected-scene gameplay scoring/transform/ownership and window lifecycle tests, production build of all five entries; artifact reference verification |
 | `contracts` | Canonical schema, generated TypeScript and validators | `contracts:check`, validation fixtures, both language consumers and the mirror build |
 | `packages/motion`, `packages/session`, implemented `games/*` | Source-only TypeScript modules bundled into the app | Types, lint, behavior/replay tests and consuming application build; no invented npm archives |
 | `packages/diagnostics`, unimplemented games | Ownership/documentation scaffold | Repository documentation checks until runtime code is introduced |

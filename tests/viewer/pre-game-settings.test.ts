@@ -71,4 +71,28 @@ describe("pre-game confirmation lifecycle", () => {
     button("confirm-start").click();
     expect(start).not.toHaveBeenCalled();
   });
+
+  it("keeps invalid confirmation open and focusable without locking the opener", () => {
+    menu.dispose();
+    let valid = false;
+    const guard = vi.fn(() => {
+      button("close-settings").focus();
+      return valid;
+    });
+    menu = createPreGameSettings(document.querySelector("main")!, start, {
+      canStart: guard,
+    });
+    menu.open();
+    button("confirm-start").click();
+    expect(guard).toHaveBeenCalledOnce();
+    expect(dialog.open).toBe(true);
+    expect(start).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(button("close-settings"));
+    button("close-settings").click();
+    menu.open();
+    valid = true;
+    button("confirm-start").click();
+    expect(dialog.open).toBe(false);
+    expect(start).toHaveBeenCalledOnce();
+  });
 });

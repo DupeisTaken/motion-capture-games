@@ -142,6 +142,33 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 
 **Scaffold delivery:** [Issue #5](https://github.com/DupeisTaken/motion-capture-games/issues/5) and [PR #6](https://github.com/DupeisTaken/motion-capture-games/pull/6) track this documentation update; [the runner report](../reports/motion-runner.html) records its actual checks. M6 implementation needs its own issue when work begins; completing the scaffold does not close the game milestone.
 
+## M7: Single-player virtual maze
+
+**Problem:** Let one participant navigate a virtual maze using directional buzzer feedback while an operator sees the maze and current position. A position estimate alone cannot determine which wall is ahead; facing requires independent Head/Torso evidence.
+
+**Owns:** The [Virtual Maze design](games/virtual-maze.md), a source-only `games/virtual-maze/` module, explicit position/facing readiness, manual metric corner registration, seeded generation, directional wall/collision/goal rules, operator map and map-free participant intensity/audio. M7 preserves existing milestone IDs and starts a camera-free rehearsal at the user's request. Physical gameplay depends on relevant M1 geometry, timing, identity and accuracy evidence; the existing two-camera planning screen cannot enable it.
+
+**Software slice:** [Issue #40](https://github.com/DupeisTaken/motion-capture-games/issues/40) tracks `/maze.html`, rehearsing 5..10 m width and depth independently, Easy/Medium/Hard generation, internal loops, and explicit Head/Torso selection with Torso as default. Synthetic X/Z and independent heading controls exercise the game without cameras or Python inference. Four named local photo annotations are planning only; the separate metric registration API requires already-calibrated rig-ground coordinates. Browser audio requires explicit activation and follows normalized game intensity. [The delivery report](../reports/virtual-maze.html) owns actual check/browser results and hosting links when available. Software delivery does not close physical M7 or M1.
+
+**Software acceptance criteria:**
+
+- Validate independent finite dimensions in 5..10 m, preserve metric aspect/scale and generate reproducible connected mazes for all three difficulties and the same seed/code revision.
+- With internal loops enabled, verify BFS reachability of the selected interior goal and failure of both documented canonical hand-rule followers from the declared start/initial heading. Show that test's scope; a cycle count alone is insufficient and arbitrary human strategies are not covered.
+- Compute wall-ahead clearance/intensity in metric coordinates from the explicitly selected head or torso vector. Test stationary turns, differing headings, walls behind the participant, corridor openings, contact and goal behavior.
+- Validate named metric corners and reject malformed/degenerate/inconsistent input. Document the future adapter's duty to bind registration to rig calibration; the current pure registration object has no revision field. Keep photo image annotations separate from calibration and prevent local photos entering reports/fixtures.
+- Reject missing/stale/uncertain selected direction and incompatible identity/time/calibration. Treat out-of-bounds position explicitly without clamping or goal reward; never substitute orientation or infer it from position/velocity. Physical-origin input remains unavailable in the rehearsal.
+- Keep participant presentation free of maze/route/position data; provide an inline alternative and separate window. Require explicit sound enable, bounded gain and immediate silence on pause/lost input/unavailable presentation. Verify keyboard/touch, popup cleanup and English desktop/mobile layouts from a real server.
+- Run meaningful deterministic generation, registration/input, geometry, lifecycle/audio and UI tests; run `pnpm verify:maze`, `pnpm check` and `pnpm build`. Deliver owning documentation, self-contained HTML evidence and a focused linked PR when hosting access permits it.
+
+**Physical follow-up briefs, all open:**
+
+- **M7-P1: Trusted maze input.** Add simultaneous acquisition behind the vision boundary, verified exposure/clock mapping, cross-view identity and calibrated rig observations; preserve bounded queues and source provenance. Reuse M1 work rather than opening cameras in a game. Define and version the live input contract.
+- **M7-P2: Corners and cone evidence.** Establish actual corner labels/colors and calibrated floor-contact observations, manual fallback and held-out metric checks. Evaluate HSV segmentation/morphology/contours only against actual lighting and occlusion, documenting failure/uncertainty. Moving a cone/camera invalidates its registration evidence. Photo clicks remain planning until an independent calibration workflow is implemented and verified.
+- **M7-P3: Facing capability.** Measure Head and Torso separately, including neutral/front-back calibration, stationary/head-only/torso-only turns, backward walking, pitch/roll, occlusion and differing orientations. Head is not eye gaze. Publish angular error, coverage and failure policy; no selected-source fallback.
+- **M7-P4: Supervised installation trials.** Measure position and directional-clearance error, usable updates, motion-to-buzzer latency and signal perception on a declared 5..10 m installation. Check room boundaries, corridor/body clearance, operator stop and recovery. Record trial counts, rig/profile and limitations before enabling physical navigation.
+
+**Exit:** The software slice may be reviewed and delivered on its own with honest limitations. M7 closes only when the physical follow-up evidence and supervised participant acceptance exist; synthetic tests do not certify a room.
+
 ## Smooth diagnostic preview follow-up
 
 [Issue #10](https://github.com/DupeisTaken/motion-capture-games/issues/10) tracks RTMPose as the development default and independent smooth display rendering. [ADR 0006](decisions/0006-independent-preview.md) records source/pose timing limits; [the report](../reports/preview-performance.html) records actual software and performance evidence. This does not close M1 hardware, external-latency or multiplayer gates.
