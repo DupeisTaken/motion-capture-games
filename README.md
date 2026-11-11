@@ -4,6 +4,21 @@ A collection of local games played through body movement, with immediate on-scre
 
 **Status: diagnostic viewer, experimental Slap a Mole, Dodgeball and Motion Runner games, and Virtual Maze rehearsal.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Slap a Mole](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both offer a combined pre-game setup menu, raw mirrored camera pictures and an optional separate game window. [Virtual Maze](docs/games/virtual-maze.md) adds camera-free metric maze generation and directional sound. Production model selection, calibrated push input, physical collision tuning, multiplayer games, live multi-view reconstruction and hardware certification remain open.
 
+## Open the game directory
+
+Open **http://127.0.0.1:5173/** to choose any implemented game or operator tool. **All games** and the Motion Studio brand return to the directory. The tracking console is now at **/diagnostics.html**; update bookmarks that previously used the root URL or /index.html for diagnostics.
+
+| Page | Local path | Guide |
+| --- | --- | --- |
+| Slap a Mole | /mole.html | [Reach, flick and push rehearsal](docs/games/mole-motion.md) |
+| Dodgeball | /dodgeball.html | [Full-body avoidance](docs/games/dodgeball.md) |
+| Motion Runner | /runner.html | [Lanes, jump and duck](docs/games/motion-runner.md) |
+| Virtual Maze | /maze.html | [Synthetic navigation and sound](docs/games/virtual-maze.md) |
+| Tracking console | /diagnostics.html | [Single-camera diagnostics](docs/diagnostic-viewer.md) |
+| Two-camera workspace | /rig.html | [Rig planning and XYZ rehearsal](docs/two-camera-workspace.md) |
+
+The directory needs only the frontend: after installing dependencies, run `pnpm exec vite`. It makes no vision-service or camera requests. Camera play needs the full setup below and explicit **Start camera** in a game or console. Virtual Maze supports synthetic rehearsal; physical input remains pending. See [application entry points](apps/mirror/README.md#entry-points) and [the directory report](reports/game-directory.html).
+
 ## Run the diagnostic viewer
 
 Use Node 24.21.0, pnpm 11.25.0, and an existing Python 3.9+ interpreter for the local bootstrap:
@@ -14,7 +29,7 @@ pnpm setup
 pnpm dev
 ```
 
-Open **http://127.0.0.1:5173**. The compact test console keeps controls, skeletons, detections, performance stages and stream context on one page. Choose **Camera**, select a device by name under **Choose camera**, then choose **Start camera**. **Refresh** finds newly connected USB cameras. The same selector appears in both games after choosing Camera input. **Manual camera index** remains an advanced fallback; browser identification is optional. Choose **Synthetic scene** for generated bodies without camera access. Setup downloads pinned Python tools and verified model artifacts locally; preview inference works offline afterward. RTMPose is the development default; MediaPipe remains a comparison option. Display rendering, camera/source and pose rates are independent and reported separately. Camera access requires an explicit action. See [the viewer guide](docs/diagnostic-viewer.md) for controls, commands and limitations.
+Open **http://127.0.0.1:5173/diagnostics.html** (also linked from the root directory). The compact test console keeps controls, skeletons, detections, performance stages and stream context on one page. Choose **Camera**, select a device by name under **Choose camera**, then choose **Start camera**. **Refresh** finds newly connected USB cameras. The same selector appears in both games after choosing Camera input. **Manual camera index** remains an advanced fallback; browser identification is optional. Choose **Synthetic scene** for generated bodies without camera access. Setup downloads pinned Python tools and verified model artifacts locally; preview inference works offline afterward. RTMPose is the development default; MediaPipe remains a comparison option. Display rendering, camera/source and pose rates are independent and reported separately. Camera access requires an explicit action. See [the viewer guide](docs/diagnostic-viewer.md) for controls, commands and limitations.
 
 Console Stop releases only its acknowledged source. Failed capture release keeps **Retry camera stop** available and blocks replacement until confirmed. A cancelled pending start is cleaned up when its acknowledgment arrives. If startup ownership cannot be identified after a lost response, the console explains service restart/reload recovery. See [capture ownership](docs/diagnostic-viewer.md#capture-ownership-and-retry) and [the lifecycle report](reports/diagnostic-capture-lifecycle.html).
 

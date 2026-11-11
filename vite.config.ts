@@ -18,8 +18,11 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        diagnostics: fileURLToPath(
+        directory: fileURLToPath(
           new URL("apps/mirror/index.html", import.meta.url),
+        ),
+        diagnostics: fileURLToPath(
+          new URL("apps/mirror/diagnostics.html", import.meta.url),
         ),
         rig: fileURLToPath(new URL("apps/mirror/rig.html", import.meta.url)),
         maze: fileURLToPath(new URL("apps/mirror/maze.html", import.meta.url)),

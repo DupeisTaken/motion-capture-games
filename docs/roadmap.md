@@ -8,6 +8,10 @@ The Git remote is [DupeisTaken/motion-capture-games](https://github.com/DupeisTa
 
 The milestone IDs below are stable local references. Each milestone may become several focused issues/PRs rather than one large change. This sequence has no promised dates; hardware and experiment results determine effort.
 
+## Application navigation
+
+[Issue #54](https://github.com/DupeisTaken/motion-capture-games/issues/54) adds the root game directory linking Slap a Mole, Dodgeball, Motion Runner and Virtual Maze, with separate tracking-console and two-camera operator links. `/diagnostics.html` replaces the root diagnostic entry; game URLs stay stable. See [entry points](../apps/mirror/README.md#entry-points) and [the delivery report](../reports/game-directory.html) for actual software/browser checks. This navigation work closes no physical milestone gate.
+
 ## M0: Documentation foundation
 
 **Scope:** Record the agreed product, ownership boundaries, repository conventions, proposal status and validation gates. Provide a self-contained report.

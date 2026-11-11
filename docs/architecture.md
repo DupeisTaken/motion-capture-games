@@ -41,6 +41,8 @@ Games use public motion and session interfaces. Shared packages never import ind
 
 The compositor supports camera-overlay games and a rendered game world. The [motion runner](games/motion-runner.md) uses the latter, while setup/practice can show camera feedback. Vision still owns acquisition and publishes observations; the runner owns lane selection, jump/duck state and obstacle outcomes. A rendered perspective does not require a new 3D tracking contract or a different camera pipeline.
 
+The application root is a static [game directory](../apps/mirror/README.md#entry-points), linking all implemented game pages and operator tools. The tracking console has an explicit `/diagnostics.html` entry. The directory loads local presentation assets only; game runtimes and camera setup load after navigating to their pages.
+
 ## Runtime arrangement
 
 Begin with one local vision service and one mirror application, not distributed microservices. Use bounded capture/inference workers only where measurement justifies them. Keep blocking inference out of the renderer and service control event loop. Bound CPU thread pools and avoid simultaneous benchmark workloads on the development machine.

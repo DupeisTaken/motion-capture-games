@@ -36,6 +36,7 @@
     "check:python": "node scripts/tasks.mjs python-check",
     "benchmark:preview": "node scripts/benchmark-preview.mjs",
     "benchmark:xyz": "node scripts/tasks.mjs xyz",
+    "verify:directory": "node scripts/verify-game-directory.mjs",
     "verify:vision": "node scripts/verify-vision-issues.mjs",
     "rig:generate": "node scripts/tasks.mjs rig-rehearsal && prettier --write apps/mirror/src/rig-rehearsal.json",
     "rig:check": "node scripts/tasks.mjs rig-rehearsal --check",

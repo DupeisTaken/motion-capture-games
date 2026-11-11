@@ -1,5 +1,17 @@
 # Mirror application
 
+## Entry points
+
+The root URL and `/index.html` serve the game directory. It links to all four implemented games: `/mole.html` (Slap a Mole), `/dodgeball.html`, `/runner.html` and `/maze.html` (Virtual Maze), plus `/diagnostics.html` (tracking console) and `/rig.html` (two-camera workspace). Game headers expose **All games**; the Motion Studio brand returns to the directory. Console links explicitly target `/diagnostics.html`, replacing the old root route.
+
+Directory content is static HTML, with local CSS and a CSS-only module entry for the Vite artifact check. Links remain usable with JavaScript disabled. Loading it imports no game, camera, inference or diagnostics runtime and makes no vision-service requests. Each game keeps its own input setup and scoring. Virtual Maze is clearly labeled synthetic rehearsal with physical input pending.
+
+Run `pnpm exec vite` for frontend-only browsing after installing dependencies, or `pnpm dev` for the complete application. Run `pnpm verify:directory` for real-server desktop/mobile navigation evidence and `pnpm verify:directory --production` after `pnpm build` to verify emitted routes. See [the delivery report](../../reports/game-directory.html).
+
+When adding a playable HTML entry, register it in `vite.config.ts`, add a directory card with accurate input requirements, update this entry-point list and the [CI component/build table](../../docs/continuous-integration.md#component-and-package-builds). The directory test compares game links with actual app HTML entries to catch omissions.
+
+## Runtime composition
+
 `rig.html` provides the [two-camera operator rehearsal and physical planning workspace](../../docs/two-camera-workspace.md). Both camera diagnostics remain prominent, with XYZ separate from the player display. **Gameplay camera** selects the synthetic background for one real Slap a Mole Practice/Touch runtime and its optional player window. A fresh synthetic pointer/keyboard controller drives hits; recorded bodies/XYZ do not. The inline gameplay preview starts collapsed, and only its game stage/HUD moves to the player window. Identity, source-quality, clock and lifecycle boundaries are documented in the owning guide. No capture, inference or simultaneous live cameras are added. [The gameplay-camera report](../../reports/displayed-camera.html) records actual verification.
 
 Virtual Maze uses the same `pre-game-settings` dialog/controller as the other games. `maze-setup.ts` owns draft configuration and native validation; Start round commits a prepared maze, while Close/Escape preserves the paused current round. `maze-camera-guide.ts` provides an accessible placement schematic and practical calibration/accuracy steps without opening cameras or certifying a rig. The shared controller's optional `canStart` guard validates before closing; its default behavior for existing games is unchanged.

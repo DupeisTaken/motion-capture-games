@@ -8,7 +8,7 @@ import { chromium } from "playwright-core";
 
 const { values } = parseArgs({
   options: {
-    url: { type: "string", default: "http://127.0.0.1:5173/" },
+    url: { type: "string", default: "http://127.0.0.1:5173/diagnostics.html" },
     label: { type: "string", default: "preview" },
     duration: { type: "string", default: "30000" },
     warmup: { type: "string", default: "5000" },

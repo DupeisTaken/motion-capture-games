@@ -20,7 +20,7 @@ import {
 
 const markup = `
   <a class="skip-link" href="#rig-workspace">Skip to two-view workspace</a>
-  <header class="app-header"><a class="brand" href="/">Motion<span class="brand-light">Studio</span><span class="subtle-badge">LAB</span></a><span class="header-section">Operator / two-view workspace</span><a class="rig-console-link" href="/">Single-camera console ↗</a></header>
+  <header class="app-header"><a class="brand" href="/">Motion<span class="brand-light">Studio</span><span class="subtle-badge">LAB</span></a><span class="header-section">Operator / two-view workspace</span><a class="rig-console-link" href="/diagnostics.html">Single-camera console ↗</a></header>
   <main class="rig-workspace" id="rig-workspace">
     <div class="page-heading"><div><p class="eyebrow">RIG SETUP / FUTURE SPATIAL INPUT</p><h1>Two views. One shared space.</h1></div><span class="rig-origin-badge">Synthetic rehearsal</span></div>
     <p class="rig-intro">Explore how two camera angles become a position in meters. Plan camera roles separately. Live two-camera capture and maze input remain unavailable.</p>
@@ -50,7 +50,7 @@ const markup = `
       </div>
     </section>
     <section id="rig-planning" role="tabpanel" aria-labelledby="rig-tab-planning" hidden>
-      <div class="rig-planning-intro rig-note"><strong>Planning only · no camera is opened</strong><p>Refresh lists native device metadata. Assign fixed roles and record setup notes. This page cannot preview two live cameras, calibrate them or verify XYZ. Use the <a href="/">single-camera console</a> to inspect one camera at a time.</p></div>
+      <div class="rig-planning-intro rig-note"><strong>Planning only · no camera is opened</strong><p>Refresh lists native device metadata. Assign fixed roles and record setup notes. This page cannot preview two live cameras, calibrate them or verify XYZ. Use the <a href="/diagnostics.html">single-camera console</a> to inspect one camera at a time.</p></div>
       <form id="rig-plan-form" class="rig-plan-grid">
         <fieldset class="rig-panel"><legend>Primary · reference camera</legend><p class="field-help">The reference role anchors the operator view. It does not mean the person standing on one side.</p>${cameraChoiceMarkupFor("reference")}</fieldset>
         <fieldset class="rig-panel"><legend>Secondary · supporting camera</legend><p class="field-help">An additional angle should cover the same volume. Role assignment follows the device identity through list reordering.</p>${cameraChoiceMarkupFor("support")}</fieldset>

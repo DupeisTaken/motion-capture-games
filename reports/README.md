@@ -1,5 +1,7 @@
 # Change reports
 
+[Root game directory](game-directory.html) records the four-game landing page, explicit diagnostics route, navigation/build checks and embedded English desktop/mobile before/after screenshots.
+
 [Slap a Mole concurrent targets and bombs](slap-a-mole-bombs.html) records longer target lifetimes, bomb scoring, replay compatibility and English desktop/mobile browser verification.
 
 [Slap a Mole rename](slap-a-mole-rename.html) records the display-name update, compatible routes and source paths, isolated software checks and synthetic desktop/mobile before/after screenshots.
