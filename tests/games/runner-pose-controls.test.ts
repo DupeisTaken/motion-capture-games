@@ -204,34 +204,57 @@ describe("runner image thirds and standing head controls", () => {
     pose.translate(0, -0.07);
     expect(pose.sample()).toMatchObject({ jump: false, standing: false });
   });
+  it("calibrates lateral center from a shoulder pair when one hip is hidden", () => {
+    for (const center of [0.36, 0.64]) {
+      const pose = new Pose();
+      pose.translate(center - 0.5);
+      const hip = pose.value.people[0].joints.right_hip;
+      delete pose.value.people[0].joints.right_hip;
+      pose.calibrate();
+      expect(settle(pose)).toMatchObject({ valid: true, lane: 0 });
+      pose.value.people[0].joints.right_hip = hip;
+      expect(pose.sample()).toMatchObject({ valid: true, lane: 0 });
+    }
+  });
   it("does not turn yaw with one hidden hip into lateral movement near a third boundary", () => {
-    for (const center of [.36, .64]) {
-      const pose = new Pose(); pose.translate(center-.5); pose.calibrate();
+    for (const center of [0.36, 0.64]) {
+      const pose = new Pose();
+      pose.translate(center - 0.5);
+      pose.calibrate();
       expect(settle(pose).lane).toBe(0);
       // One hip rotates inward. The complete shoulder pair still measures center.
       delete pose.value.people[0].joints.right_hip;
       pose.value.people[0].joints.left_hip!.x = center;
-      expect(pose.sample()).toMatchObject({valid:true,lane:0});
+      expect(pose.sample()).toMatchObject({ valid: true, lane: 0 });
       delete pose.value.people[0].joints.right_shoulder;
-      expect(pose.sample()).toMatchObject({valid:false,jump:false});
+      expect(pose.sample()).toMatchObject({ valid: false, jump: false });
     }
   });
   it("cannot rearm midair when face loss switches to a smaller shoulder lift", () => {
     const pose = new Pose();
     delete pose.value.people[0].joints.left_ankle;
     delete pose.value.people[0].joints.right_ankle;
-    pose.calibrate(); settle(pose);
+    pose.calibrate();
+    settle(pose);
     const reference = structuredClone(pose.value);
     const size = pose.controls.calibration!.bodyHeight;
-    pose.value.people[0].joints.nose!.y! -= size * .1;
-    for (const name of ["left_shoulder", "right_shoulder", "left_hip", "right_hip"] as const)
-      pose.value.people[0].joints[name]!.y! -= size * .04;
-    pose.sample(); expect(pose.sample().jump).toBe(true);
+    pose.value.people[0].joints.nose!.y! -= size * 0.1;
+    for (const name of [
+      "left_shoulder",
+      "right_shoulder",
+      "left_hip",
+      "right_hip",
+    ] as const)
+      pose.value.people[0].joints[name]!.y! -= size * 0.04;
+    pose.sample();
+    expect(pose.sample().jump).toBe(true);
     const nose = pose.value.people[0].joints.nose;
     delete pose.value.people[0].joints.nose;
-    for(let i=0;i<6;i++) expect(pose.sample()).toMatchObject({standing:false,jump:false});
+    for (let i = 0; i < 6; i++)
+      expect(pose.sample()).toMatchObject({ standing: false, jump: false });
     pose.value.people[0].joints.nose = nose;
-    for(let i=0;i<4;i++) expect(pose.sample()).toMatchObject({standing:false,jump:false});
+    for (let i = 0; i < 4; i++)
+      expect(pose.sample()).toMatchObject({ standing: false, jump: false });
     reference.sequence = pose.value.sequence;
     pose.value = reference;
     expect(settle(pose).standing).toBe(true);

@@ -217,11 +217,20 @@ export class RunnerPoseControls {
       : torso * 2.6;
     if (height < 0.16 || height > 1) return false;
     const head = positions(points, heads, "y");
+    const hipX = positions(points, hips, "x");
+    const shoulderX = positions(points, shoulders, "x");
+    const centerX =
+      hipX.length === 2
+        ? average(hipX)
+        : shoulderX.length === 2
+          ? average(shoulderX)
+          : null;
+    if (centerX === null) return false;
     this.baseline = {
       epoch: frame.epoch,
       spaceRevision: frame.spaceRevision,
       trackId,
-      centerX: average(positions(points, hips, "x")),
+      centerX,
       headY: head.length ? median(head) : average(shoulderY) - height * 0.17,
       bodyHeight: height,
       observationRevision: observationSpaceRevision(observation),
@@ -310,10 +319,16 @@ export class RunnerPoseControls {
       );
     // A single rotating hip is not a measured torso center. Prefer a current
     // pair; pause if both pairs disappear rather than turn yaw into a lane.
-    const centerX = hipX.length === 2 ? average(hipX) :
-      shoulderX.length === 2 && referenceShoulderX.length === 2 ?
-        baseline.centerX + average(shoulderX) - average(referenceShoulderX) : null;
-    if (centerX === null) return fail("Lane position occluded. Face the camera so both shoulders or both hips are visible.");
+    const centerX =
+      hipX.length === 2
+        ? average(hipX)
+        : shoulderX.length === 2 && referenceShoulderX.length === 2
+          ? baseline.centerX + average(shoulderX) - average(referenceShoulderX)
+          : null;
+    if (centerX === null)
+      return fail(
+        "Lane position occluded. Face the camera so both shoulders or both hips are visible.",
+      );
     // Compare vertical joints to their own reference before combining, so a
     // fallback does not inherit another joint's absolute image height.
     const headDelta = deltas(points, baseline.anchors, heads, "y");

@@ -44,7 +44,7 @@ export function mountRunnerGame(
     </div>
     <div class="runner-toolbar"><p id="game-status" role="status" aria-live="polite">Choose your input, then start your run.</p><div><button id="start-round" class="runner-primary">Start run →</button><button id="pause-round" hidden>Pause</button><button id="new-round" hidden>New run</button><button id="end-round" hidden>End run</button></div></div>
     <div class="runner-controls" id="demo-controls"><span>REHEARSAL CONTROLS</span><div class="lane-buttons" role="group" aria-label="Choose lane"><button id="lane-left" aria-label="Select left lane">← <span>Left</span></button><button id="lane-center" aria-label="Select center lane">● <span>Center</span></button><button id="lane-right" aria-label="Select right lane"><span>Right</span> →</button></div><div class="action-buttons"><button id="jump-action">↑ <span>Jump</span></button><button id="duck-action" aria-pressed="false">↓ <span>Roll</span></button></div><p>Keyboard: ← / C / → lanes · Space jump · hold ↓ to roll.<br>Touch: tap a lane or Jump; hold Roll.</p></div>
-    <section id="body-preview" class="body-preview" aria-label="Live body control preview" hidden><div class="preview-heading"><div><p class="eyebrow">LEARN YOUR CONTROLS</p><h2>Your movement, live.</h2></div><label class="runner-check"><input id="show-preview" type="checkbox" checked> Show camera</label></div><p>Move your mirrored image into a third to choose a lane. Set standing, then lift your head and torso to jump; lower both to roll.</p><div class="preview-picture"><canvas id="camera-preview" width="640" height="480" aria-label="Mirrored camera from the existing body tracking source"></canvas><svg id="preview-guides" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Lane thirds and calibrated head height guides"><path d="M33.333 0V100 M66.667 0V100" class="third-lines"/><g class="third-labels"><text x="16.67" y="9">LEFT</text><text x="50" y="9">CENTER</text><text x="83.33" y="9">RIGHT</text></g><g id="head-guides" hidden><line id="jump-guide" x1="0" x2="100"/><line id="standing-guide" x1="0" x2="100"/><line id="duck-guide" x1="0" x2="100"/><circle id="head-marker" r="1.8"/></g></svg><p id="preview-empty">Start camera to see your controls.</p></div><div class="preview-readout"><strong id="preview-action">WAITING FOR PLAYER</strong><span id="preview-freshness" role="status">Camera off</span></div><p id="preview-thresholds">Head guides appear after Set standing reference. Green: jump · white: standing · amber: roll.</p></section>
+    <section id="body-preview" class="body-preview" aria-label="Live body control preview" hidden><div class="preview-heading"><div><p class="eyebrow">LEARN YOUR CONTROLS</p><h2>Your movement, live.</h2></div><label class="runner-check"><input id="show-preview" type="checkbox" checked> Show camera</label></div><p>Move your mirrored image into a third to choose a lane. Set standing, then lift your head and torso to jump; lower both to roll.</p><div class="preview-picture"><canvas id="camera-preview" width="640" height="480" aria-label="Mirrored camera from the existing body tracking source"></canvas><svg id="preview-guides" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Lane thirds and calibrated head height guides"><path d="M33.333 0V100 M66.667 0V100" class="third-lines"/><g class="third-labels"><text x="16.67" y="9">LEFT</text><text x="50" y="9">CENTER</text><text x="83.33" y="9">RIGHT</text></g><g id="head-guides" hidden><line id="jump-guide" x1="0" x2="100"/><line id="standing-guide" x1="0" x2="100"/><line id="duck-guide" x1="0" x2="100"/><circle id="head-marker" r="1.8"/></g></svg><p id="preview-empty">Start camera to see your controls.</p></div><div class="preview-readout"><strong id="preview-action">WAITING FOR PLAYER</strong><span id="preview-freshness" role="status">Camera off</span><span id="preview-age"></span></div><p id="preview-thresholds">Head guides appear after Set standing reference. Green: jump · white: standing · amber: roll.</p></section>
     <div class="runner-principles"><p><strong>Move to a lane</strong><span>Left, center or right image third. Holding a position keeps your lane.</span></p><p><strong>Jump & roll</strong><span>Jump low hurdles. Duck under the overhead gates.</span></p><p><strong>Your run stays yours</strong><span>Spectators can enter the frame. The game pauses if it loses your tracking.</span></p></div>
   </section><aside class="runner-settings" aria-label="Run setup"><div class="runner-section-label"><span>MAKE IT YOURS</span><span>01</span></div><h2>Choose your escape.</h2>
     <label for="world-select">World</label><select id="world-select"><option value="rail">Neon Rails · the mint skyline</option><option value="gold">Gold Rush · a sunlit getaway</option></select><p class="field-note" id="world-description">A mint skyline, railway runs and colorful city streets.</p>
@@ -92,7 +92,7 @@ export function mountRunnerGame(
       return { render() {}, dispose() {} };
     }
   })();
-  const session = new SinglePlayerSession();
+  const session = new SinglePlayerSession({ recoveryWindowMs: 450 });
   const pose = new RunnerPoseControls();
   const preview = new RunnerPreview(get<HTMLCanvasElement>("camera-preview"));
   const cameraChoice = new CameraChoice(root);
@@ -224,16 +224,7 @@ export function mountRunnerGame(
       : value.people.length === 1 && value.people[0].identity === "confident"
         ? value.people[0]
         : null;
-    if (owner && (!participant || value.epoch !== owner.epoch)) {
-      ownershipChanged = true;
-      cameraInput = null;
-      game.pause("Player identity changed. Start a new run.");
-      cameraMessage(
-        "Player identity changed. Choose New run; a different person cannot inherit this score.",
-      );
-      return;
-    }
-    if (!participant?.trackId) {
+    if (!binding && !participant?.trackId) {
       cameraInput = null;
       cameraMessage(
         value.people.length > 1
@@ -244,14 +235,27 @@ export function mountRunnerGame(
     }
     const base = binding
       ? session.ingest(value, receivedAt)
-      : session.join(value, participant.trackId, receivedAt);
+      : !owner && participant?.trackId
+        ? session.join(value, participant.trackId, receivedAt)
+        : null;
     if (!base) {
       pose.suspend();
       calibratedBase = null;
       cameraInput = null;
       if (owner && !session.binding) ownershipChanged = true;
+      if (active())
+        game.pause(
+          session.reason ?? "Waiting for the same player. Scoring is paused.",
+        );
       cameraMessage(session.reason ?? "Waiting for fresh tracking.");
       return;
+    }
+    if (session.recovered) {
+      pose.suspend();
+      if (active())
+        game.pause(
+          "Tracking recovered. Stand comfortably for the recovery countdown.",
+        );
     }
     calibratedBase = base;
     if (!pose.calibrated) {
@@ -261,7 +265,7 @@ export function mountRunnerGame(
       );
       return;
     }
-    cameraInput = pose.ingest(value, base, participant.trackId);
+    cameraInput = pose.ingest(value, base, session.binding!.trackId);
     recordPractice(cameraInput);
     cameraMessage(
       cameraInput.valid
@@ -367,11 +371,17 @@ export function mountRunnerGame(
         : stale
           ? "STALE · scoring paused"
           : input?.valid
-            ? `Fresh body · ${Math.max(0, Math.round(t - input.atMs))} ms mapped age`
+            ? "Fresh body"
             : pose.calibrated
               ? (cameraInput?.reason ??
                 "Occluded or uncertain · scoring paused")
               : "Live · set standing reference",
+    );
+    setText(
+      "preview-age",
+      !stale && input?.valid
+        ? `Body ${Math.max(0, Math.round((t - input.atMs) / 50) * 50)} ms mapped age · ${pixels ? `picture ${Math.max(0, Math.round((t - preview.atMs) / 50) * 50)} ms receipt age` : "picture hidden or waiting"}`
+        : "",
     );
   }
   function render(t: number, input: RunnerInput | null) {
@@ -563,6 +573,17 @@ export function mountRunnerGame(
   }
   function tick() {
     if (disposed) return;
+    if (!isDemo() && session.expire(now())) {
+      pose.reset();
+      calibratedBase = null;
+      cameraInput = null;
+      if (owner) ownershipChanged = true;
+      if (active())
+        game.pause(
+          "Tracking recovery expired. Choose New run; score ownership stays protected.",
+        );
+      cameraMessage(session.reason ?? "Tracking expired. Set standing again.");
+    }
     if (!isDemo() && (trackingStale || now() - receivedAt > 350))
       pose.suspend();
     const t = now(),
@@ -824,7 +845,7 @@ export function mountRunnerGame(
       );
     } else
       cameraMessage(
-        "Stand comfortably with one shoulder and one hip confidently visible. Clear occlusion, then try Set standing reference again.",
+        "Stand comfortably with both shoulders or both hips visible, plus a shoulder and hip for height. Clear occlusion, then try Set standing reference again.",
       );
     tick();
   });

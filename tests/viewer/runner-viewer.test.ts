@@ -364,6 +364,64 @@ describe("runner application", () => {
     choose("source-select", "demo");
     expect(element("body-preview").hidden).toBe(true);
   });
+  it("recovers only the same track after brief loss, freezes scoring, and expires without packets", async () => {
+    const socket = await startCamera();
+    let sequence = 0;
+    function send(
+      mode: "fresh" | "missing" | "tentative" | "ambiguous" = "fresh",
+    ) {
+      now += 50;
+      const value = observation(++sequence, 2);
+      if (mode === "missing") value.people.shift();
+      value.detectedCount = value.people.length;
+      if (mode === "tentative" || mode === "ambiguous")
+        value.people[0].identity = mode;
+      socket.onmessage?.({ data: packet(value) });
+    }
+    // Bind while alone, then let a spectator enter before calibration.
+    now += 50;
+    socket.onmessage?.({ data: packet(observation(++sequence)) });
+    send();
+    click("calibrate-player");
+    send();
+    send();
+    send();
+    click("start-round");
+    for (let i = 0; i < 65; i++) send();
+    expect(state().phase).toBe("playing");
+    const frozen = state();
+    send("missing");
+    expect(state().phase).toBe("paused");
+    expect(state().score).toBe(frozen.score);
+    expect(state().distance).toBe(frozen.distance);
+    send("tentative");
+    expect(state().phase).toBe("paused");
+    send();
+    expect(state().phase).toBe("paused");
+    send();
+    send();
+    expect(state().phase).toBe("countdown");
+    for (let i = 0; i < 45; i++) send();
+    expect(state().phase).toBe("playing");
+    advance(451);
+    expect(state().phase).toBe("paused");
+    expect(element("resume-round").hidden).toBe(true);
+    const score = state().score;
+    send();
+    send();
+    send();
+    expect(state().score).toBe(score);
+    expect(state().phase).toBe("paused");
+    click("new-round");
+    send();
+    click("calibrate-player");
+    send();
+    send();
+    send();
+    click("start-round");
+    send("ambiguous");
+    expect(element("resume-round").hidden).toBe(true);
+  });
   it("rejects stale calibration clicks even if the old button was enabled", async () => {
     const socket = await startCamera();
     now += 50;
@@ -411,7 +469,9 @@ describe("runner application", () => {
     expect(acknowledge).not.toBeNull();
     expect(element<HTMLButtonElement>("source-connect").disabled).toBe(true);
     click("source-connect");
-    expect(fetchMock.mock.calls.filter(([url]) => url === "/api/start")).toHaveLength(1);
+    expect(
+      fetchMock.mock.calls.filter(([url]) => url === "/api/start"),
+    ).toHaveLength(1);
     (acknowledge as unknown as (value: unknown) => void)({
       ok: true,
       json: async () => ({ epoch: "late-runner", state: "running" }),
@@ -534,6 +594,7 @@ describe("runner application", () => {
     expect(state().phase).toBe("playing");
     send(0, 0, false, 1, true);
     expect(state().phase).toBe("paused");
+    advance(500);
     expect(element("resume-round").hidden).toBe(true);
     expect(element("overlay-copy").textContent).toContain("score ownership");
     const ownedScore = state().score;
