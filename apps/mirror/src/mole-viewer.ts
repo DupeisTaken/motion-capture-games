@@ -1,3 +1,4 @@
+import { createMultiplayerView } from "./multiplayer-view";
 import { createResumeControl } from "./resume-control";
 import { bombArt, moleArt } from "./mole-art";
 import {
@@ -132,6 +133,10 @@ export function mountMoleGame(
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
   const setup = createPreGameSettings(root, () => {
+    if (multiplayer.enabled()) {
+      multiplayer.start();
+      return;
+    }
     resetGame();
     requested = true;
     manualPaused = false;
@@ -162,6 +167,13 @@ export function mountMoleGame(
     difficulty: select("difficulty-select").value as GameOptions["difficulty"],
     interaction,
   });
+  const multiplayer = createMultiplayerView(
+    root,
+    "mole",
+    config,
+    now,
+    nextSeed(),
+  );
   function setMessage(message: string) {
     if (get("setup-input-status").textContent !== message)
       get("setup-input-status").textContent = message;
@@ -528,6 +540,8 @@ export function mountMoleGame(
   }
   function ingestCamera() {
     if (!observation) return;
+    multiplayer.ingest(observation, image, receivedAt);
+    if (multiplayer.enabled()) return;
     const revision = observationSpaceRevision(observation);
     const receiptGap = cameraLastReceipt ? receivedAt - cameraLastReceipt : 0;
     cameraLastReceipt = receivedAt;
@@ -594,6 +608,11 @@ export function mountMoleGame(
   }
   function tick() {
     if (disposed) return;
+    if (multiplayer.enabled()) {
+      multiplayer.tick();
+      updateReleaseControls();
+      return;
+    }
     const t = now();
     if (isDemo()) {
       demoJoined = true;
@@ -619,10 +638,12 @@ export function mountMoleGame(
       game.resume(t);
     updateTrackChoices();
     render();
+    multiplayer.tick();
   }
   async function stopCamera(
     message = "Camera stopped. Start it again when ready.",
   ) {
+    multiplayer.interrupt(message, true);
     generation++;
     connecting = false;
     cameraMessage = message;
@@ -723,6 +744,9 @@ export function mountMoleGame(
                 status.message || "Camera stopped. Reconnect to continue.",
               );
             if (status.state === "stale") {
+              multiplayer.interrupt(
+                "Camera input is stale. Waiting for fresh input.",
+              );
               frame = null;
               observation = null;
               image?.close();
@@ -950,6 +974,7 @@ export function mountMoleGame(
     tick,
     dispose() {
       disposed = true;
+      multiplayer.dispose();
       setup.dispose();
       cameraChoice.dispose();
       listeners.abort();

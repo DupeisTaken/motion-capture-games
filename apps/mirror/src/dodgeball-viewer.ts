@@ -1,3 +1,4 @@
+import { createMultiplayerView } from "./multiplayer-view";
 import { createResumeControl } from "./resume-control";
 import {
   CameraChoice,
@@ -135,6 +136,10 @@ export function mountDodgeballGame(
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
   const setup = createPreGameSettings(root, () => {
+    if (multiplayer.enabled()) {
+      multiplayer.start();
+      return;
+    }
     resetGame();
     armed = true;
     if (!isDemo() && observation) ingestCamera();
@@ -149,6 +154,13 @@ export function mountDodgeballGame(
     mode: select("mode-select").value as GameOptions["mode"],
     difficulty: select("difficulty-select").value as GameOptions["difficulty"],
   });
+  const multiplayer = createMultiplayerView(
+    root,
+    "dodgeball",
+    config,
+    now,
+    nextSeed(),
+  );
   function setMessage(message: string) {
     if (get("setup-input-status").textContent !== message)
       get("setup-input-status").textContent = message;
@@ -190,6 +202,8 @@ export function mountDodgeballGame(
   // gap may recover only when the same still-confident identity returns.
   function ingestCamera() {
     if (!observation) return;
+    multiplayer.ingest(observation, image, receivedAt);
+    if (multiplayer.enabled()) return;
     const source = observation;
     if (game.state.phase === "ready" && !armed) {
       owner = null;
@@ -502,6 +516,11 @@ export function mountDodgeballGame(
   }
   function tick() {
     if (disposed) return;
+    if (multiplayer.enabled()) {
+      multiplayer.tick();
+      updateReleaseControls();
+      return;
+    }
     const t = now();
     if (isDemo()) frame = demoFrame(t);
     if (owner && t - lastOwnerAt > RECOVERY_GRACE_MS && active())
@@ -537,10 +556,12 @@ export function mountDodgeballGame(
       game.resume(t);
     updatePlayerBinding();
     render();
+    multiplayer.tick();
   }
   async function stopCamera(
     message = "Camera stopped. Start it when you are ready.",
   ) {
+    multiplayer.interrupt(message, true);
     generation++;
     connecting = false;
     cameraMessage = message;
@@ -638,6 +659,9 @@ export function mountDodgeballGame(
                 status.message || "Camera stopped. Reconnect to continue.",
               );
             if (status.state === "stale") {
+              multiplayer.interrupt(
+                "Camera input is stale. Waiting for fresh input.",
+              );
               frame = null;
               observation = null;
               image?.close();
@@ -850,6 +874,7 @@ export function mountDodgeballGame(
     tick,
     dispose() {
       disposed = true;
+      multiplayer.dispose();
       setup.dispose();
       cameraChoice.dispose();
       display.dispose();

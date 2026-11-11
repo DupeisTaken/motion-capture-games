@@ -1,0 +1,160 @@
+.multiplayer-active .mm-game {
+  display: none;
+}
+.multiplayer-board {
+  color: #e8f1e8;
+  background: #142f2b;
+  padding: clamp(16px, 3vw, 32px);
+  border: 1px solid #47675b;
+  border-radius: 20px;
+  min-width: 0;
+}
+.multiplayer-board[hidden] {
+  display: none;
+}
+.multiplayer-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.multiplayer-heading h2 {
+  font-size: clamp(24px, 3vw, 36px);
+  margin: 8px 0;
+}
+.multiplayer-heading p,
+.multiplayer-policy {
+  max-width: 80ch;
+  line-height: 1.6;
+}
+.multiplayer-capacity {
+  color: #163629;
+  background: #d3e5b4;
+  border-radius: 24px;
+  padding: 10px 16px;
+  align-self: start;
+}
+.multiplayer-policy {
+  color: #c7d7ce;
+}
+.multiplayer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.multiplayer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.multiplayer-slot {
+  min-width: 0;
+  background: #203e37;
+  border: 1px solid #617b6c;
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 14px;
+}
+.multiplayer-slot > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.multiplayer-slot h3 {
+  font-size: 22px;
+  margin: 4px 0 14px;
+}
+.multiplayer-score {
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+}
+.multiplayer-enrollment {
+  display: grid;
+  gap: 8px;
+}
+.multiplayer-enrollment select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 6px;
+  color: #142f2b;
+  background: #f2f6e9;
+}
+.multiplayer-binding,
+.multiplayer-state,
+.multiplayer-stats {
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  font-size: 14px;
+}
+.multiplayer-stage {
+  position: relative;
+  aspect-ratio: 8 / 5;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.multiplayer-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.multiplayer-target {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.multiplayer-target svg {
+  width: 100%;
+  height: 100%;
+}
+.multiplayer-slot[data-status="rejoin-required"] {
+  border-color: #f8bd8e;
+}
+.multiplayer-state {
+  min-height: 3em;
+  color: #e8f0b8;
+}
+.multiplayer-board button {
+  white-space: normal;
+}
+@media (max-width: 1050px) {
+  .multiplayer-grid {
+    grid-template-columns: 1fr;
+  }
+  .multiplayer-stage {
+    max-height: 440px;
+  }
+}
+
+.multiplayer-target[data-phase="warning"] svg {
+  opacity: 0.45;
+  transform: scale(0.72);
+}
+.multiplayer-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #f8edbc;
+  color: #15392b;
+  font-size: 10px;
+  font-weight: 800;
+}
+.multiplayer-target[data-phase="warning"] .multiplayer-cue {
+  background: #ffd18b;
+}
+.multiplayer-outcome {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: #fff9cf;
+  background: #14362b;
+  border: 1px solid #c9e6ad;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  pointer-events: none;
+}

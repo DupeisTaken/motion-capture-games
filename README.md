@@ -62,6 +62,8 @@ Open [Slap a Mole](http://127.0.0.1:5173/mole.html) or [Dodgeball](http://127.0.
 
 These are early experimental game slices. Physical framing/collision accuracy, participant height and movement tuning, hardware capacity and latency still require M1/M4 evidence.
 
+Mole and Dodgeball also offer **Multiplayer · experimental 1–3 players** under Camera setup. Select a visible track and **Enroll** for each anonymous slot, close setup, then **Start enrolled players**. Each labeled panel has an independent game and score; other detections remain spectators. Tracking problems pause affected attribution. Leaving clears that slot’s score; new identities never inherit it. Multiplayer uses the same camera stream and stays inline. See [multiplayer policy](docs/multiplayer.md) and [software evidence](reports/playtest-multiplayer.html); three-player physical capacity and continuity remain unmeasured.
+
 ## Play Motion Runner
 
 Open **http://127.0.0.1:5173/runner.html**. Choose **Neon Rails** or **Gold Rush** and Nova, Moss or Ember. Rehearsal starts without a camera: select left/center/right with the buttons or Left / C / Right, Space or Up to jump, and hold Down or Roll to duck. Choose **Fast start** for a 14 m/s opening instead of the standard 10 m/s; both gradually build to 18 m/s. The setting is fixed during a run and remains selected for New run. Three shields end a competitive run; Practice removes the life limit. The game shows an original 3D world, never camera imagery.
