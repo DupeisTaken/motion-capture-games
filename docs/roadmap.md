@@ -68,6 +68,8 @@ All six remain open. [ADR 0004](decisions/0004-proposed-vision-experiment.md) re
 
 ## M2: Whack-a-mole vertical slice
 
+**Concurrent targets:** [Issue #48](https://github.com/DupeisTaken/motion-capture-games/issues/48) gives the admitted player two longer-lived moles and one bomb that deducts 50 points on contact. Each target has independent timing and replacement. [The delivery report](../reports/slap-a-mole-bombs.html) records software and browser checks. Physical playtesting and admitting multiple players remain M2 work.
+
 **Pre-game setup:** [Issue #33](https://github.com/DupeisTaken/motion-capture-games/issues/33) combines video/input, display and game-specific options in one menu opened on load and before every new round in both games. Start confirmation requests play; closing setup preserves results, and Pause/Resume stay in the play view. [The setup report](../reports/pre-game-settings.html) records actual checks and English desktop/mobile evidence. No new distributable or physical gate is introduced.
 
 Wrist-flap extension: [issue #29](https://github.com/DupeisTaken/motion-capture-games/issues/29) adds an optional 2D Flick interaction with nearby swept collision, source-timed thresholds, settled-hand rearming and conservative history resets. [The report](../reports/wrist-flick.html) records verification; physical sensitivity and stationary-wrist hand-orientation tracking remain open.

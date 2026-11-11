@@ -15,6 +15,9 @@ import {
 } from "../../games/mole-motion/src/index";
 
 const outside: MotionContact = { name: "left_wrist", x: 0.01, y: 0.01 };
+const firstMole = (state: GameState) =>
+  state.targets.find((target) => target.kind === "mole")!;
+
 function input(atMs: number, sequence: number): GameMotionFrame {
   return {
     version: 1,
@@ -70,7 +73,7 @@ class Play {
   hit(name: MotionContact["name"] = "left_wrist"): GameState {
     this.contacts = [{ ...outside, name, towardScreenM: 0 }];
     this.tick();
-    const target = this.game.state.target!;
+    const target = firstMole(this.game.state);
     this.contacts = [{ name, x: target.x, y: target.y, towardScreenM: 0.15 }];
     return this.tick();
   }
@@ -131,15 +134,19 @@ describe("Slap a Mole lifecycle and scoring", () => {
   it("waits for explicit start and countdown before spawning and scoring", () => {
     const play = new Play();
     expect(play.game.update(0, input(0, 1)).phase).toBe("ready");
-    expect(play.game.state.target).toBeNull();
+    expect(play.game.state.targets).toEqual([]);
     play.game.start(0);
     play.advance(2_900);
     expect(play.game.state.phase).toBe("countdown");
     expect(play.game.state.hits).toBe(0);
-    expect(play.game.state.target).toBeNull();
+    expect(play.game.state.targets).toEqual([]);
     play.advance(100);
     expect(play.game.state.phase).toBe("playing");
-    expect(play.game.state.target?.id).toBe(1);
+    expect(play.game.state.targets.map(({ id, kind }) => [id, kind])).toEqual([
+      [1, "mole"],
+      [2, "mole"],
+      [3, "bomb"],
+    ]);
     expect(play.game.state.elapsedMs).toBe(0);
   });
 
@@ -156,13 +163,13 @@ describe("Slap a Mole lifecycle and scoring", () => {
     const state = play.hit(name);
     expect(state.hits).toBe(1);
     expect(state.score).toBe(100);
-    expect(state.target?.id).toBe(2);
+    expect(state.targets.at(-1)?.id).toBe(4);
   });
 
   it("touch rejects hips even when a hip overlaps the mole", () => {
     const play = new Play();
     play.start();
-    const target = play.game.state.target!;
+    const target = firstMole(play.game.state);
     play.contacts = [outside, { name: "left_hip", x: target.x, y: target.y }];
     play.tick();
     expect(play.game.state.hits).toBe(0);
@@ -175,7 +182,7 @@ describe("Slap a Mole lifecycle and scoring", () => {
     expect(play.game.state.hits).toBe(14);
     expect(play.game.state.bestCombo).toBe(14);
     expect(play.game.state.score).toBe(2_250);
-    const target = play.game.state.target!;
+    const target = firstMole(play.game.state);
     play.contacts = [
       { name: "left_wrist", x: 0, y: 0 },
       { name: "right_foot", x: 0, y: 0 },
@@ -188,7 +195,9 @@ describe("Slap a Mole lifecycle and scoring", () => {
     }));
     const state = play.tick();
     expect(state.hits).toBe(15);
-    expect(state.target?.id).toBe(target.id + 1);
+    expect(state.targets.some((candidate) => candidate.id === target.id)).toBe(
+      false,
+    );
   });
 
   it("does not score a held contact underneath the next spawned mole", () => {
@@ -209,7 +218,7 @@ describe("Slap a Mole lifecycle and scoring", () => {
   it("does not manufacture an entry by replacing wrist with hand", () => {
     const play = new Play();
     play.start();
-    const target = play.game.state.target!;
+    const target = firstMole(play.game.state);
     play.contacts = [{ name: "left_hand", x: target.x, y: target.y }];
     expect(play.tick().hits).toBe(0);
     play.contacts = [{ name: "left_hand", x: 0, y: 0 }];
@@ -239,7 +248,7 @@ describe("Slap a Mole lifecycle and scoring", () => {
     expect(state.result).toBe("time-up");
     expect(state.remainingMs).toBe(0);
     expect(state.elapsedMs).toBe(60_000);
-    expect(state.target).toBeNull();
+    expect(state.targets).toEqual([]);
   });
 
   it("challenge wins at 15 hits and loses when its clock expires", () => {
@@ -248,7 +257,7 @@ describe("Slap a Mole lifecycle and scoring", () => {
     for (let count = 0; count < 15; count++) winner.hit();
     expect(winner.game.state.result).toBe("challenge-won");
     expect(winner.game.state.hits).toBe(15);
-    expect(winner.game.state.target).toBeNull();
+    expect(winner.game.state.targets).toEqual([]);
     const loser = new Play({ mode: "challenge" });
     loser.start();
     loser.advance(60_000);
@@ -260,11 +269,11 @@ describe("Slap a Mole lifecycle and scoring", () => {
     play.start();
     play.hit();
     play.contacts = [{ ...outside }];
-    play.advance(TUNING.normal.lifetimeMs);
+    play.advance(TUNING.normal.lifetimeMs - 200);
     expect(play.game.state.misses).toBe(1);
     expect(play.game.state.combo).toBe(0);
     expect(play.game.state.bestCombo).toBe(1);
-    play.advance(2 * TUNING.normal.lifetimeMs);
+    play.advance(TUNING.normal.lifetimeMs);
     expect(play.game.state.result).toBe("out-of-lives");
     expect(play.game.state.misses).toBe(3);
     expect(play.game.state.remainingMs).toBeNull();
@@ -278,17 +287,17 @@ describe("Slap a Mole lifecycle and scoring", () => {
     expect(play.game.state.misses).toBe(0);
     expect(play.game.state.remainingMs).toBeNull();
     expect(play.game.finish().result).toBe("completed");
-    expect(play.game.state.target).toBeNull();
+    expect(play.game.state.targets).toEqual([]);
   });
 
   it("restart clears results, score, ordering and seed state", () => {
     const play = new Play();
-    const original = play.start().target;
+    const original = play.start().targets;
     play.hit();
     play.game.finish();
     play.game.restart(play.now);
     play.advance(TUNING.startCountdownMs);
-    expect(play.game.state.target).toEqual(original);
+    expect(play.game.state.targets).toEqual(original);
     expect(play.game.state.score).toBe(0);
     expect(play.game.state.hits).toBe(0);
     expect(play.game.state.result).toBeNull();
@@ -297,14 +306,156 @@ describe("Slap a Mole lifecycle and scoring", () => {
   it("returned snapshots cannot alter options or live targets", () => {
     const play = new Play();
     const state = play.start();
-    state.target!.x = 99;
+    state.targets[0].x = 99;
     state.options.reachArea.x = 99;
     state.score = 999;
-    expect(play.game.state.target!.x).toBeLessThan(1);
+    expect(firstMole(play.game.state).x).toBeLessThan(1);
     expect(play.game.state.options.reachArea.x).toBe(
       DEFAULT_OPTIONS.reachArea.x,
     );
     expect(play.game.state.score).toBe(0);
+  });
+});
+
+describe("concurrent targets and bombs", () => {
+  it("replaces an expired bomb without clearing an active mole streak", () => {
+    const play = new Play();
+    play.start();
+    play.hit();
+    play.hit();
+    const before = play.game.state;
+    const bomb = before.targets.find((target) => target.kind === "bomb")!;
+    const after = play.advance(bomb.remainingMs);
+    expect(after).toMatchObject({ score: 210, combo: 2, misses: 0, hits: 2 });
+    expect(after.targets.find((target) => target.kind === "bomb")?.id).not.toBe(
+      bomb.id,
+    );
+  });
+
+  it("stops at the challenge goal when both moles are hit on the final frame", () => {
+    const play = new Play({ mode: "challenge" });
+    play.start();
+    for (let count = 0; count < 14; count++) play.hit();
+    const names = ["left_wrist", "right_wrist"] as const;
+    play.contacts = names.map((name) => ({ ...outside, name }));
+    const { targets } = play.tick();
+    play.contacts = targets
+      .filter((target) => target.kind === "mole")
+      .map(({ x, y }, index) => ({ name: names[index], x, y }));
+    expect(play.tick()).toMatchObject({
+      phase: "results",
+      result: "challenge-won",
+      hits: 15,
+      combo: 15,
+      targets: [],
+    });
+  });
+
+  it.each([
+    ["easy", 5_000],
+    ["normal", 4_000],
+    ["hard", 3_000],
+  ] as const)("%s targets last %d active ms", (difficulty, lifetimeMs) => {
+    const play = new Play({ difficulty });
+    const start = play.start();
+    expect(start.targets).toHaveLength(3);
+    expect(start.targets.map((target) => target.remainingMs)).toEqual([
+      lifetimeMs,
+      lifetimeMs,
+      lifetimeMs,
+    ]);
+    const beforeExpiry = play.advance(lifetimeMs - 1);
+    expect(beforeExpiry.targets.map((target) => target.remainingMs)).toEqual([
+      1, 1, 1,
+    ]);
+    expect(beforeExpiry.misses).toBe(0);
+    const afterExpiry = play.advance(1);
+    expect(afterExpiry).toMatchObject({
+      hits: 0,
+      misses: 2,
+      score: 0,
+      lastStrike: null,
+    });
+    expect(afterExpiry.targets.map((target) => target.id)).toEqual([4, 5, 6]);
+  });
+
+  it.each(["touch", "push"] as const)(
+    "a %s bomb strike costs points once and only replaces the bomb",
+    (interaction) => {
+      const play = new Play({ interaction, mode: "practice" });
+      play.start();
+      play.hit();
+      const before = play.game.state;
+      const bomb = before.targets.find((target) => target.kind === "bomb")!;
+      play.contacts = [{ ...outside, towardScreenM: 0 }];
+      play.tick();
+      play.contacts = [
+        { name: "left_wrist", x: bomb.x, y: bomb.y, towardScreenM: 0.15 },
+      ];
+      const after = play.tick();
+      expect(after).toMatchObject({
+        score: 50,
+        hits: 1,
+        misses: 0,
+        combo: 0,
+        bestCombo: 1,
+        lastStrike: { molePoints: 0, bombPenalty: 50 },
+      });
+      expect(after.targets.filter((target) => target.kind === "mole")).toEqual(
+        before.targets
+          .filter((target) => target.kind === "mole")
+          .map((target) => ({
+            ...target,
+            remainingMs: target.remainingMs - 200,
+          })),
+      );
+      expect(
+        after.targets.find((target) => target.kind === "bomb")!.id,
+      ).not.toBe(bomb.id);
+      expect(play.tick().score).toBe(50);
+      expect(play.hit().score).toBe(150);
+    },
+  );
+
+  it("scores two distinct moles and applies a simultaneous bomb after the hit awards", () => {
+    const play = new Play({ mode: "practice" });
+    const { targets } = play.start();
+    play.contacts = [
+      { ...outside, name: "left_wrist" },
+      { ...outside, name: "right_wrist" },
+      { ...outside, name: "left_foot" },
+    ];
+    play.tick();
+    play.contacts = play.contacts.map((contact, index) => ({
+      ...contact,
+      x: targets[index].x,
+      y: targets[index].y,
+    }));
+    const state = play.tick();
+    expect(state).toMatchObject({
+      hits: 2,
+      score: 160,
+      combo: 0,
+      bestCombo: 2,
+      misses: 0,
+      lastStrike: { molePoints: 210, bombPenalty: 50 },
+    });
+    expect(state.targets.map((target) => target.id)).toEqual([4, 5, 6]);
+  });
+
+  it("does not let hand and wrist aliases strike two targets with one limb", () => {
+    const play = new Play();
+    const { targets } = play.start();
+    play.contacts = [outside, { ...outside, name: "left_hand" }];
+    play.tick();
+    play.contacts = play.contacts.map((contact, index) => ({
+      ...contact,
+      x: targets[index].x,
+      y: targets[index].y,
+    }));
+    const state = play.tick();
+    expect(state.hits).toBe(1);
+    expect(state.targets.map((target) => target.id)).toEqual([2, 3, 4]);
   });
 });
 
@@ -329,7 +480,7 @@ describe("depth-gated push", () => {
     const state = unavailable.tick(100, { depthAvailable: false });
     expect(state.phase).toBe("paused");
     expect(state.reason).toContain("depth");
-    expect(state.target).toEqual(frozen.target);
+    expect(state.targets).toEqual(frozen.targets);
     const feet = new Play({ interaction: "push" });
     feet.start();
     feet.contacts = [{ name: "left_foot", x: 0.5, y: 0.5, towardScreenM: 0.2 }];
@@ -339,7 +490,7 @@ describe("depth-gated push", () => {
   it("requires actual forward depth, not mere 2D overlap", () => {
     const play = new Play({ interaction: "push" });
     play.start();
-    const target = play.game.state.target!;
+    const target = firstMole(play.game.state);
     play.contacts = [
       { name: "left_wrist", x: target.x, y: target.y, towardScreenM: 0 },
     ];
@@ -354,7 +505,7 @@ describe("depth-gated push", () => {
     const play = new Play({ interaction: "push" });
     play.start();
     play.hit();
-    const target = play.game.state.target!;
+    const target = firstMole(play.game.state);
     play.contacts = [
       { name: "left_wrist", x: target.x, y: target.y, towardScreenM: 0.2 },
     ];
@@ -376,7 +527,7 @@ describe("depth-gated push", () => {
   it("breaks a push cycle when a limb disappears while another remains visible", () => {
     const play = new Play({ interaction: "push" });
     play.start();
-    const target = play.game.state.target!;
+    const target = firstMole(play.game.state);
     const left: MotionContact = {
       name: "left_wrist",
       x: target.x,
@@ -404,7 +555,7 @@ describe("depth-gated push", () => {
   it("consumes a forward gesture that missed before moving onto a target", () => {
     const play = new Play({ interaction: "push" });
     play.start();
-    const target = play.game.state.target!;
+    const target = firstMole(play.game.state);
     play.contacts = [{ ...outside, towardScreenM: 0.2 }];
     expect(play.tick().hits).toBe(0);
     play.contacts = [
@@ -440,24 +591,25 @@ describe("framing, quality and temporal safety", () => {
       expect(paused.reason).toContain(reason);
       expect(paused.score).toBe(before.score);
       expect(paused.elapsedMs).toBe(before.elapsedMs);
-      expect(paused.target).toEqual(before.target);
+      expect(paused.targets).toEqual(before.targets);
       play.advance(10_000);
       expect(play.game.state.elapsedMs).toBe(before.elapsedMs);
-      expect(play.game.state.target).toEqual(before.target);
+      expect(play.game.state.targets).toEqual(before.targets);
     },
   );
 
   it("explicit recovery counts down without catch-up or a free held hit", () => {
     const play = new Play();
     play.start();
-    const target = play.game.state.target!;
+    const targets = play.game.state.targets;
+    const target = targets[0];
     play.tick(100, { feetVisible: false });
     play.advance(20_000);
     play.contacts = [{ name: "left_wrist", x: target.x, y: target.y }];
     play.game.resume(play.now);
     play.advance(TUNING.resumeCountdownMs);
     expect(play.game.state.phase).toBe("playing");
-    expect(play.game.state.target).toEqual(target);
+    expect(play.game.state.targets).toEqual(targets);
     expect(play.game.state.elapsedMs).toBe(0);
     expect(play.tick().hits).toBe(0);
     play.hit();
@@ -487,7 +639,7 @@ describe("framing, quality and temporal safety", () => {
       play.start();
       const before = play.game.state;
       expect(play.tick(100, change(play)).phase).toBe("paused");
-      expect(play.game.state.target).toEqual(before.target);
+      expect(play.game.state.targets).toEqual(before.targets);
       expect(play.game.state.elapsedMs).toBe(before.elapsedMs);
       expect(play.game.state.hits).toBe(0);
     }
@@ -501,14 +653,14 @@ describe("framing, quality and temporal safety", () => {
     expect(after.phase).toBe("paused");
     expect(after.reason).toContain("interrupted");
     expect(after.misses).toBe(0);
-    expect(after.target).toEqual(before.target);
+    expect(after.targets).toEqual(before.targets);
     expect(after.elapsedMs).toBe(0);
   });
 
   it("a fresh sample after a source gap cannot bridge an old gesture", () => {
     const play = new Play({ interaction: "push" });
     play.start();
-    const target = play.game.state.target!;
+    const target = firstMole(play.game.state);
     play.contacts = [
       { name: "left_wrist", x: target.x, y: target.y, towardScreenM: 0 },
     ];
@@ -578,21 +730,28 @@ describe("framing, quality and temporal safety", () => {
 
 describe("placement, configuration and replay", () => {
   it.each(["easy", "normal", "hard"] as const)(
-    "%s keeps the whole mole within the configured reach rectangle",
+    "%s keeps all targets inside the reach rectangle and clear of one another",
     (difficulty) => {
       const reachArea = { x: 0.2, y: 0.25, width: 0.6, height: 0.5 };
       const play = new Play({ mode: "practice", difficulty, reachArea });
       play.start();
       for (let count = 0; count < 100; count++) {
-        const target = play.game.state.target!;
-        expect(target.x - target.radius).toBeGreaterThanOrEqual(reachArea.x);
-        expect(target.y - target.radius).toBeGreaterThanOrEqual(reachArea.y);
-        expect(target.x + target.radius).toBeLessThanOrEqual(
-          reachArea.x + reachArea.width,
-        );
-        expect(target.y + target.radius).toBeLessThanOrEqual(
-          reachArea.y + reachArea.height,
-        );
+        const { targets } = play.game.state;
+        expect(targets).toHaveLength(3);
+        targets.forEach((target, index) => {
+          expect(target.x - target.radius).toBeGreaterThanOrEqual(reachArea.x);
+          expect(target.y - target.radius).toBeGreaterThanOrEqual(reachArea.y);
+          expect(target.x + target.radius).toBeLessThanOrEqual(
+            reachArea.x + reachArea.width,
+          );
+          expect(target.y + target.radius).toBeLessThanOrEqual(
+            reachArea.y + reachArea.height,
+          );
+          for (const other of targets.slice(index + 1))
+            expect(
+              Math.hypot(target.x - other.x, target.y - other.y),
+            ).toBeGreaterThan(target.radius + other.radius);
+        });
         play.hit();
       }
     },
@@ -605,7 +764,7 @@ describe("placement, configuration and replay", () => {
       for (const difficulty of ["normal", "hard"] as const) {
         const play = new Play({ difficulty }, seed);
         play.contacts = [{ name: "left_wrist", x: 0.5, y: 0.5 }];
-        const target = play.start().target!;
+        const target = firstMole(play.start());
         const distance = Math.hypot(target.x - 0.5, target.y - 0.5);
         if (difficulty === "normal") normalDistance += distance;
         else hardDistance += distance;
@@ -634,7 +793,7 @@ describe("placement, configuration and replay", () => {
           towardScreenM: 0,
         },
       ];
-      expect(first.start().target).toEqual(second.start().target);
+      expect(first.start().targets).toEqual(second.start().targets);
     }
   });
 
@@ -643,8 +802,8 @@ describe("placement, configuration and replay", () => {
     left.contacts = [{ name: "left_wrist", x: 0.1, y: 0.5 }];
     const right = new Play({ difficulty: "hard" });
     right.contacts = [{ name: "left_wrist", x: 0.9, y: 0.5 }];
-    expect(left.start().target!.x).toBeGreaterThan(0.65);
-    expect(right.start().target!.x).toBeLessThan(0.35);
+    expect(firstMole(left.start()).x).toBeGreaterThan(0.65);
+    expect(firstMole(right.start()).x).toBeLessThan(0.35);
   });
 
   it.each([
@@ -669,7 +828,7 @@ describe("placement, configuration and replay", () => {
     expect(() => new MoleGame().restart(Infinity)).toThrow("finite");
   });
 
-  it("version 1 replay reproduces every seeded target, score and pause outcome", () => {
+  it("version 2 replay reproduces every seeded target, score and pause outcome", () => {
     const play = new Play({ mode: "challenge", difficulty: "hard" }, 127);
     play.start();
     for (let count = 0; count < 6; count++) play.hit();
@@ -681,7 +840,7 @@ describe("placement, configuration and replay", () => {
     play.advance(TUNING.resumeCountdownMs);
     for (let count = 0; count < 9; count++) play.hit();
     const replay: GameReplay = {
-      version: 1,
+      version: 2,
       options: play.options,
       seed: play.seed,
       commands: play.commands,
@@ -692,7 +851,31 @@ describe("placement, configuration and replay", () => {
     expect(replayGame(serialized)).toEqual(first);
     expect(first.at(-1)?.result).toBe("challenge-won");
     expect(() =>
-      replayGame({ ...replay, version: 2 } as unknown as GameReplay),
+      replayGame({ ...replay, version: 3 } as unknown as GameReplay),
     ).toThrow("version");
+  });
+
+  it("replays version 1 with its original target shape and shorter lifetime", () => {
+    const play = new Play({ mode: "survival" });
+    const target = firstMole(play.start());
+    play.advance(2_500);
+    const states = replayGame({
+      version: 1,
+      options: play.options,
+      seed: play.seed,
+      commands: play.commands,
+    });
+    expect(states.find((state) => state.phase === "playing")?.target).toEqual({
+      id: 1,
+      x: target.x,
+      y: target.y,
+      radius: target.radius,
+      remainingMs: 2_500,
+    });
+    expect(states.at(-1)).toMatchObject({
+      misses: 1,
+      target: { id: 2, remainingMs: 2_500 },
+    });
+    expect(states.at(-1)).not.toHaveProperty("targets");
   });
 });

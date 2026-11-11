@@ -1,5 +1,7 @@
 # Change reports
 
+[Slap a Mole concurrent targets and bombs](slap-a-mole-bombs.html) records longer target lifetimes, bomb scoring, replay compatibility and English desktop/mobile browser verification.
+
 [Slap a Mole rename](slap-a-mole-rename.html) records the display-name update, compatible routes and source paths, isolated software checks and synthetic desktop/mobile before/after screenshots.
 
 [Two-camera operator workspace](two-camera-workspace.html) records paired synthetic XYZ rehearsal, physical camera-role planning, independent review, actual checks and responsive before/after screenshots. Planning inputs and simulated output do not establish physical calibration, synchronization, accuracy or maze readiness.

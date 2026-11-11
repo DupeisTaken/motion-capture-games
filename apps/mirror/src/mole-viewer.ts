@@ -32,11 +32,19 @@ const MAX_RECOVERY_GAP_MS = 2000;
 
 const moleArt = `<svg viewBox="0 0 120 110" aria-hidden="true"><ellipse cx="60" cy="96" rx="52" ry="11" fill="#071d1a"/><path d="M19 88V55a41 41 0 0 1 82 0v33" fill="#ce9364"/><circle cx="25" cy="37" r="14" fill="#ce9364"/><circle cx="95" cy="37" r="14" fill="#ce9364"/><circle cx="25" cy="37" r="8" fill="#a7654c"/><circle cx="95" cy="37" r="8" fill="#a7654c"/><path d="M19 88V57a41 41 0 0 1 82 0v31" fill="#ce9364"/><ellipse cx="60" cy="72" rx="23" ry="18" fill="#f4cc9c"/><ellipse cx="60" cy="62" rx="10" ry="7" fill="#492e2b"/><circle cx="43" cy="50" r="4" fill="#272d29"/><circle cx="78" cy="50" r="4" fill="#272d29"/><path d="m51 80 9 5 9-5" fill="none" stroke="#734a3b" stroke-width="3" stroke-linecap="round"/><path d="M13 94h94" stroke="#74aa81" stroke-width="5" stroke-linecap="round"/></svg>`;
 
+const targetSlots = ["mole-target", "mole-target-2", "bomb-target"] as const;
+const bombWarning = `Avoid bombs · −${TUNING.bombPenalty} points`;
+
+function targetMarkup(id: (typeof targetSlots)[number]): string {
+  const bomb = id === "bomb-target";
+  return `<div id="${id}" class="mole-target${bomb ? " mole-bomb" : ""}" hidden>${bomb ? '<span class="bomb-art" aria-hidden="true"></span>' : moleArt}<progress class="mole-lifetime" max="1" value="1" aria-label="${bomb ? "Bomb" : "Mole"} time remaining"></progress></div>`;
+}
+
 const modeCopy: Record<string, string> = {
   timed: "60 seconds. Make every mole count.",
   challenge: "Hit 15 moles before 60 seconds run out.",
   survival: "Keep going. Three escaped moles end the round.",
-  practice: "No clock, no penalties. Find your rhythm.",
+  practice: "No round timer or penalty for escaped moles.",
 };
 
 export function mountMoleGame(
@@ -46,7 +54,7 @@ export function mountMoleGame(
   const now = deps.now || (() => performance.now());
   const setupMarkup = preGameSettingsMarkup(
     "Slap a Mole",
-    `<label for="mode-select">Play mode</label><select id="mode-select"><option value="timed">◷  Timed · 60 seconds</option><option value="challenge">◎  Challenge · 15 moles</option><option value="survival">♡  Survival · 3 misses</option><option value="practice">∞  Practice · no pressure</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p>
+    `<label for="mode-select">Play mode</label><select id="mode-select"><option value="timed">◷  Timed · 60 seconds</option><option value="challenge">◎  Challenge · 15 moles</option><option value="survival">♡  Survival · 3 misses</option><option value="practice">∞  Practice · untimed</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p><p class="field-note">Whack the two moles as they appear. ${bombWarning}.</p>
     <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · room to warm up</option><option value="normal" selected>Normal · find your rhythm</option><option value="hard">Hard · stretch your reach</option></select><p class="field-note">Hard favors moles farther from your available contact points, within the play area.</p>
     <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-flick" aria-pressed="false">Flick</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies.</p>
     `,
@@ -63,8 +71,8 @@ export function mountMoleGame(
   <div class="mm-layout play-layout">
   <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="player-readiness" role="status">Press Start round. We’ll wait until your input is ready.</p><button id="source-stop" class="mm-text" disabled>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
   <section class="mm-game" aria-label="Slap a Mole game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>HITS</span><strong id="hits-value">0</strong></div><div class="score-item"><span>BEST STREAK</span><strong id="streak-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
-    <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Game play area. Rehearsal: move pointer or arrow keys to aim; Space to push."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera and game view"></canvas><div class="display-hud" aria-label="Live round score"><span>SCORE <strong id="display-score">000</strong></span><span>TIME <strong id="display-time">1:00</strong></span></div><div class="stage-label"><i></i><span id="stage-mode">TOUCH TO WHACK</span></div><div class="player-label">P1 <span id="stage-player">NOT JOINED</span></div><div id="mole-target" class="mole-target" hidden>${moleArt}</div><div id="hit-feedback" class="hit-feedback" aria-hidden="true"></div><div class="mm-overlay" id="game-overlay"><div class="overlay-mole">${moleArt}</div><p id="overlay-kicker">READY, SET, REACH</p><h2 id="overlay-title">Small moles.<br>Big moves.</h2><p id="overlay-copy">Press Start round and make your first move.<br>Keep your whole body inside the camera view.</p></div><div class="stage-bottom"><span id="stage-help">Rehearsal · move your cursor or use arrow keys</span><span>MIRRORED VIEW</span></div></div>
-    <div class="target-track"><span id="target-life">Waiting for your first mole</span><progress id="target-progress" max="1" value="1" aria-label="Mole time remaining"></progress><span id="misses-value">0 escaped</span></div>
+    <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Game play area. Rehearsal: move pointer or arrow keys to aim; Space to push."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera and game view"></canvas><div class="display-hud" aria-label="Live round score"><span>SCORE <strong id="display-score">000</strong></span><span>TIME <strong id="display-time">1:00</strong></span></div><div class="stage-label"><i></i><span id="stage-mode">TOUCH TO WHACK</span></div><div class="player-label">P1 <span id="stage-player">NOT JOINED</span></div>${targetSlots.map(targetMarkup).join("")}<div id="hit-feedback" class="hit-feedback" aria-hidden="true"></div><div class="mm-overlay" id="game-overlay"><div class="overlay-mole">${moleArt}</div><p id="overlay-kicker">READY, SET, REACH</p><h2 id="overlay-title">Small moles.<br>Big moves.</h2><p id="overlay-copy">Press Start round and make your first move.<br>Keep your whole body inside the camera view.</p></div><div class="stage-bottom"><span id="stage-help">Rehearsal · move your cursor or use arrow keys</span><span class="bomb-warning">${bombWarning}</span></div></div>
+    <div class="target-track"><span id="target-life"></span><span id="misses-value">0 escaped</span></div>
     <div class="game-actions"><button id="start-round" class="mm-primary">Set up round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="resume-round" class="mm-primary" hidden>Resume · countdown</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start round. Input checks happen automatically.</span></div>
     <p class="source-disclosure" id="source-disclosure">Synthetic controls, including simulated depth. This rehearsal does not measure camera or push accuracy.</p>
   </section></div>
@@ -113,7 +121,7 @@ export function mountMoleGame(
   let disposed = false,
     pushUntil = -1,
     pointer = { x: 0.28, y: 0.5 };
-  let lastHits = 0,
+  let lastStrikeSequence: number | null = null,
     hitUntil = 0,
     demoTime = -Infinity;
   const cameraChoice = new CameraChoice(root);
@@ -212,8 +220,7 @@ export function mountMoleGame(
   }
   function resetGame() {
     game = new MoleGame(config(), nextSeed());
-    lastHits = 0;
-    lastScore = 0;
+    lastStrikeSequence = null;
     hitUntil = 0;
     pushUntil = -1;
     requested = false;
@@ -324,24 +331,24 @@ export function mountMoleGame(
       get<HTMLInputElement>("show-tracking").checked && !display.isOpen,
       isDemo(),
     );
-    const target = get("mole-target");
-    target.hidden = !state.target || state.phase !== "playing";
-    if (state.target) {
-      const mole = state.target;
-      const position = mapJoint(mole, rect);
-      target.style.left = `${position.x}px`;
-      target.style.top = `${position.y}px`;
-      target.style.width = `${mole.radius * 2 * rect.width}px`;
-      target.style.height = `${mole.radius * 2 * rect.height}px`;
-      get("target-life").textContent =
-        `${(mole.remainingMs / 1000).toFixed(1)}s to whack`;
-      get<HTMLProgressElement>("target-progress").value =
-        mole.remainingMs / TUNING[state.options.difficulty].lifetimeMs;
-    } else
-      get("target-life").textContent =
-        state.phase === "results"
-          ? "Round complete"
-          : "Waiting for your next mole";
+    const moles = state.targets.filter((target) => target.kind === "mole");
+    const bomb = state.targets.find((target) => target.kind === "bomb");
+    const visibleTargets = [moles[0], moles[1], bomb];
+    const lifetime = TUNING[state.options.difficulty].lifetimeMs;
+    get("target-life").textContent = `${lifetime / 1000}s per target`;
+    targetSlots.forEach((id, index) => {
+      const element = get(id);
+      const target = visibleTargets[index];
+      element.hidden = !target || state.phase !== "playing";
+      if (element.hidden || !target) return;
+      const position = mapJoint(target, rect);
+      element.dataset.targetId = String(target.id);
+      element.style.left = `${position.x}px`;
+      element.style.top = `${position.y}px`;
+      element.style.width = `${target.radius * 2 * rect.width}px`;
+      element.style.height = `${target.radius * 2 * rect.height}px`;
+      element.querySelector("progress")!.value = target.remainingMs / lifetime;
+    });
     get("score-value").textContent = String(state.score).padStart(3, "0");
     get("hits-value").textContent =
       `${state.hits}${state.options.mode === "challenge" ? " / 15" : ""}`;
@@ -477,15 +484,21 @@ export function mountMoleGame(
             : "Press Start round. We’ll check your input automatically.",
       );
     }
-    if (state.hits > lastHits) {
-      hitUntil = t + 550;
-      get("hit-feedback").textContent = `WHACK! +${state.score - lastScore}`;
+    const feedback = get("hit-feedback");
+    const strike = state.lastStrike;
+    if (strike && strike.sequence !== lastStrikeSequence) {
+      lastStrikeSequence = strike.sequence;
+      hitUntil = t + 850;
+      feedback.classList.toggle("bomb-feedback", strike.bombPenalty > 0);
+      const whack = strike.molePoints ? `WHACK! +${strike.molePoints}` : "";
+      const blast = strike.bombPenalty ? `BOMB! −${strike.bombPenalty}` : "";
+      feedback.textContent = [whack, blast].filter(Boolean).join(" · ");
     }
-    lastHits = state.hits;
-    lastScore = state.score;
-    get("hit-feedback").hidden = t > hitUntil || hitUntil === 0;
+    feedback.hidden =
+      hitUntil === 0 ||
+      t > hitUntil ||
+      (state.phase !== "playing" && state.phase !== "results");
   }
-  let lastScore = 0;
   function ingestCamera() {
     if (!observation) return;
     const revision = observationSpaceRevision(observation);
