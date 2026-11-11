@@ -32,7 +32,7 @@
     <p class="date">11 November 2026 · Slap a Mole</p>
     <h1>Two moles and a bomb</h1>
     <p>More time to reach each mole and three simultaneous targets give the player a choice of what to strike. The player can see each target’s remaining time in its own bar.</p>
-    <p><a href="https://github.com/DupeisTaken/motion-capture-games/issues/48">Issue #48</a></p>
+    <p><a href="https://github.com/DupeisTaken/motion-capture-games/issues/48">Issue #48</a> · <a href="https://github.com/DupeisTaken/motion-capture-games/pull/49">PR #49</a></p>
   </header>
 
   <section>
@@ -75,6 +75,7 @@
     <ul>
       <li><code>pnpm check</code> passed on Windows with Node 24.21.0 and pnpm 11.25.0. The run included repository conventions, schema, types, lint and formatting, 504 TypeScript tests and 208 Python tests. Pytest used a dedicated workspace temp directory after the initial sandboxed run stalled.</li>
       <li><code>pnpm build</code> passed. All four application entries and their local asset references were verified.</li>
+      <li>The HTML report rendered at both viewport sizes with all five embedded images and no external asset requests.</li>
       <li>Chrome 157.0.8103.39, real local Vite servers, English (en-US), desktop 1440 × 900 and mobile 390 × 844. The baseline used game sources from <code>999fb92</code>. The browser counted one visible target before and three after at both sizes.</li>
       <li>Desktop pointer and mobile tap checks observed 100 points after striking a mole and 50 after striking a bomb. The bomb replaced independently, all three targets reappeared after resume, and the score remained 50. The separate desktop game window showed all targets and returned them to the operator page on close.</li>
     </ul>
