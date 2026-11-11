@@ -132,7 +132,7 @@ On Python 3.12/Windows, `monotonic_ns` can have 15.625 ms resolution. Capture an
 
 Person rows are retained while displayed identity, joint count and capacity stay unchanged. The independent animation loop draws the latest fresh image with compatible pose geometry. The sample window and existing one-frame queues remain bounded.
 
-Slap a Mole and Dodgeball continue to consume the compatible exact-pair observation endpoint for game input; their camera model default is also RTMPose. The smooth independent preview policy applies to the tracking console and does not change game scoring or session identity rules.
+Slap a Mole and Dodgeball consume the exact-pair observation endpoint for game input. Slap a Mole uses MediaPipe Pose Landmarker Lite for its hand landmarks. Dodgeball uses RTMPose. The smooth independent preview policy applies to the tracking console.
 
 ## Raw camera and separate game display
 

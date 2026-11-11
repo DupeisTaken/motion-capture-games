@@ -1,4 +1,4 @@
-import type { Observation, Person } from "./index";
+import type { Joint, Observation, Person, RenderableJoint } from "./index";
 
 export type ContactName =
   | "left_hand"
@@ -49,27 +49,41 @@ const CONTACT_JOINTS = [
   ["right_ankle", "right_foot"],
 ] as const;
 
-/** Wrist/ankle proxies stay explicit; estimated or off-image joints cannot hit. */
+function observed(joint: Joint | undefined): joint is RenderableJoint {
+  return (
+    joint?.status === "observed" &&
+    joint.inFrame &&
+    joint.x !== null &&
+    joint.y !== null &&
+    joint.x >= 0 &&
+    joint.x <= 1 &&
+    joint.y >= 0 &&
+    joint.y <= 1 &&
+    joint.score >= GAME_INPUT_QUALITY.minimumScore &&
+    joint.score <= 1
+  );
+}
+
+/** Palm centers require same-side finger evidence from the same observation. */
 export function observedContacts(person: Person): MotionContact[] {
   const contacts: MotionContact[] = [];
   for (const [jointName, contactName] of CONTACT_JOINTS) {
     const joint = person.joints[jointName];
-    if (
-      joint?.status === "observed" &&
-      joint.inFrame &&
-      joint.x !== null &&
-      joint.y !== null &&
-      Number.isFinite(joint.x) &&
-      Number.isFinite(joint.y) &&
-      joint.x >= 0 &&
-      joint.x <= 1 &&
-      joint.y >= 0 &&
-      joint.y <= 1 &&
-      Number.isFinite(joint.score) &&
-      joint.score >= GAME_INPUT_QUALITY.minimumScore &&
-      joint.score <= 1
-    ) {
+    if (observed(joint)) {
       contacts.push({ name: contactName, x: joint.x, y: joint.y });
+    }
+  }
+  for (const side of ["left", "right"] as const) {
+    const wrist = person.joints[`${side}_wrist`];
+    const index = person.joints[`${side}_index_finger`];
+    const pinky = person.joints[`${side}_pinky_finger`];
+    if (observed(wrist) && observed(index) && observed(pinky)) {
+      // Halfway from the wrist to the midpoint across the two finger landmarks.
+      contacts.push({
+        name: `${side}_hand`,
+        x: (2 * wrist.x + index.x + pinky.x) / 4,
+        y: (2 * wrist.y + index.y + pinky.y) / 4,
+      });
     }
   }
   return contacts;

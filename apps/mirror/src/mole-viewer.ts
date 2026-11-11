@@ -56,7 +56,7 @@ export function mountMoleGame(
     "Slap a Mole",
     `<label for="mode-select">Play mode</label><select id="mode-select"><option value="timed">◷  Timed · 60 seconds</option><option value="challenge">◎  Challenge · 15 moles</option><option value="survival">♡  Survival · 3 misses</option><option value="practice">∞  Practice · untimed</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p><p class="field-note">Whack the two moles as they appear. ${bombWarning}.</p>
     <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · room to warm up</option><option value="normal" selected>Normal · find your rhythm</option><option value="hard">Hard · stretch your reach</option></select><p class="field-note">Hard favors moles farther from your available contact points, within the play area.</p>
-    <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-flick" aria-pressed="false">Flick</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies.</p>
+    <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-flick" aria-pressed="false">Flick</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Overlap a mole with the ring around your palm or foot.</p>
     `,
     `<label for="source-select">Input source</label><select id="source-select"><option value="camera">Camera · body tracking</option><option value="demo">Rehearsal · no camera</option></select>
     <div id="setup-camera-release" hidden><p id="setup-release-message" class="field-note" role="status"></p><button id="setup-retry-camera-stop" class="mm-secondary">Retry camera stop</button></div><p id="setup-input-status" class="field-note" role="status"></p><div id="demo-controls"><label for="demo-contact">Rehearsal contact</label><select id="demo-contact"><option value="left_wrist">Left wrist / hand</option><option value="right_wrist">Right wrist / hand</option><option value="left_hip">Left hip</option><option value="right_hip">Right hip</option><option value="left_foot">Left foot</option><option value="right_foot">Right foot</option></select><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
@@ -260,11 +260,11 @@ export function mountMoleGame(
         ? demo
           ? "Aim near a mole, pause briefly, then flick the cursor or press an arrow key. Settle briefly before the next flick."
           : "Hold your wrist near a mole, then give a quick flap. Settle briefly to rearm. Your wrist must visibly move; finger-only flaps are not tracked."
-        : !demo
-          ? "Camera supplies 2D only: hands/feet use wrist/ankle proxies. Push needs calibrated depth and is unavailable here."
-          : interaction === "touch"
-            ? "Meet a mole with a hand or foot. Camera play uses wrist and ankle proxies."
-            : "Line up a hip, hand or wrist, then push toward the screen. Rehearsal simulates depth: tap or press Space.";
+        : interaction === "touch"
+          ? demo
+            ? "Move the contact ring until it overlaps a mole."
+            : "Overlap a mole with the ring around your palm or foot. Camera Push requires calibrated depth."
+          : "Line up a hip, hand or wrist, then push toward the screen. Rehearsal simulates depth: tap or press Space.";
     for (const option of select("demo-contact").options)
       option.disabled =
         interaction === "push"
@@ -285,7 +285,7 @@ export function mountMoleGame(
           : "PUSH TO WHACK";
     get("source-disclosure").textContent = demo
       ? "Synthetic controls, including simulated depth. This rehearsal does not measure camera or push accuracy."
-      : "Experimental camera contact play. Wrist/ankle proxies; physical accuracy, reach and latency need hardware trials. No recording.";
+      : "Experimental camera contact play. Physical accuracy, reach and latency need hardware trials. No recording.";
     get("stage-help").textContent = demo
       ? interaction === "flick"
         ? "Rehearsal · aim, settle, flick or tap ← →"
@@ -294,7 +294,7 @@ export function mountMoleGame(
           : "Rehearsal · aim, then tap or press Space to push"
       : interaction === "flick"
         ? "Flick near a mole · settle between flaps"
-        : "Move left → go left · keep hands and both feet visible";
+        : "Touch with the palm or foot ring · keep both feet visible";
   }
   function demoFrame(t: number): GameMotionFrame | null {
     if (!demoJoined) return null;
@@ -302,6 +302,14 @@ export function mountMoleGame(
       sequence++;
       demoTime = t;
     }
+    const contact = select("demo-contact").value as ContactName;
+    const name =
+      interaction === "touch" &&
+      (contact === "left_wrist" || contact === "right_wrist")
+        ? contact === "left_wrist"
+          ? "left_hand"
+          : "right_hand"
+        : contact;
     return {
       version: 1,
       epoch: `rehearsal-${demoEpoch}`,
@@ -314,7 +322,7 @@ export function mountMoleGame(
       spaceRevision: "rehearsal-space-v1",
       contacts: [
         {
-          name: select("demo-contact").value as ContactName,
+          name,
           ...pointer,
           towardScreenM: t < pushUntil ? 0.18 : 0,
         },
@@ -327,14 +335,23 @@ export function mountMoleGame(
     const readiness = game.readiness(t, frame);
     const fresh = frame && t - frame.atMs <= TUNING.staleMs && t >= frame.atMs;
     const previewFresh = observation && t - receivedAt <= TUNING.staleMs;
+    const touch = state.options.interaction === "touch";
+    const touchRegions =
+      readiness.ready &&
+      !needsNewOwner &&
+      state.phase !== "paused" &&
+      state.phase !== "results"
+        ? game.touchRegions(frame?.contacts ?? [])
+        : [];
     const rect = drawMoleScene(
       get<HTMLCanvasElement>("game-canvas"),
       previewFresh ? observation : null,
       previewFresh ? image : null,
-      fresh ? (frame?.contacts ?? []) : [],
+      fresh && !touch ? (frame?.contacts ?? []) : [],
       true,
       get<HTMLInputElement>("show-tracking").checked && !display.isOpen,
       isDemo(),
+      touchRegions,
     );
     const moles = state.targets.filter((target) => target.kind === "mole");
     const bomb = state.targets.find((target) => target.kind === "bomb");
@@ -664,7 +681,7 @@ export function mountMoleGame(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           source: "camera",
-          algorithm: "rtmpose",
+          algorithm: "mediapipe",
           tracker: "pose",
           ...camera,
           maxPeople: 3,

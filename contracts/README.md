@@ -13,6 +13,8 @@ Nanoseconds cross JSON as decimal strings rather than JavaScript numbers, preser
 
 All joint names are anatomical, before mirroring. Missing joints have null coordinates and `inFrame: false`. Off-image estimates keep their coordinates and have `inFrame: false`. A model score is not a calibrated probability. A camera track is never a session player identity. `detectedCount` is the number of current accepted detections; `capacityReached` means more people may be present beyond the detector's configured maximum.
 
+Observation v1 accepts optional index- and pinky-finger joints for each hand. Existing body-only observations remain valid. Update the service and viewer together, as older strict readers reject the added joint names in MediaPipe observations.
+
 ## Diagnostic frame transport
 
 The smooth viewer pulls independent `/api/preview` images and `/api/observations` JSON poses. [Preview schema v1](schemas/preview.schema.json) owns the image’s epoch, sequence, source clock, geometry and measured capture rate; [its generated binding](generated/preview.ts) is checked alongside observations. Both images and observations retain their own actual source timestamps. The browser’s display-only overlay gate permits a held pose only for matching source/epoch/geometry with a 0–150 ms gap. This is not exact-frame alignment or scoring authorization.

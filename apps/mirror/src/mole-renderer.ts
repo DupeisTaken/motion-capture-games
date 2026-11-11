@@ -7,6 +7,7 @@ import {
   type Observation,
   type Rect,
 } from "../../../packages/motion/src/index";
+import type { TouchRegion } from "../../../games/mole-motion/src/index";
 
 /** Targets, contacts and source image share this exact contain/mirror transform. */
 export function drawMoleScene(
@@ -17,6 +18,7 @@ export function drawMoleScene(
   mirror = true,
   diagnostics = false,
   rehearsal = !frame,
+  touchRegions: readonly TouchRegion[] = [],
 ): Rect {
   const width = Math.max(1, canvas.clientWidth || 960);
   const height = Math.max(1, canvas.clientHeight || 600);
@@ -139,6 +141,27 @@ export function drawMoleScene(
     ctx.arc(point.x, point.y, 15, 0, Math.PI * 2);
     ctx.strokeStyle = "#d2f4ae66";
     ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  for (const region of touchRegions) {
+    const point = mapJoint(region, rect, mirror);
+    ctx.beginPath();
+    ctx.ellipse(
+      point.x,
+      point.y,
+      region.radius * rect.width,
+      region.radius * rect.height,
+      0,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fillStyle = "#d2f4ae33";
+    ctx.fill();
+    ctx.strokeStyle = "#102b27d9";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.strokeStyle = "#d2f4ae";
+    ctx.lineWidth = 2;
     ctx.stroke();
   }
   return rect;

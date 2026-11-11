@@ -80,6 +80,8 @@
         "left_shoulder": {"$ref": "#/definitions/Joint"}, "right_shoulder": {"$ref": "#/definitions/Joint"},
         "left_elbow": {"$ref": "#/definitions/Joint"}, "right_elbow": {"$ref": "#/definitions/Joint"},
         "left_wrist": {"$ref": "#/definitions/Joint"}, "right_wrist": {"$ref": "#/definitions/Joint"},
+        "left_index_finger": {"$ref": "#/definitions/Joint"}, "right_index_finger": {"$ref": "#/definitions/Joint"},
+        "left_pinky_finger": {"$ref": "#/definitions/Joint"}, "right_pinky_finger": {"$ref": "#/definitions/Joint"},
         "left_hip": {"$ref": "#/definitions/Joint"}, "right_hip": {"$ref": "#/definitions/Joint"},
         "left_knee": {"$ref": "#/definitions/Joint"}, "right_knee": {"$ref": "#/definitions/Joint"},
         "left_ankle": {"$ref": "#/definitions/Joint"}, "right_ankle": {"$ref": "#/definitions/Joint"}

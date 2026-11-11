@@ -49,7 +49,15 @@ function packet(
 
 describe("model-independent skeleton presentation", () => {
   it("defines the canonical joint set and anatomical bones without model indices", () => {
-    expect(JOINT_NAMES).toHaveLength(17);
+    expect(JOINT_NAMES).toHaveLength(21);
+    expect(JOINT_NAMES).toEqual(
+      expect.arrayContaining([
+        "left_index_finger",
+        "right_index_finger",
+        "left_pinky_finger",
+        "right_pinky_finger",
+      ]),
+    );
     expect(BONES).toContainEqual(["left_elbow", "left_wrist"]);
     for (const [from, to] of BONES) {
       expect(JOINT_NAMES).toContain(from);

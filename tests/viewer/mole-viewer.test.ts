@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountMoleGame } from "../../apps/mirror/src/mole-viewer";
 import type { Observation } from "../../contracts/generated/observation";
 import fixture from "../../contracts/examples/synthetic-observation.json";
-import { mapJoint, type MotionContact } from "../../packages/motion/src/index";
+import { mapJoint } from "../../packages/motion/src/index";
+import { TUNING, type TouchRegion } from "../../games/mole-motion/src/index";
 
 const renderer = vi.hoisted(() => ({
   drawMoleScene: vi.fn<(...args: unknown[]) => object>(() => ({
@@ -87,12 +88,31 @@ function observation(sequence = 1): Observation {
         identity: "confident",
         joints: {
           ...base.people[0].joints,
+          left_index_finger: { ...joint, x: 0.22, y: 0.46 },
+          left_pinky_finger: { ...joint, x: 0.18, y: 0.46 },
           left_ankle: { ...joint, x: 0.4 },
           right_ankle: { ...joint, x: 0.6 },
         },
       },
     ],
   };
+}
+
+function leftPalm(
+  { joints }: Observation["people"][number],
+  x: number,
+  y: number,
+) {
+  const joint = {
+    x,
+    y,
+    score: 0.95,
+    status: "observed",
+    inFrame: true,
+  } as const;
+  joints.left_wrist = { ...joint, y: y - 0.03 };
+  joints.left_index_finger = { ...joint, x: x + 0.01, y: y + 0.03 };
+  joints.left_pinky_finger = { ...joint, x: x - 0.01, y: y + 0.03 };
 }
 
 function packet(value: Observation): ArrayBuffer {
@@ -291,8 +311,8 @@ describe("Slap a Mole operator integration", () => {
       const socket = await startCamera();
       await socket.receive(packet(observation()));
       const before = (
-        renderer.drawMoleScene.mock.calls.at(-1)?.[3] as MotionContact[]
-      ).find((contact) => contact.name === "left_wrist")!;
+        renderer.drawMoleScene.mock.calls.at(-1)?.[7] as TouchRegion[]
+      ).find((contact) => contact.name === "left_hand")!;
       const moved = observation(2);
       for (const joint of Object.values(moved.people[0].joints)) {
         if (joint.x !== null) joint.x += 0.1;
@@ -300,8 +320,8 @@ describe("Slap a Mole operator integration", () => {
       now += 50;
       await socket.receive(packet(moved));
       const args = renderer.drawMoleScene.mock.calls.at(-1)!;
-      const after = (args[3] as MotionContact[]).find(
-        (contact) => contact.name === "left_wrist",
+      const after = (args[7] as TouchRegion[]).find(
+        (contact) => contact.name === "left_hand",
       )!;
       const rect = { x: 20, y: 40, width: 800, height: 500 };
       expect(args[4]).toBe(true);
@@ -318,7 +338,7 @@ describe("Slap a Mole operator integration", () => {
       movePointer(480, 300);
       const rect = { x: 0, y: 0, width: 960, height: 600 };
       const before = mapJoint(
-        (renderer.drawMoleScene.mock.calls.at(-1)?.[3] as MotionContact[])[0],
+        (renderer.drawMoleScene.mock.calls.at(-1)?.[7] as TouchRegion[])[0],
         rect,
       );
       now += 50;
@@ -326,7 +346,7 @@ describe("Slap a Mole operator integration", () => {
         new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }),
       );
       const after = mapJoint(
-        (renderer.drawMoleScene.mock.calls.at(-1)?.[3] as MotionContact[])[0],
+        (renderer.drawMoleScene.mock.calls.at(-1)?.[7] as TouchRegion[])[0],
         rect,
       );
       expect(Math.sign(after.x - before.x)).toBe(
@@ -881,28 +901,23 @@ describe("Slap a Mole operator integration", () => {
       now += 50;
       await socket.receive(packet(value));
     };
-    const outside = (value: Observation) => {
-      const wrist = value.people[0].joints.left_wrist!;
-      wrist.x = 0.01;
-      wrist.y = 0.01;
-      return wrist;
-    };
     for (let frame = 0; frame < 80; frame++) {
       const value = observation(++sequence);
-      outside(value);
+      leftPalm(value.people[0], 0.04, 0.04);
       await send(value);
     }
     const target = targetPosition();
     const initialTime = element("time-value").textContent;
     const initialScore = element("score-value").textContent;
-    const joinedWrist = { x: 1 - target.x / 960, y: target.y / 600 };
+    const x = 1 - target.x / 960;
+    const y = target.y / 600;
     function withSpectator(hit: boolean): Observation {
       const value = observation(++sequence);
-      const wrist = outside(value);
-      const spectator = structuredClone(value.people[0]);
+      const joined = value.people[0];
+      const spectator = structuredClone(joined);
       spectator.trackId = "spectator";
-      Object.assign(spectator.joints.left_wrist!, joinedWrist);
-      if (hit) Object.assign(wrist, joinedWrist);
+      leftPalm(spectator, x, y);
+      leftPalm(joined, hit ? x : 0.04, hit ? y : 0.04);
       value.people.splice(sequence % 2, 0, spectator);
       value.detectedCount = 2;
       return value;
@@ -1000,24 +1015,12 @@ describe("Slap a Mole operator integration", () => {
         await socket.receive(packet(observation(sequence)));
       }
       const outside = observation(81);
-      outside.people[0].joints.left_wrist = {
-        x: 0.01,
-        y: 0.01,
-        score: 0.95,
-        status: "observed",
-        inFrame: true,
-      };
+      leftPalm(outside.people[0], 0.04, 0.04);
       now += 50;
       await socket.receive(packet(outside));
       const target = targetPosition();
       const hit = observation(82);
-      hit.people[0].joints.left_wrist = {
-        x: 1 - target.x / 960,
-        y: target.y / 600,
-        score: 0.95,
-        status: "observed",
-        inFrame: true,
-      };
+      leftPalm(hit.people[0], 1 - target.x / 960, target.y / 600);
       now += 50;
       await socket.receive(packet(hit));
       expect(element("score-value").textContent).toBe("100");
@@ -1039,6 +1042,49 @@ describe("Slap a Mole operator integration", () => {
       expect(element("game-status").textContent).toMatch(/waiting/i);
     },
   );
+
+  it("scores a camera palm ring at the mole edge and ignores a wrist at its center", async () => {
+    const socket = await startCamera();
+    const start = fetchMock.mock.calls.find(([url]) => url === "/api/start");
+    expect(JSON.parse(start?.[1]?.body).algorithm).toBe("mediapipe");
+    element<HTMLButtonElement>("confirm-start").click();
+    const feed = async (value: Observation) => {
+      now += 50;
+      await socket.receive(packet(value));
+    };
+    for (let sequence = 1; sequence <= 80; sequence++) {
+      await feed(observation(sequence));
+    }
+    const target = targetPosition();
+    const x = 1 - target.x / 960;
+    const y = target.y / 600;
+    const wristOnly = observation(81);
+    leftPalm(wristOnly.people[0], x, y + 0.03);
+    delete wristOnly.people[0].joints.left_index_finger;
+    await feed(wristOnly);
+    expect(element("hits-value").textContent).toBe("0");
+    expect(
+      (renderer.drawMoleScene.mock.calls.at(-1)?.[7] as TouchRegion[]).map(
+        ({ name }) => name,
+      ),
+    ).toEqual(["left_foot", "right_foot"]);
+
+    const palmAway = observation(82);
+    leftPalm(palmAway.people[0], x, y - 0.1);
+    await feed(palmAway);
+    const palmEdge = observation(83);
+    const palmY = y - TUNING.normal.radius - TUNING.touchRadius / 2;
+    leftPalm(palmEdge.people[0], x, palmY);
+    await feed(palmEdge);
+    expect(element("score-value").textContent).toBe("100");
+    const palm = (
+      renderer.drawMoleScene.mock.calls.at(-1)?.[7] as TouchRegion[]
+    ).find(({ name }) => name === "left_hand");
+    expect(palm?.y).toBeCloseTo(palmY);
+    expect(palm?.radius).toBe(TUNING.touchRadius);
+    advance(TUNING.staleMs + 50);
+    expect(renderer.drawMoleScene.mock.calls.at(-1)?.[7]).toEqual([]);
+  });
 
   it("keeps camera diagnostics off by default and out of the separate player display", async () => {
     const socket = await startCamera();

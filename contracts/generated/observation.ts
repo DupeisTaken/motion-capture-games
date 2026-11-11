@@ -100,6 +100,10 @@ export interface Joints {
   right_elbow?: Joint;
   left_wrist?: Joint;
   right_wrist?: Joint;
+  left_index_finger?: Joint;
+  right_index_finger?: Joint;
+  left_pinky_finger?: Joint;
+  right_pinky_finger?: Joint;
   left_hip?: Joint;
   right_hip?: Joint;
   left_knee?: Joint;

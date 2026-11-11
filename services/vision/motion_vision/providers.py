@@ -35,6 +35,12 @@ COCO17 = (
     "right_ankle",
 )
 MP_INDICES = (0, 2, 5, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28)
+MP_FINGERS = (
+    ("left_index_finger", 19),
+    ("right_index_finger", 20),
+    ("left_pinky_finger", 17),
+    ("right_pinky_finger", 18),
+)
 # Provisional unitless diagnostic thresholds, versioned here with the adapter.
 # A score above this line labels a joint observed; it is not a spatial-error probability.
 JOINT_OBSERVED_SCORE = 0.5
@@ -70,23 +76,29 @@ def joint(x: Any, y: Any, score: Any) -> dict[str, Any]:
     }
 
 
+def landmark_joint(item: Any) -> dict[str, Any]:
+    # Optional Tasks fields can be absent: unknown quality is not a measured confidence.
+    quality = (item.visibility, item.presence)
+    score = (
+        min(quality)
+        if all(value is not None and math.isfinite(value) for value in quality)
+        else None
+    )
+    return joint(item.x, item.y, score)
+
+
 def landmark_person(landmarks: list[Any]) -> Person | None:
-    joints = {}
-    for name, index in zip(COCO17, MP_INDICES, strict=True):
-        item = landmarks[index]
-        # Optional Tasks fields can be absent: unknown quality is not a measured confidence.
-        quality = (item.visibility, item.presence)
-        score = (
-            min(quality)
-            if all(value is not None and math.isfinite(value) for value in quality)
-            else None
-        )
-        joints[name] = joint(item.x, item.y, score)
+    joints = {
+        name: landmark_joint(landmarks[index])
+        for name, index in zip(COCO17, MP_INDICES, strict=True)
+    }
     usable = [item for item in joints.values() if item["score"] >= 0.25 and item["x"] is not None]
     if len(usable) < 3:
         return None
     xs, ys = [item["x"] for item in usable], [item["y"] for item in usable]
     x, y = min(xs), min(ys)
+    # Optional finger evidence does not change body bounds or person admission.
+    joints.update((name, landmark_joint(landmarks[index])) for name, index in MP_FINGERS)
     return {
         "box": {"x": x, "y": y, "width": max(max(xs) - x, 0.01), "height": max(max(ys) - y, 0.01)},
         "joints": joints,

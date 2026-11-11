@@ -14,7 +14,7 @@ import {
   type ReplayCommand,
 } from "../../games/mole-motion/src/index";
 
-const outside: MotionContact = { name: "left_wrist", x: 0.01, y: 0.01 };
+const outside: MotionContact = { name: "left_hand", x: 0.01, y: 0.01 };
 const firstMole = (state: GameState) =>
   state.targets.find((target) => target.kind === "mole")!;
 
@@ -42,8 +42,9 @@ class Play {
   constructor(
     readonly options: Partial<GameOptions> = {},
     readonly seed = 42,
+    readonly version: GameReplay["version"] = 3,
   ) {
-    this.game = new MoleGame(options, seed);
+    this.game = new MoleGame(options, seed, version);
   }
   tick(delta = 100, overrides: Partial<GameMotionFrame> = {}): GameState {
     this.now += delta;
@@ -70,7 +71,7 @@ class Play {
     this.tick(0);
     return this.advance(TUNING.startCountdownMs);
   }
-  hit(name: MotionContact["name"] = "left_wrist"): GameState {
+  hit(name: MotionContact["name"] = "left_hand"): GameState {
     this.contacts = [{ ...outside, name, towardScreenM: 0 }];
     this.tick();
     const target = firstMole(this.game.state);
@@ -150,21 +151,17 @@ describe("Slap a Mole lifecycle and scoring", () => {
     expect(play.game.state.elapsedMs).toBe(0);
   });
 
-  it.each([
-    "left_hand",
-    "right_hand",
-    "left_wrist",
-    "right_wrist",
-    "left_foot",
-    "right_foot",
-  ] as const)("touch accepts a fresh %s entry", (name) => {
-    const play = new Play();
-    play.start();
-    const state = play.hit(name);
-    expect(state.hits).toBe(1);
-    expect(state.score).toBe(100);
-    expect(state.targets.at(-1)?.id).toBe(4);
-  });
+  it.each(["left_hand", "right_hand", "left_foot", "right_foot"] as const)(
+    "touch accepts a fresh %s entry",
+    (name) => {
+      const play = new Play();
+      play.start();
+      const state = play.hit(name);
+      expect(state.hits).toBe(1);
+      expect(state.score).toBe(100);
+      expect(state.targets.at(-1)?.id).toBe(4);
+    },
+  );
 
   it("touch rejects hips even when a hip overlaps the mole", () => {
     const play = new Play();
@@ -175,6 +172,20 @@ describe("Slap a Mole lifecycle and scoring", () => {
     expect(play.game.state.hits).toBe(0);
   });
 
+  it.each(["left_hand", "right_foot"] as const)(
+    "scores %s on region overlap, including when its center is outside the mole",
+    (name) => {
+      const play = new Play();
+      const target = firstMole(play.start());
+      const edge = target.radius + TUNING.touchRadius;
+      play.contacts = [{ name, x: target.x, y: target.y - edge - 0.001 }];
+      expect(play.tick().hits).toBe(0);
+      play.contacts[0].y = target.y - edge + 0.001;
+      expect(play.tick().hits).toBe(1);
+      expect(play.tick().hits).toBe(1);
+    },
+  );
+
   it("scores once for simultaneous limb contacts and caps the combo bonus", () => {
     const play = new Play({ mode: "practice" });
     play.start();
@@ -184,7 +195,7 @@ describe("Slap a Mole lifecycle and scoring", () => {
     expect(play.game.state.score).toBe(2_250);
     const target = firstMole(play.game.state);
     play.contacts = [
-      { name: "left_wrist", x: 0, y: 0 },
+      { name: "left_hand", x: 0, y: 0 },
       { name: "right_foot", x: 0, y: 0 },
     ];
     play.tick();
@@ -211,15 +222,28 @@ describe("Slap a Mole lifecycle and scoring", () => {
     expect(play.game.state.hits).toBe(1);
     play.contacts = [{ ...outside }];
     play.tick();
-    play.contacts = [{ name: "left_wrist", x: 0.5, y: 0.5 }];
+    play.contacts = [{ name: "left_hand", x: 0.5, y: 0.5 }];
     expect(play.tick().hits).toBe(2);
   });
 
-  it("does not manufacture an entry by replacing wrist with hand", () => {
+  it("ignores wrist overlap and requires a fresh entry after a missing palm returns", () => {
     const play = new Play();
     play.start();
     const target = firstMole(play.game.state);
-    play.contacts = [{ name: "left_hand", x: target.x, y: target.y }];
+    const wrist: MotionContact = {
+      name: "left_wrist",
+      x: target.x,
+      y: target.y,
+    };
+    const foot: MotionContact = { ...outside, name: "left_foot" };
+    play.contacts = [foot, { ...outside, name: "left_wrist" }];
+    play.tick();
+    play.contacts = [foot, wrist];
+    expect(play.tick().hits).toBe(0);
+    expect(play.game.touchRegions(play.contacts)).toEqual([
+      { ...foot, radius: TUNING.touchRadius },
+    ]);
+    play.contacts = [foot, { ...wrist, name: "left_hand" }];
     expect(play.tick().hits).toBe(0);
     play.contacts = [{ name: "left_hand", x: 0, y: 0 }];
     play.tick();
@@ -336,7 +360,7 @@ describe("concurrent targets and bombs", () => {
     const play = new Play({ mode: "challenge" });
     play.start();
     for (let count = 0; count < 14; count++) play.hit();
-    const names = ["left_wrist", "right_wrist"] as const;
+    const names = ["left_hand", "right_hand"] as const;
     play.contacts = names.map((name) => ({ ...outside, name }));
     const { targets } = play.tick();
     play.contacts = targets
@@ -390,7 +414,7 @@ describe("concurrent targets and bombs", () => {
       play.contacts = [{ ...outside, towardScreenM: 0 }];
       play.tick();
       play.contacts = [
-        { name: "left_wrist", x: bomb.x, y: bomb.y, towardScreenM: 0.15 },
+        { name: "left_hand", x: bomb.x, y: bomb.y, towardScreenM: 0.15 },
       ];
       const after = play.tick();
       expect(after).toMatchObject({
@@ -421,8 +445,8 @@ describe("concurrent targets and bombs", () => {
     const play = new Play({ mode: "practice" });
     const { targets } = play.start();
     play.contacts = [
-      { ...outside, name: "left_wrist" },
-      { ...outside, name: "right_wrist" },
+      { ...outside, name: "left_hand" },
+      { ...outside, name: "right_hand" },
       { ...outside, name: "left_foot" },
     ];
     play.tick();
@@ -444,9 +468,9 @@ describe("concurrent targets and bombs", () => {
   });
 
   it("does not let hand and wrist aliases strike two targets with one limb", () => {
-    const play = new Play();
+    const play = new Play({}, 42, 2);
     const { targets } = play.start();
-    play.contacts = [outside, { ...outside, name: "left_hand" }];
+    play.contacts = [{ ...outside, name: "left_wrist" }, outside];
     play.tick();
     play.contacts = play.contacts.map((contact, index) => ({
       ...contact,
@@ -605,7 +629,7 @@ describe("framing, quality and temporal safety", () => {
     const target = targets[0];
     play.tick(100, { feetVisible: false });
     play.advance(20_000);
-    play.contacts = [{ name: "left_wrist", x: target.x, y: target.y }];
+    play.contacts = [{ name: "left_hand", x: target.x, y: target.y }];
     play.game.resume(play.now);
     play.advance(TUNING.resumeCountdownMs);
     expect(play.game.state.phase).toBe("playing");
@@ -763,7 +787,7 @@ describe("placement, configuration and replay", () => {
     for (let seed = 1; seed <= 50; seed++) {
       for (const difficulty of ["normal", "hard"] as const) {
         const play = new Play({ difficulty }, seed);
-        play.contacts = [{ name: "left_wrist", x: 0.5, y: 0.5 }];
+        play.contacts = [{ name: "left_hand", x: 0.5, y: 0.5 }];
         const target = firstMole(play.start());
         const distance = Math.hypot(target.x - 0.5, target.y - 0.5);
         if (difficulty === "normal") normalDistance += distance;
@@ -777,15 +801,15 @@ describe("placement, configuration and replay", () => {
     for (const interaction of ["touch", "push"] as const) {
       const first = new Play({ difficulty: "hard", interaction });
       const second = new Play({ difficulty: "hard", interaction });
-      const wrist: MotionContact = {
-        name: "left_wrist",
+      const hand: MotionContact = {
+        name: "left_hand",
         x: 0.2,
         y: 0.2,
         towardScreenM: 0,
       };
-      first.contacts = [wrist];
+      first.contacts = [hand];
       second.contacts = [
-        wrist,
+        hand,
         {
           name: interaction === "touch" ? "left_hip" : "left_foot",
           x: 0.9,
@@ -799,9 +823,9 @@ describe("placement, configuration and replay", () => {
 
   it("hard placement responds to available contact locations", () => {
     const left = new Play({ difficulty: "hard" });
-    left.contacts = [{ name: "left_wrist", x: 0.1, y: 0.5 }];
+    left.contacts = [{ name: "left_hand", x: 0.1, y: 0.5 }];
     const right = new Play({ difficulty: "hard" });
-    right.contacts = [{ name: "left_wrist", x: 0.9, y: 0.5 }];
+    right.contacts = [{ name: "left_hand", x: 0.9, y: 0.5 }];
     expect(firstMole(left.start()).x).toBeGreaterThan(0.65);
     expect(firstMole(right.start()).x).toBeLessThan(0.35);
   });
@@ -828,32 +852,39 @@ describe("placement, configuration and replay", () => {
     expect(() => new MoleGame().restart(Infinity)).toThrow("finite");
   });
 
-  it("version 2 replay reproduces every seeded target, score and pause outcome", () => {
-    const play = new Play({ mode: "challenge", difficulty: "hard" }, 127);
-    play.start();
-    for (let count = 0; count < 6; count++) play.hit();
-    play.commands.push({ type: "pause", reason: "Synthetic replay pause" });
-    play.game.pause("Synthetic replay pause");
-    play.advance(1_000);
-    play.commands.push({ type: "resume", atMs: play.now });
-    play.game.resume(play.now);
-    play.advance(TUNING.resumeCountdownMs);
-    for (let count = 0; count < 9; count++) play.hit();
-    const replay: GameReplay = {
-      version: 2,
-      options: play.options,
-      seed: play.seed,
-      commands: play.commands,
-    };
-    const serialized = JSON.parse(JSON.stringify(replay)) as GameReplay;
-    const first = replayGame(replay);
-    expect(first.at(-1)).toEqual(play.game.state);
-    expect(replayGame(serialized)).toEqual(first);
-    expect(first.at(-1)?.result).toBe("challenge-won");
-    expect(() =>
-      replayGame({ ...replay, version: 3 } as unknown as GameReplay),
-    ).toThrow("version");
-  });
+  it.each([2, 3] as const)(
+    "version %s replay reproduces every seeded target, score and pause outcome",
+    (version) => {
+      const play = new Play(
+        { mode: "challenge", difficulty: "hard" },
+        127,
+        version,
+      );
+      play.start();
+      for (let count = 0; count < 6; count++) play.hit();
+      play.commands.push({ type: "pause", reason: "Synthetic replay pause" });
+      play.game.pause("Synthetic replay pause");
+      play.advance(1_000);
+      play.commands.push({ type: "resume", atMs: play.now });
+      play.game.resume(play.now);
+      play.advance(TUNING.resumeCountdownMs);
+      for (let count = 0; count < 9; count++) play.hit();
+      const replay: GameReplay = {
+        version,
+        options: play.options,
+        seed: play.seed,
+        commands: play.commands,
+      };
+      const serialized = JSON.parse(JSON.stringify(replay)) as GameReplay;
+      const first = replayGame(replay);
+      expect(first.at(-1)).toEqual(play.game.state);
+      expect(replayGame(serialized)).toEqual(first);
+      expect(first.at(-1)?.result).toBe("challenge-won");
+      expect(() =>
+        replayGame({ ...replay, version: 4 } as unknown as GameReplay),
+      ).toThrow("version");
+    },
+  );
 
   it("replays version 1 with its original target shape and shorter lifetime", () => {
     const play = new Play({ mode: "survival" });

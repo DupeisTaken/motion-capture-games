@@ -33,6 +33,8 @@ export const TUNING = Object.freeze({
   maxStepMs: 400,
   pushNeutralM: 0.04,
   pushHitM: 0.12,
+  // Radius of a Touch contact in normalized image coordinates.
+  touchRadius: 0.024,
   flick: Object.freeze({
     // Normalized image distances and source milliseconds; participant tuning is open.
     minimumTravel: 0.018,
@@ -68,6 +70,9 @@ export interface GameTarget {
   y: number;
   radius: number;
   remainingMs: number;
+}
+export interface TouchRegion extends MotionContact {
+  radius: number;
 }
 export type GameResult =
   "completed" | "challenge-won" | "time-up" | "out-of-lives";
@@ -109,20 +114,18 @@ const CONTACTS: readonly ContactName[] = [
   "right_foot",
 ];
 
-function eligible(contact: MotionContact, interaction: Interaction): boolean {
-  if (interaction === "flick") return /_(hand|wrist)$/.test(contact.name);
-  return interaction === "touch"
-    ? !contact.name.endsWith("_hip")
-    : !contact.name.endsWith("_foot") && Number.isFinite(contact.towardScreenM);
-}
-
 function group(name: ContactName): string {
   return name.replace(/_(hand|wrist)$/, "_upper");
 }
 
-function overlaps(contact: MotionContact, target: GameTarget): boolean {
+function overlaps(
+  contact: MotionContact,
+  target: GameTarget,
+  radius = 0,
+): boolean {
   return (
-    Math.hypot(contact.x - target.x, contact.y - target.y) <= target.radius
+    Math.hypot(contact.x - target.x, contact.y - target.y) <=
+    target.radius + radius
   );
 }
 
@@ -224,7 +227,7 @@ export class MoleGame {
   constructor(
     options: Partial<GameOptions> = {},
     seed = 42,
-    private readonly rulesVersion: GameReplay["version"] = 2,
+    private readonly rulesVersion: GameReplay["version"] = 3,
   ) {
     this.options = {
       ...DEFAULT_OPTIONS,
@@ -242,6 +245,38 @@ export class MoleGame {
   get state(): GameState {
     // Consumers cannot mutate simulation or configuration through a UI snapshot.
     return structuredClone(this.value);
+  }
+
+  private get touchRadius(): number {
+    return this.rulesVersion >= 3 ? TUNING.touchRadius : 0;
+  }
+
+  private eligible(contact: MotionContact): boolean {
+    switch (this.options.interaction) {
+      case "touch":
+        return this.rulesVersion >= 3
+          ? /_(hand|foot)$/.test(contact.name)
+          : !contact.name.endsWith("_hip");
+      case "flick":
+        return /_(hand|wrist)$/.test(contact.name);
+      case "push":
+        return (
+          !contact.name.endsWith("_foot") &&
+          Number.isFinite(contact.towardScreenM)
+        );
+    }
+  }
+
+  /** The viewer supplies the current, ready player frame. */
+  touchRegions(contacts: readonly MotionContact[]): TouchRegion[] {
+    if (this.options.interaction !== "touch" || this.touchRadius === 0)
+      return [];
+    return contacts
+      .filter((contact) => this.eligible(contact))
+      .map((contact) => ({
+        ...contact,
+        radius: this.touchRadius,
+      }));
   }
 
   /** Presentation can explain a blocked action without advancing or resuming play. */
@@ -343,9 +378,7 @@ export class MoleGame {
       this.lastSourceTime = input.atMs;
       this.continuousSourceTime = input.atMs;
     }
-    const contacts = input.contacts.filter((contact) =>
-      eligible(contact, this.options.interaction),
-    );
+    const contacts = input.contacts.filter((contact) => this.eligible(contact));
     // Consume gestures even during countdown or an expired target; never defer a hit.
     const flicks =
       isNew && this.options.interaction === "flick"
@@ -527,11 +560,7 @@ export class MoleGame {
         return "Invalid player contact. Check the source input.";
       names.add(contact.name);
     }
-    if (
-      !frame.contacts.some((contact) =>
-        eligible(contact, this.options.interaction),
-      )
-    )
+    if (!frame.contacts.some((contact) => this.eligible(contact)))
       return this.options.interaction === "flick"
         ? "Keep a hand or wrist visible to flick."
         : this.options.interaction === "touch"
@@ -723,9 +752,11 @@ export class MoleGame {
             limb,
             contact,
             (target) =>
-              overlaps(contact, target) &&
+              overlaps(contact, target, this.touchRadius) &&
               ![...this.previous.values()].some(
-                (old) => group(old.name) === limb && overlaps(old, target),
+                (old) =>
+                  group(old.name) === limb &&
+                  overlaps(old, target, this.touchRadius),
               ),
           );
         } else if (
@@ -794,7 +825,7 @@ export type ReplayCommand =
   | { type: "pause"; reason?: string }
   | { type: "finish" };
 export interface GameReplay {
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   options: Partial<GameOptions>;
   seed: number;
   commands: ReplayCommand[];
@@ -808,12 +839,14 @@ type LegacyGameState = Omit<GameState, "targets" | "lastStrike"> & {
 export function replayGame(
   replay: GameReplay & { version: 1 },
 ): LegacyGameState[];
-export function replayGame(replay: GameReplay & { version: 2 }): GameState[];
+export function replayGame(
+  replay: GameReplay & { version: 2 | 3 },
+): GameState[];
 export function replayGame(replay: GameReplay): (GameState | LegacyGameState)[];
 export function replayGame(
   replay: GameReplay,
 ): (GameState | LegacyGameState)[] {
-  if (replay.version !== 1 && replay.version !== 2)
+  if (replay.version !== 1 && replay.version !== 2 && replay.version !== 3)
     throw new Error("Unsupported game replay version.");
   const game = new MoleGame(replay.options, replay.seed, replay.version);
   const states = replay.commands.map((command) => {
@@ -832,7 +865,7 @@ export function replayGame(
         return game.finish();
     }
   });
-  if (replay.version === 2) return states;
+  if (replay.version !== 1) return states;
   return states.map((state) => {
     const mole = state.targets[0];
     return {
