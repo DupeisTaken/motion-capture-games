@@ -3,144 +3,140 @@ import {
   observationSpaceRevision,
   type Observation,
   type GameMotionFrame,
+  type JointName,
 } from "../../../packages/motion/src/index";
 
 export type Lane = -1 | 0 | 1;
-/** Consumed semantic controls retain the bound session's source time and revision. */
+/** Semantic controls retain source time and the bound session revision. */
 export interface RunnerInput {
   atMs: number;
   sequence: number;
   epoch: string;
   spaceRevision: string;
   identity: "confident" | "uncertain" | "missing";
-  /** All visible detections. Only the bound track supplies controls. */
   participantCount: number;
   lane: Lane;
   jump: boolean;
   duck: boolean;
-  /** Confirmed standing posture; jump=false alone also occurs while airborne. */
   standing: boolean;
   valid: boolean;
   reason?: string;
 }
-/** Proposed normalized image-space tuning. Physical accuracy remains unmeasured. */
+/** Version 2: proposed image-space thresholds, pending supervised physical trials. */
 export const RUNNER_POSE_TUNING = Object.freeze({
-  laneEnterBodyHeights: 0.2,
-  laneReleaseBodyHeights: 0.12,
-  jumpFeetLiftBodyHeights: 0.055,
-  jumpHipLiftBodyHeights: 0.075,
+  version: 2,
+  laneBoundaryMargin: 0.018,
+  jumpHeadLiftBodyHeights: 0.075,
+  jumpTorsoLiftBodyHeights: 0.035,
   jumpConfirmMs: 45,
   landingConfirmMs: 100,
   standingConfirmMs: 100,
-  standingFeetToleranceBodyHeights: 0.035,
-  standingHipToleranceBodyHeights: 0.07,
-  standingShoulderToleranceBodyHeights: 0.09,
-  duckHipDropBodyHeights: 0.12,
-  duckReleaseBodyHeights: 0.075,
-  standingKneeAngleDegrees: 150,
-  duckKneeAngleDegrees: 150,
+  standingToleranceBodyHeights: 0.065,
+  // Rearm cannot overlap the torso evidence that supports an active jump,
+  // including when the face becomes hidden and shoulders supply head height.
+  standingTorsoToleranceBodyHeights: 0.025,
+  standingFeetToleranceBodyHeights: 0.06,
+  duckHeadDropBodyHeights: 0.16,
+  duckTorsoDropBodyHeights: 0.08,
+  duckReleaseBodyHeights: 0.09,
   maximumSampleGapMs: 350,
 });
+interface Point {
+  x: number;
+  y: number;
+}
+type Anchors = Partial<Record<JointName, Point>>;
 export interface RunnerCalibration {
   epoch: string;
   spaceRevision: string;
   trackId: string;
   centerX: number;
-  hipY: number;
-  feetY: number;
-  leftFootY: number;
-  rightFootY: number;
-  shoulderY: number;
+  headY: number;
   bodyHeight: number;
   observationRevision: string;
+  anchors: Anchors;
 }
-interface Point {
-  x: number;
-  y: number;
+export interface RunnerPoseFeedback {
+  displayX: number;
+  headY: number;
+  jumpY: number;
+  duckY: number;
+  standingY: number;
+  evidence: "head + torso" | "shoulder fallback + torso";
+  airborne: boolean;
 }
-interface Pose {
-  centerX: number;
-  hipY: number;
-  feetY: number;
-  shoulderY: number;
-  leftFootY: number;
-  rightFootY: number;
-  leftKneeAngle: number;
-  rightKneeAngle: number;
+const heads: JointName[] = [
+  "nose",
+  "left_eye",
+  "right_eye",
+  "left_ear",
+  "right_ear",
+];
+const shoulders: JointName[] = ["left_shoulder", "right_shoulder"];
+const hips: JointName[] = ["left_hip", "right_hip"];
+const ankles: JointName[] = ["left_ankle", "right_ankle"];
+function average(values: number[]): number {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
-function angle(a: Point, b: Point, c: Point): number {
-  const ab = { x: a.x - b.x, y: a.y - b.y };
-  const cb = { x: c.x - b.x, y: c.y - b.y };
-  const magnitude = Math.hypot(ab.x, ab.y) * Math.hypot(cb.x, cb.y);
-  return magnitude > 0
-    ? (Math.acos(
-        Math.max(-1, Math.min(1, (ab.x * cb.x + ab.y * cb.y) / magnitude)),
-      ) *
-        180) /
-        Math.PI
-    : 0;
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return (
+    (sorted[Math.floor((sorted.length - 1) / 2)] +
+      sorted[Math.floor(sorted.length / 2)]) /
+    2
+  );
 }
-function pose(
-  observation: Observation,
-  frame: GameMotionFrame,
-  person: Observation["people"][number],
-): Pose | null {
-  if (
-    person.identity !== "confident" ||
-    frame.identity !== "confident" ||
-    !frame.feetVisible ||
-    observation.epoch !== frame.epoch ||
-    observation.sequence !== frame.sequence
-  )
-    return null;
-  const names = [
-    "left_shoulder",
-    "right_shoulder",
-    "left_hip",
-    "right_hip",
-    "left_knee",
-    "right_knee",
-    "left_ankle",
-    "right_ankle",
-  ] as const;
-  const points = new Map<(typeof names)[number], Point>();
-  for (const name of names) {
+function anchors(person: Observation["people"][number]): Anchors {
+  const result: Anchors = {};
+  for (const name of [...heads, ...shoulders, ...hips, ...ankles]) {
     const point = person.joints[name];
     if (
-      !point ||
-      point.status !== "observed" ||
-      !point.inFrame ||
-      point.x === null ||
-      point.y === null ||
-      !Number.isFinite(point.x) ||
-      !Number.isFinite(point.y) ||
-      point.x < 0 ||
-      point.x > 1 ||
-      point.y < 0 ||
-      point.y > 1 ||
-      !Number.isFinite(point.score) ||
-      point.score < GAME_INPUT_QUALITY.minimumScore ||
-      point.score > 1
+      point?.status === "observed" &&
+      point.inFrame &&
+      point.x !== null &&
+      point.y !== null &&
+      Number.isFinite(point.x) &&
+      Number.isFinite(point.y) &&
+      point.x >= 0 &&
+      point.x <= 1 &&
+      point.y >= 0 &&
+      point.y <= 1 &&
+      Number.isFinite(point.score) &&
+      point.score >= GAME_INPUT_QUALITY.minimumScore &&
+      point.score <= 1
     )
-      return null;
-    points.set(name, { x: point.x, y: point.y });
+      result[name] = { x: point.x, y: point.y };
   }
-  const at = (name: (typeof names)[number]) => points.get(name)!;
-  return {
-    centerX: (at("left_hip").x + at("right_hip").x) / 2,
-    hipY: (at("left_hip").y + at("right_hip").y) / 2,
-    feetY: (at("left_ankle").y + at("right_ankle").y) / 2,
-    shoulderY: (at("left_shoulder").y + at("right_shoulder").y) / 2,
-    leftFootY: at("left_ankle").y,
-    rightFootY: at("right_ankle").y,
-    leftKneeAngle: angle(at("left_hip"), at("left_knee"), at("left_ankle")),
-    rightKneeAngle: angle(at("right_hip"), at("right_knee"), at("right_ankle")),
-  };
+  return result;
+}
+function positions(
+  points: Anchors,
+  names: JointName[],
+  axis: "x" | "y",
+): number[] {
+  return names.flatMap((name) => (points[name] ? [points[name]![axis]] : []));
+}
+function deltas(
+  points: Anchors,
+  baseline: Anchors,
+  names: JointName[],
+  axis: "x" | "y",
+): number[] {
+  return names.flatMap((name) =>
+    points[name] && baseline[name]
+      ? [points[name]![axis] - baseline[name]![axis]]
+      : [],
+  );
+}
+/** Controls and preview share this mirror, independent of anatomical names. */
+export function runnerDisplayX(cameraX: number): number {
+  return 1 - cameraX;
 }
 
-/** Runner-specific experimental pose controls; no inference or camera ownership. */
+/** Runner-only interpretation; no camera, inference or guessed identity association. */
 export class RunnerPoseControls {
   private baseline: RunnerCalibration | null = null;
+  private latestFeedback: RunnerPoseFeedback | null = null;
   private lane: Lane = 0;
   private duck = false;
   private airborne = false;
@@ -154,7 +150,14 @@ export class RunnerPoseControls {
     return this.baseline !== null;
   }
   get calibration(): RunnerCalibration | null {
-    return this.baseline ? { ...this.baseline } : null;
+    return this.baseline ? structuredClone(this.baseline) : null;
+  }
+  get feedback(): RunnerPoseFeedback | null {
+    return this.latestFeedback ? { ...this.latestFeedback } : null;
+  }
+  /** Break gesture continuity while retaining the explicit standing reference. */
+  suspend(): void {
+    this.clearActions();
   }
   reset(): void {
     this.baseline = null;
@@ -167,30 +170,33 @@ export class RunnerPoseControls {
     this.duck = false;
     this.airborne = false;
     this.jumpArmed = false;
-    this.takeoffAt = null;
-    this.landedAt = null;
-    this.standingAt = null;
+    this.takeoffAt = this.landedAt = this.standingAt = null;
+    this.latestFeedback = null;
+  }
+  private person(
+    observation: Observation,
+    frame: GameMotionFrame,
+    trackId: string,
+  ) {
+    const matching = observation.people.filter(
+      (person) => person.trackId === trackId,
+    );
+    return matching.length === 1 &&
+      matching[0].identity === "confident" &&
+      frame.identity === "confident" &&
+      observation.epoch === frame.epoch &&
+      observation.sequence === frame.sequence
+      ? matching[0]
+      : null;
   }
   calibrate(
     observation: Observation,
     frame: GameMotionFrame,
     trackId: string,
   ): boolean {
-    const [person] = observation.people;
-    if (observation.people.length !== 1 || person.trackId !== trackId)
-      return false;
-    const current = pose(observation, frame, person);
+    const person = this.person(observation, frame, trackId);
     if (
-      !current ||
-      current.leftKneeAngle < RUNNER_POSE_TUNING.standingKneeAngleDegrees ||
-      current.rightKneeAngle < RUNNER_POSE_TUNING.standingKneeAngleDegrees
-    )
-      return false;
-    const bodyHeight = current.feetY - current.shoulderY;
-    if (
-      bodyHeight < 0.25 ||
-      current.hipY <= current.shoulderY ||
-      current.hipY >= current.feetY ||
+      !person ||
       !frame.epoch ||
       !frame.spaceRevision ||
       !Number.isFinite(frame.atMs) ||
@@ -199,21 +205,29 @@ export class RunnerPoseControls {
       frame.sequence < 0
     )
       return false;
+    const points = anchors(person);
+    const shoulderY = positions(points, shoulders, "y"),
+      hipY = positions(points, hips, "y");
+    if (!shoulderY.length || !hipY.length) return false;
+    const torso = average(hipY) - average(shoulderY);
+    if (torso < 0.045) return false;
+    const footY = positions(points, ankles, "y");
+    const height = footY.length
+      ? average(footY) - average(shoulderY)
+      : torso * 2.6;
+    if (height < 0.16 || height > 1) return false;
+    const head = positions(points, heads, "y");
     this.baseline = {
       epoch: frame.epoch,
       spaceRevision: frame.spaceRevision,
       trackId,
-      centerX: current.centerX,
-      hipY: current.hipY,
-      feetY: current.feetY,
-      leftFootY: current.leftFootY,
-      rightFootY: current.rightFootY,
-      shoulderY: current.shoulderY,
-      bodyHeight,
+      centerX: average(positions(points, hips, "x")),
+      headY: head.length ? median(head) : average(shoulderY) - height * 0.17,
+      bodyHeight: height,
       observationRevision: observationSpaceRevision(observation),
+      anchors: points,
     };
     this.clearActions();
-    this.jumpArmed = true;
     this.lastAt = -Infinity;
     this.lastSequence = -1;
     return true;
@@ -240,12 +254,13 @@ export class RunnerPoseControls {
       standing: false,
       valid: false,
     };
-    const fail = (reason: string) => {
+    const fail = (reason: string): RunnerInput => {
       this.clearActions();
       return { ...result, reason };
     };
     const baseline = this.baseline;
-    if (!baseline) return fail("Stand centered and calibrate before playing.");
+    if (!baseline)
+      return fail("Set a comfortable standing reference before playing.");
     if (
       baseline.epoch !== frame.epoch ||
       baseline.spaceRevision !== frame.spaceRevision ||
@@ -254,70 +269,116 @@ export class RunnerPoseControls {
     ) {
       this.reset();
       return fail(
-        "Player or camera space changed. Start a new round and calibrate again.",
+        "Player or camera space changed. Start a new run and set standing again.",
       );
     }
-    // Calibration and gestures belong to the bound track, independent of detection order.
-    const matches = observation.people.filter(
-      (person) => person.trackId === trackId,
-    );
-    if (matches.length !== 1 || matches[0].identity !== "confident") {
-      result.identity = matches.length ? "uncertain" : "missing";
+    const person = this.person(observation, frame, trackId);
+    if (!person) {
+      result.identity = observation.people.some(
+        (person) => person.trackId === trackId,
+      )
+        ? "uncertain"
+        : "missing";
       return fail(
-        "Player identity changed or became uncertain. Start a new round.",
+        "Joined player missing or uncertain. Separate from others; scoring is paused.",
       );
     }
-    const current = pose(observation, frame, matches[0]);
-    if (!current)
-      return fail(
-        "Keep both shoulders, hips, knees and feet confidently in view.",
-      );
     if (
       !Number.isFinite(frame.atMs) ||
+      frame.atMs < 0 ||
       !Number.isSafeInteger(frame.sequence) ||
       frame.sequence <= this.lastSequence ||
       frame.atMs <= this.lastAt
     )
       return fail("Outdated body observation rejected.");
-    if (
-      Number.isFinite(this.lastAt) &&
-      frame.atMs - this.lastAt > RUNNER_POSE_TUNING.maximumSampleGapMs
-    )
-      this.clearActions();
+    const gap = frame.atMs - this.lastAt;
     this.lastAt = frame.atMs;
     this.lastSequence = frame.sequence;
-    const size = baseline.bodyHeight;
-    // A camera faces the participant: decreasing camera x is their screen-right.
-    // This explicit control transform is independent of camera-preview mirroring.
-    const horizontal = (baseline.centerX - current.centerX) / size;
-    const enter = RUNNER_POSE_TUNING.laneEnterBodyHeights;
-    const release = RUNNER_POSE_TUNING.laneReleaseBodyHeights;
-    if (horizontal < -enter) this.lane = -1;
-    else if (horizontal > enter) this.lane = 1;
-    else if (Math.abs(horizontal) <= release) this.lane = 0;
-    const hipDrop = (current.hipY - baseline.hipY) / size;
-    const shoulderDrop = (current.shoulderY - baseline.shoulderY) / size;
-    const bent =
-      Math.min(current.leftKneeAngle, current.rightKneeAngle) <
-      RUNNER_POSE_TUNING.duckKneeAngleDegrees;
+    if (Number.isFinite(gap) && gap > RUNNER_POSE_TUNING.maximumSampleGapMs)
+      return fail(
+        "Tracking gap. Stand comfortably to rearm controls; scoring is paused.",
+      );
+    const points = anchors(person);
+    const shoulderDelta = deltas(points, baseline.anchors, shoulders, "y");
+    const hipDelta = deltas(points, baseline.anchors, hips, "y");
+    const hipX = positions(points, hips, "x");
+    const shoulderX = positions(points, shoulders, "x");
+    const referenceShoulderX = positions(baseline.anchors, shoulders, "x");
+    if (!shoulderDelta.length || !hipDelta.length)
+      return fail(
+        "Torso occluded. Keep one shoulder and one hip confidently visible.",
+      );
+    // A single rotating hip is not a measured torso center. Prefer a current
+    // pair; pause if both pairs disappear rather than turn yaw into a lane.
+    const centerX = hipX.length === 2 ? average(hipX) :
+      shoulderX.length === 2 && referenceShoulderX.length === 2 ?
+        baseline.centerX + average(shoulderX) - average(referenceShoulderX) : null;
+    if (centerX === null) return fail("Lane position occluded. Face the camera so both shoulders or both hips are visible.");
+    // Compare vertical joints to their own reference before combining, so a
+    // fallback does not inherit another joint's absolute image height.
+    const headDelta = deltas(points, baseline.anchors, heads, "y");
+    const headDrop =
+      median(headDelta.length ? headDelta : shoulderDelta) /
+      baseline.bodyHeight;
+    const torsoDrop =
+      Math.min(median(shoulderDelta), median(hipDelta)) / baseline.bodyHeight;
+    const displayX = runnerDisplayX(centerX);
+    const margin = RUNNER_POSE_TUNING.laneBoundaryMargin;
+    if (displayX < 1 / 3 - margin) this.lane = -1;
+    else if (displayX > 2 / 3 + margin) this.lane = 1;
+    else if (
+      (this.lane === -1 && displayX > 1 / 3 + margin) ||
+      (this.lane === 1 && displayX < 2 / 3 - margin)
+    )
+      this.lane = 0;
     if (
       !this.airborne &&
-      hipDrop >= RUNNER_POSE_TUNING.duckHipDropBodyHeights &&
-      shoulderDrop >= 0.08 &&
-      bent
-    )
+      headDrop >= RUNNER_POSE_TUNING.duckHeadDropBodyHeights &&
+      torsoDrop >= RUNNER_POSE_TUNING.duckTorsoDropBodyHeights
+    ) {
       this.duck = true;
-    else if (hipDrop < RUNNER_POSE_TUNING.duckReleaseBodyHeights)
+      this.jumpArmed = false;
+    } else if (headDrop < RUNNER_POSE_TUNING.duckReleaseBodyHeights)
       this.duck = false;
-    const feetLift =
-      (baseline.feetY - Math.max(current.leftFootY, current.rightFootY)) / size;
-    const hipLift = (baseline.hipY - current.hipY) / size;
-    const grounded = feetLift < 0.025 && hipLift < 0.04;
-    if (!this.airborne && grounded && !this.duck) this.jumpArmed = true;
+    const feetDelta = deltas(points, baseline.anchors, ankles, "y");
+    const standingPose =
+      !this.duck &&
+      Math.abs(headDrop) <= RUNNER_POSE_TUNING.standingToleranceBodyHeights &&
+      shoulderDelta.every(
+        (delta) =>
+          Math.abs(delta) / baseline.bodyHeight <=
+          RUNNER_POSE_TUNING.standingTorsoToleranceBodyHeights,
+      ) &&
+      hipDelta.every(
+        (delta) =>
+          Math.abs(delta) / baseline.bodyHeight <=
+          RUNNER_POSE_TUNING.standingTorsoToleranceBodyHeights,
+      ) &&
+      feetDelta.every(
+        (delta) =>
+          Math.abs(delta) / baseline.bodyHeight <=
+          RUNNER_POSE_TUNING.standingFeetToleranceBodyHeights,
+      );
+    if (standingPose) this.standingAt ??= frame.atMs;
+    else this.standingAt = null;
+    const settled =
+      this.standingAt !== null &&
+      frame.atMs - this.standingAt >= RUNNER_POSE_TUNING.standingConfirmMs;
+    if (this.airborne && standingPose) {
+      this.landedAt ??= frame.atMs;
+      if (frame.atMs - this.landedAt >= RUNNER_POSE_TUNING.landingConfirmMs) {
+        this.airborne = false;
+        this.landedAt = null;
+      }
+    } else this.landedAt = null;
+    if (settled && !this.airborne) this.jumpArmed = true;
     const takingOff =
-      feetLift >= RUNNER_POSE_TUNING.jumpFeetLiftBodyHeights &&
-      hipLift >= RUNNER_POSE_TUNING.jumpHipLiftBodyHeights &&
-      !this.duck;
+      !this.duck &&
+      -headDrop >= RUNNER_POSE_TUNING.jumpHeadLiftBodyHeights &&
+      -median(shoulderDelta) / baseline.bodyHeight >=
+        RUNNER_POSE_TUNING.jumpTorsoLiftBodyHeights &&
+      -median(hipDelta) / baseline.bodyHeight >=
+        RUNNER_POSE_TUNING.jumpTorsoLiftBodyHeights;
     let jump = false;
     if (!this.airborne && this.jumpArmed && takingOff) {
       this.takeoffAt ??= frame.atMs;
@@ -326,42 +387,27 @@ export class RunnerPoseControls {
         this.airborne = true;
         this.jumpArmed = false;
         this.takeoffAt = null;
-        this.landedAt = null;
       }
-    } else if (!this.airborne) this.takeoffAt = null;
-    if (this.airborne && grounded) {
-      this.landedAt ??= frame.atMs;
-      if (frame.atMs - this.landedAt >= RUNNER_POSE_TUNING.landingConfirmMs) {
-        this.airborne = false;
-        this.jumpArmed = true;
-        this.landedAt = null;
-      }
-    } else if (this.airborne) this.landedAt = null;
-    const standingPose =
-      !this.airborne &&
-      !this.duck &&
-      Math.abs(current.leftFootY - baseline.leftFootY) / size <=
-        RUNNER_POSE_TUNING.standingFeetToleranceBodyHeights &&
-      Math.abs(current.rightFootY - baseline.rightFootY) / size <=
-        RUNNER_POSE_TUNING.standingFeetToleranceBodyHeights &&
-      Math.abs(hipDrop) <= RUNNER_POSE_TUNING.standingHipToleranceBodyHeights &&
-      Math.abs(shoulderDrop) <=
-        RUNNER_POSE_TUNING.standingShoulderToleranceBodyHeights &&
-      Math.min(current.leftKneeAngle, current.rightKneeAngle) >=
-        RUNNER_POSE_TUNING.standingKneeAngleDegrees;
-    if (standingPose) this.standingAt ??= frame.atMs;
-    else this.standingAt = null;
-    const standing =
-      this.standingAt !== null &&
-      frame.atMs - this.standingAt >= RUNNER_POSE_TUNING.standingConfirmMs;
-    if (current.centerX < 0.12 || current.centerX > 0.88)
-      return fail("Return inside the calibrated play area.");
+    } else this.takeoffAt = null;
+    this.latestFeedback = {
+      displayX,
+      headY: baseline.headY + headDrop * baseline.bodyHeight,
+      standingY: baseline.headY,
+      jumpY:
+        baseline.headY -
+        RUNNER_POSE_TUNING.jumpHeadLiftBodyHeights * baseline.bodyHeight,
+      duckY:
+        baseline.headY +
+        RUNNER_POSE_TUNING.duckHeadDropBodyHeights * baseline.bodyHeight,
+      evidence: headDelta.length ? "head + torso" : "shoulder fallback + torso",
+      airborne: this.airborne,
+    };
     return {
       ...result,
       lane: this.lane,
       jump,
-      duck: this.airborne ? false : this.duck,
-      standing,
+      duck: !this.airborne && this.duck,
+      standing: settled && !this.airborne,
       valid: true,
     };
   }

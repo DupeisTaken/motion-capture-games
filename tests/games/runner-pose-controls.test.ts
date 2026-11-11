@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fixture from "../../contracts/examples/synthetic-observation.json";
-import type { Observation, Person } from "../../packages/motion/src/index";
+import type {
+  Observation,
+  Person,
+  JointName,
+} from "../../packages/motion/src/index";
 import { observationToGameFrame } from "../../packages/motion/src/game-input";
 import { syntheticBody } from "../../packages/motion/src/dodgeball-input";
 import { RunnerPoseControls } from "../../games/motion-runner/src/index";
@@ -57,127 +61,195 @@ class Pose {
   }
 }
 
-describe("experimental runner body controls", () => {
-  it("requires one fully observed standing body and protects calibration snapshots", () => {
+describe("runner image thirds and standing head controls", () => {
+  function settle(pose: Pose) {
+    pose.sample();
+    pose.sample();
+    return pose.sample();
+  }
+  it("requires observed torso evidence, accepts cropped legs and keeps calibration snapshots private", () => {
     const pose = new Pose();
     expect(pose.sample().valid).toBe(false);
+    delete pose.value.people[0].joints.left_ankle;
+    delete pose.value.people[0].joints.right_ankle;
+    delete pose.value.people[0].joints.left_knee;
+    delete pose.value.people[0].joints.right_knee;
     pose.calibrate();
-    expect(pose.controls.calibrated).toBe(true);
     const calibration = pose.controls.calibration!;
-    calibration.centerX = 9;
-    expect(pose.controls.calibration!.centerX).toBe(0.5);
-    const ankle = pose.value.people[0].joints.left_ankle!;
-    ankle.status = "estimated";
-    expect(pose.sample().valid).toBe(false);
-    expect(
-      pose.controls.calibrate(pose.value, pose.frame(), "joined-player"),
-    ).toBe(false);
+    calibration.anchors.left_hip!.x = 9;
+    expect(pose.controls.calibration!.anchors.left_hip!.x).not.toBe(9);
+    expect(settle(pose)).toMatchObject({ valid: true, standing: true });
+    pose.value.people[0].joints.left_hip!.status = "estimated";
+    pose.value.people[0].joints.right_hip!.inFrame = false;
+    expect(pose.sample()).toMatchObject({ valid: false, standing: false });
   });
-  it("maps participant-left to display-left, holds hysteresis, returns center and never uses array order", () => {
-    const pose = new Pose();
-    pose.calibrate();
-    pose.translate(0.14);
-    expect(pose.sample().lane).toBe(-1);
-    pose.translate(0.09);
-    expect(pose.sample().lane).toBe(-1);
-    pose.translate(0.02);
-    expect(pose.sample().lane).toBe(0);
-    pose.translate(-0.14);
-    expect(pose.sample().lane).toBe(1);
-    pose.translate(0.14);
-    expect(pose.sample().lane).toBe(-1);
-  });
-  it("requires both feet and hips rising, confirms takeoff, rejects repeated airborne jumps and rearms after stable landing", () => {
-    const pose = new Pose();
-    pose.calibrate();
-    pose.translate(0, -0.08);
-    expect(pose.sample().jump).toBe(false);
-    expect(pose.sample().jump).toBe(true);
-    for (let i = 0; i < 10; i++) expect(pose.sample().jump).toBe(false);
-    pose.translate(0, 0);
-    pose.sample();
-    pose.sample();
-    pose.sample();
-    pose.translate(0, -0.08);
-    pose.sample();
-    expect(pose.sample().jump).toBe(true);
-    const other = new Pose();
-    other.calibrate();
-    other.value.people[0].joints.nose!.y! -= 0.1;
-    expect(other.sample().jump).toBe(false);
-    expect(other.sample().jump).toBe(false);
-    other.value.people[0].joints.left_hip!.y! -= 0.1;
-    other.value.people[0].joints.right_hip!.y! -= 0.1;
-    expect(other.sample().jump).toBe(false);
-    expect(other.sample().jump).toBe(false);
-  });
-  it("distinguishes confirmed standing from airborne followup frames whose jump event is already false", () => {
-    const pose = new Pose();
-    pose.calibrate();
-    expect(pose.sample().standing).toBe(false);
-    expect(pose.sample().standing).toBe(false);
-    expect(pose.sample().standing).toBe(true);
-    pose.translate(0, -0.08);
-    expect(pose.sample()).toMatchObject({ jump: false, standing: false });
-    expect(pose.sample()).toMatchObject({ jump: true, standing: false });
-    expect(pose.sample()).toMatchObject({
-      valid: true,
-      jump: false,
-      duck: false,
-      standing: false,
-    });
-    pose.translate(0);
-    for (let index = 0; index < 4; index++)
-      expect(pose.sample().standing).toBe(false);
-    expect(pose.sample().standing).toBe(true);
-  });
-  it("refuses standing credit for a raised single foot or bent knees without replacing it with a jump", () => {
-    for (const part of ["foot", "knee"] as const) {
+  it("maps absolute mirrored thirds independently of reference center and body size", () => {
+    for (const scale of [0.55, 1, 1.15]) {
       const pose = new Pose();
+      for (const joint of Object.values(pose.value.people[0].joints))
+        if (joint?.x != null && joint.y != null) {
+          joint.x = 0.5 + (joint.x - 0.5) * scale;
+          joint.y = 0.5 + (joint.y - 0.5) * scale;
+        }
       pose.calibrate();
-      pose.sample();
-      pose.sample();
-      expect(pose.sample().standing).toBe(true);
-      if (part === "foot") pose.value.people[0].joints.left_ankle!.y! -= 0.04;
-      else pose.value.people[0].joints.left_knee!.x! -= 0.12;
-      for (let index = 0; index < 4; index++)
-        expect(pose.sample()).toMatchObject({ standing: false, jump: false });
+      for (const [x, lane] of [
+        [0.25, 1],
+        [0.5, 0],
+        [0.75, -1],
+        [0.25, 1],
+      ] as const) {
+        const reference = pose.controls.calibration!;
+        for (const [name, point] of Object.entries(reference.anchors))
+          pose.value.people[0].joints[name as JointName]!.x =
+            point!.x + x - reference.centerX;
+        expect(pose.sample()).toMatchObject({ valid: true, lane });
+      }
+    }
+    const offCenter = new Pose();
+    offCenter.translate(0.22);
+    offCenter.calibrate();
+    expect(offCenter.sample().lane).toBe(-1);
+  });
+  it("holds both boundary deadbands and returns to center with bounded hysteresis", () => {
+    const pose = new Pose();
+    pose.calibrate();
+    for (const [displayX, lane] of [
+      [0.32, 0],
+      [0.3, -1],
+      [0.33, -1],
+      [0.345, -1],
+      [0.36, 0],
+      [0.68, 0],
+      [0.7, 1],
+      [0.665, 1],
+      [0.64, 0],
+    ] as const) {
+      pose.translate(0.5 - displayX);
+      expect(pose.sample().lane).toBe(lane);
     }
   });
-  it("recognizes held bent-knee duck and releases on standing without detecting a jump", () => {
+  it("confirms one jump per standing-return cycle, using source time rather than sample count", () => {
     const pose = new Pose();
     pose.calibrate();
+    settle(pose);
+    pose.translate(0, -0.07);
+    expect(pose.sample(10).jump).toBe(false);
+    expect(pose.sample(20).jump).toBe(false);
+    expect(pose.sample(30)).toMatchObject({ jump: true, standing: false });
+    for (let i = 0; i < 8; i++)
+      expect(pose.sample()).toMatchObject({ jump: false, standing: false });
+    pose.translate(0);
+    expect(pose.sample().standing).toBe(false);
+    pose.sample();
+    expect(pose.sample().standing).toBe(true);
+    pose.translate(0, -0.07);
+    pose.sample();
+    expect(pose.sample().jump).toBe(true);
+  });
+  it("rejects isolated head nods, hip-only movement and squat-rise as jump events", () => {
+    for (const names of [["nose"], ["left_hip", "right_hip"]]) {
+      const pose = new Pose();
+      pose.calibrate();
+      settle(pose);
+      for (const name of names)
+        pose.value.people[0].joints[name as "nose"]!.y! -= 0.1;
+      for (let i = 0; i < 4; i++) expect(pose.sample().jump).toBe(false);
+    }
+    const pose = new Pose();
+    pose.calibrate();
+    settle(pose);
     for (const name of [
+      "nose",
       "left_shoulder",
       "right_shoulder",
       "left_hip",
       "right_hip",
     ] as const)
       pose.value.people[0].joints[name]!.y! += 0.11;
-    pose.value.people[0].joints.left_knee!.x! -= 0.1;
-    pose.value.people[0].joints.right_knee!.x! += 0.1;
-    for (let index = 0; index < 8; index++)
-      expect(pose.sample()).toMatchObject({
-        valid: true,
-        duck: true,
-        jump: false,
-      });
+    for (let i = 0; i < 5; i++)
+      expect(pose.sample()).toMatchObject({ duck: true, jump: false });
     pose.translate(0);
-    expect(pose.sample()).toMatchObject({ duck: false, jump: false });
+    expect(pose.sample()).toMatchObject({
+      duck: false,
+      jump: false,
+      standing: false,
+    });
+    expect(settle(pose).standing).toBe(true);
   });
-  it("reads only the calibrated track when spectators enter, and rejects duplicate, uncertain or missing owners", () => {
+  it("uses calibrated same-joint fallback during turns without artificial lane or height steps", () => {
     const pose = new Pose();
     pose.calibrate();
-    pose.translate(0.14);
-    const owner = pose.value.people[0];
-    const spectator = observation().people[0];
-    spectator.trackId = "spectator";
-    pose.value.people = [spectator, owner];
+    settle(pose);
+    for (const name of [
+      "nose",
+      "left_shoulder",
+      "left_knee",
+      "right_knee",
+      "left_ankle",
+      "right_ankle",
+    ] as const)
+      delete pose.value.people[0].joints[name];
     expect(pose.sample()).toMatchObject({
       valid: true,
-      participantCount: 2,
-      lane: -1,
+      lane: 0,
+      jump: false,
+      duck: false,
+      standing: true,
     });
+    expect(pose.controls.feedback!.evidence).toContain("fallback");
+    pose.value.people[0].joints.right_shoulder!.y! -= 0.07;
+    pose.value.people[0].joints.right_hip!.y! -= 0.07;
+    pose.sample();
+    expect(pose.sample().jump).toBe(true);
+    pose.translate(0, -0.07);
+    expect(pose.sample()).toMatchObject({ jump: false, standing: false });
+  });
+  it("does not turn yaw with one hidden hip into lateral movement near a third boundary", () => {
+    for (const center of [.36, .64]) {
+      const pose = new Pose(); pose.translate(center-.5); pose.calibrate();
+      expect(settle(pose).lane).toBe(0);
+      // One hip rotates inward. The complete shoulder pair still measures center.
+      delete pose.value.people[0].joints.right_hip;
+      pose.value.people[0].joints.left_hip!.x = center;
+      expect(pose.sample()).toMatchObject({valid:true,lane:0});
+      delete pose.value.people[0].joints.right_shoulder;
+      expect(pose.sample()).toMatchObject({valid:false,jump:false});
+    }
+  });
+  it("cannot rearm midair when face loss switches to a smaller shoulder lift", () => {
+    const pose = new Pose();
+    delete pose.value.people[0].joints.left_ankle;
+    delete pose.value.people[0].joints.right_ankle;
+    pose.calibrate(); settle(pose);
+    const reference = structuredClone(pose.value);
+    const size = pose.controls.calibration!.bodyHeight;
+    pose.value.people[0].joints.nose!.y! -= size * .1;
+    for (const name of ["left_shoulder", "right_shoulder", "left_hip", "right_hip"] as const)
+      pose.value.people[0].joints[name]!.y! -= size * .04;
+    pose.sample(); expect(pose.sample().jump).toBe(true);
+    const nose = pose.value.people[0].joints.nose;
+    delete pose.value.people[0].joints.nose;
+    for(let i=0;i<6;i++) expect(pose.sample()).toMatchObject({standing:false,jump:false});
+    pose.value.people[0].joints.nose = nose;
+    for(let i=0;i<4;i++) expect(pose.sample()).toMatchObject({standing:false,jump:false});
+    reference.sequence = pose.value.sequence;
+    pose.value = reference;
+    expect(settle(pose).standing).toBe(true);
+  });
+  it("calibrates an explicitly bound track with spectators and never uses detection order", () => {
+    const pose = new Pose();
+    const spectator = observation().people[0];
+    spectator.trackId = "spectator";
+    pose.value.people.unshift(spectator);
+    pose.calibrate();
+    expect(settle(pose)).toMatchObject({
+      valid: true,
+      participantCount: 2,
+      standing: true,
+    });
+    pose.value.people.reverse();
+    expect(pose.sample().valid).toBe(true);
+    const owner = pose.value.people.find((p) => p.trackId === "joined-player")!;
     pose.value.people.push(structuredClone(owner));
     expect(pose.sample()).toMatchObject({
       valid: false,
@@ -191,23 +263,43 @@ describe("experimental runner body controls", () => {
     });
     pose.value.people = [spectator];
     expect(pose.sample()).toMatchObject({ valid: false, identity: "missing" });
-    const another = new Pose();
-    another.calibrate();
-    another.value.transformRevision = "new-transform";
-    expect(another.sample().valid).toBe(false);
-    expect(another.controls.calibrated).toBe(false);
   });
-  it("rejects repeated/out-of-order source samples and does not turn a post-gap airborne pose into an instant jump", () => {
-    const pose = new Pose();
-    pose.calibrate();
-    pose.sample();
-    const same = pose.controls.ingest(
-      pose.value,
-      pose.frame(),
-      "joined-player",
-    );
-    expect(same).toMatchObject({ valid: false, jump: false });
-    pose.translate(0, -0.08);
-    expect(pose.sample(500).jump).toBe(false);
+  it("breaks pending takeoff on gaps, occlusion, duplicates and restarts, then requires fresh standing", () => {
+    for (const failure of [
+      "gap",
+      "duplicate",
+      "occlusion",
+      "restart",
+    ] as const) {
+      const pose = new Pose();
+      pose.calibrate();
+      settle(pose);
+      pose.translate(0, -0.07);
+      pose.sample();
+      if (failure === "duplicate")
+        expect(
+          pose.controls.ingest(pose.value, pose.frame(), "joined-player").valid,
+        ).toBe(false);
+      if (failure === "gap") expect(pose.sample(351).valid).toBe(false);
+      if (failure === "occlusion") {
+        pose.value.people[0].joints.left_hip!.status = "missing";
+        pose.value.people[0].joints.right_hip!.status = "missing";
+        expect(pose.sample().valid).toBe(false);
+      }
+      if (failure === "restart") {
+        pose.value.epoch = "restart";
+        expect(pose.sample().valid).toBe(false);
+        expect(pose.controls.calibrated).toBe(false);
+        continue;
+      }
+      pose.translate(0, -0.07);
+      expect(pose.sample().jump).toBe(false);
+      expect(pose.sample().jump).toBe(false);
+      pose.translate(0);
+      settle(pose);
+      pose.translate(0, -0.07);
+      pose.sample();
+      expect(pose.sample().jump).toBe(true);
+    }
   });
 });
