@@ -42,6 +42,7 @@
     "rig:check": "node scripts/tasks.mjs rig-rehearsal --check",
     "verify:rig": "node scripts/verify-rig-workspace.mjs",
     "verify:maze": "node scripts/verify-maze.mjs",
+    "verify:maze-calibration": "node scripts/verify-maze-calibration.mjs",
     "verify:displayed-camera": "node scripts/verify-displayed-camera.mjs"
   },
   "dependencies": {

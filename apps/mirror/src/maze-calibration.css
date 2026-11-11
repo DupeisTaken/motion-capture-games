@@ -1,0 +1,70 @@
+.maze-calibration {
+  padding: 16px;
+}
+.calibration-warning {
+  background: #fff5db;
+  border-left: 3px solid #b97800;
+  padding: 10px;
+  font-size: 12px;
+}
+.calibration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.calibration-preview {
+  position: relative;
+  background: #172a3d;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+.calibration-preview canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: crosshair;
+}
+.calibration-preview:has(canvas[width]) {
+  aspect-ratio: auto;
+}
+.calibration-preview canvas {
+  height: auto;
+}
+.calibration-preview svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.calibration-preview span {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  padding: 3px 6px;
+  background: #172a3deb;
+  color: white;
+  font-size: 10px;
+  border-radius: 4px;
+  max-width: calc(100% - 12px);
+}
+.maze-calibration button {
+  font-size: 12px;
+}
+.maze-calibration .camera-choice {
+  margin-top: 12px;
+}
+.maze-calibration .field-label {
+  font-size: 12px;
+}
+.maze-calibration .field-note {
+  font-size: 12px;
+  color: #52647a;
+}
+.maze-calibration [role="status"] {
+  overflow-wrap: anywhere;
+}

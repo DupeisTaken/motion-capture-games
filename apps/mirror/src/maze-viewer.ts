@@ -24,6 +24,7 @@ import {
   mazeParticipantDocument,
 } from "./maze-display";
 import { mountMazePhotoCorners } from "./maze-photo-corners";
+import { mountMazeCalibration } from "./maze-calibration";
 
 export function mountMaze(root: HTMLElement) {
   root.innerHTML = `
@@ -46,6 +47,7 @@ export function mountMaze(root: HTMLElement) {
   const dialog = get<HTMLDialogElement>("pre-game-settings");
   dialog.classList.add("maze-setup");
   const photoCorners = mountMazePhotoCorners(root);
+  const calibration = mountMazeCalibration(root);
   const audio = new MazeAudio();
   const listeners = new AbortController();
   type MazeEvents = HTMLElementEventMap & WindowEventMap & DocumentEventMap;
@@ -606,6 +608,7 @@ export function mountMaze(root: HTMLElement) {
     window.clearInterval(timer);
     setup.dispose();
     photoCorners.dispose();
+    calibration.dispose();
     audio.dispose();
     participantWindow?.close();
   }
@@ -616,5 +619,15 @@ export function mountMaze(root: HTMLElement) {
   }
   listen(window, "pagehide", onPageHide);
   openSetup();
-  return { dispose };
+  return {
+    dispose,
+    navigationBlocker(): string | null {
+      return (
+        calibration.navigationBlocker ||
+        (participantWindow && !participantWindow.closed
+          ? "Close the participant window before leaving the maze."
+          : null)
+      );
+    },
+  };
 }
