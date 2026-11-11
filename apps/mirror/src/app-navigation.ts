@@ -36,13 +36,14 @@ export class NavigationStartup {
     let acknowledged = false;
     return {
       acknowledge(ok: boolean, body: unknown) {
+        // A 2xx error body may still own capture; only a nonblank epoch identifies it.
         acknowledged =
           !ok ||
           (!!body &&
             typeof body === "object" &&
             "epoch" in body &&
             typeof body.epoch === "string" &&
-            !!body.epoch);
+            !!body.epoch.trim());
       },
       finish: () => {
         this.pending--;

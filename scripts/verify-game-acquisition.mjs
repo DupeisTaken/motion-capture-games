@@ -8,6 +8,7 @@ import { chromium } from "playwright-core";
 import { createServer } from "vite";
 
 const before = process.argv.includes("--before");
+const runnerOnly = process.argv.includes("--runner");
 const phase = before ? "before" : "after";
 const baseline = "3ff148718fa062843c56774d329fffdffb4a5c88";
 const output = resolve("reports/local/operator-navigation");
@@ -23,7 +24,7 @@ const executablePath =
 assert(executablePath, "Use an installed browser; no download.");
 const originals = new Map();
 if (before)
-  for (const name of ["mole", "dodgeball"]) {
+  for (const name of ["mole", "dodgeball", "runner"]) {
     const path = `apps/mirror/src/${name}-viewer.ts`;
     originals.set(
       path,
@@ -63,7 +64,11 @@ try {
     ["desktop", 1440, 1000],
     ["mobile", 390, 844],
   ]) {
-    for (const game of ["mole", "dodgeball"]) {
+    for (const game of runnerOnly ? ["runner"] : ["mole", "dodgeball"]) {
+      const runner = game === "runner";
+      const stopId = runner ? "source-stop" : "setup-stop-camera";
+      const retryId = runner ? "retry-camera-stop" : "setup-retry-camera-stop";
+      const statusId = runner ? "camera-status" : "setup-input-status";
       const context = await browser.newContext({
         locale: "en-US",
         viewport: { width, height },
@@ -93,7 +98,7 @@ try {
           return route.fulfill({
             json:
               startMode === "malformed"
-                ? { state: "running" }
+                ? { state: runner ? "error" : "running" }
                 : { state: "running", epoch: "synthetic-current-owner" },
           });
         }
@@ -116,8 +121,11 @@ try {
       const url = `${server.resolvedUrls.local[0]}${game}.html`;
       async function open() {
         await page.goto(url);
+        if (runner) await page.locator("#source-select").selectOption("camera");
         await page.waitForFunction(
-          () => !document.querySelector("#camera-choice").disabled,
+          () =>
+            !document.querySelector("#camera-choice").disabled &&
+            !!document.querySelector("#camera-choice").value,
         );
       }
       async function capture(name) {
@@ -149,7 +157,7 @@ try {
       }
       await open();
       await page.locator("#source-connect").click();
-      await page.locator("#setup-stop-camera").click();
+      await page.locator(`#${stopId}`).click();
       await page.waitForTimeout(100);
       assert(pending, "Synthetic Start reached the held acknowledgement.");
       assert.equal(await page.locator("#source-connect").isDisabled(), !before);
@@ -164,16 +172,14 @@ try {
       await pending.fulfill({
         json: { state: "running", epoch: "synthetic-late-owner" },
       });
-      await page
-        .locator("#setup-retry-camera-stop")
-        .waitFor({ state: "visible" });
+      await page.locator(`#${retryId}`).waitFor({ state: "visible" });
       if (!before) {
         await assertLocked(true);
         await forgedStart();
         assert.equal(starts, 1);
         await capture("failed-release");
         stopFails = false;
-        await page.locator("#setup-retry-camera-stop").click();
+        await page.locator(`#${retryId}`).click();
         await page.waitForFunction(
           () => !document.querySelector("#source-connect").disabled,
         );
@@ -186,21 +192,23 @@ try {
           2,
           "Confirmed cleanup permits explicit replacement",
         );
-        await page.locator("#setup-stop-camera").click();
+        await page.locator(`#${stopId}`).click();
         startMode = "malformed";
         await open();
         const beforeUnknown = starts;
         await page.locator("#source-connect").click();
-        await page.waitForFunction(() =>
-          document
-            .querySelector("#setup-input-status")
-            .textContent.includes("ownership is unknown"),
+        await page.waitForFunction(
+          (id) =>
+            document
+              .querySelector(`#${id}`)
+              .textContent.includes("ownership is unknown"),
+          statusId,
         );
         await assertLocked(true);
         await forgedStart();
         assert.equal(starts, beforeUnknown + 1);
         assert.match(
-          await page.locator("#setup-input-status").textContent(),
+          await page.locator(`#${statusId}`).textContent(),
           /Restart the local vision service.*reload/,
         );
         await capture("unknown");
@@ -216,7 +224,7 @@ try {
   }
   assert.deepEqual(result.errors, []);
   await writeFile(
-    resolve(output, `acquisition-${phase}.json`),
+    resolve(output, `acquisition-${runnerOnly ? "runner-" : ""}${phase}.json`),
     JSON.stringify(result, null, 2),
   );
   console.log(JSON.stringify(result, null, 2));

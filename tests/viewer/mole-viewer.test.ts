@@ -1356,6 +1356,7 @@ describe("camera acquisition ownership barrier", () => {
     "invalid-json",
     "missing-epoch",
     "error-missing-epoch",
+    "blank-epoch",
     "null-body",
   ])(
     "keeps %s startup ownership unknown and refuses forged acquisition after Stop",
@@ -1376,6 +1377,7 @@ describe("camera acquisition ownership barrier", () => {
               : {
                   state:
                     failure === "error-missing-epoch" ? "error" : "running",
+                  ...(failure === "blank-epoch" ? { epoch: "   " } : {}),
                 };
           },
         });

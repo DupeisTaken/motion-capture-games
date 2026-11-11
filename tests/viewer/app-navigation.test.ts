@@ -144,6 +144,7 @@ describe("source navigation safety", () => {
       { state: "running" },
       { state: "error" },
       { state: "error", epoch: "" },
+      { state: "running", epoch: "   " },
     ]) {
       const startup = new NavigationStartup();
       const attempt = startup.begin();

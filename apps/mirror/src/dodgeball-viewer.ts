@@ -629,7 +629,9 @@ export function mountDodgeballGame(
       const result = await response.json();
       navigationAttempt.acknowledge(response.ok, result);
       const returnedEpoch =
-        typeof result?.epoch === "string" ? result.epoch : "";
+        typeof result?.epoch === "string" && result.epoch.trim()
+          ? result.epoch
+          : "";
       if (own !== generation || disposed) {
         if (returnedEpoch) await releases.release(returnedEpoch);
         return;

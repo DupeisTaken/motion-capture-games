@@ -97,6 +97,7 @@ export function mountRunnerGame(
   })();
   const session = new SinglePlayerSession();
   const pose = new RunnerPoseControls();
+  const navigationStartup = new NavigationStartup();
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
   let disposed = false;
@@ -131,22 +132,23 @@ export function mountRunnerGame(
   function updateReleaseControls() {
     if (disposed) return;
     const release = releases.state;
-    cameraChoice.setLocked(
-      connecting ||
-        !!cameraEpoch ||
-        release.pendingCount > 0 ||
-        startupUncertain,
-    );
-    get("camera-release").hidden = release.pendingCount === 0;
-    setText("camera-release-message", release.message ?? "");
-    get<HTMLButtonElement>("retry-camera-stop").disabled = release.releasing;
-    get<HTMLButtonElement>("source-connect").disabled =
+    const startupBlocker = navigationStartup.blocker;
+    // Shared ownership acknowledgement supplements Runner's independent guards.
+    const sourceLocked =
       connecting ||
       !!cameraEpoch ||
       release.pendingCount > 0 ||
-      startupUncertain;
+      startupUncertain ||
+      !!startupBlocker;
+    cameraChoice.setLocked(sourceLocked);
+    get<HTMLSelectElement>("source-select").disabled = active() || sourceLocked;
+    get("camera-release").hidden = release.pendingCount === 0;
+    setText("camera-release-message", release.message ?? "");
+    get<HTMLButtonElement>("retry-camera-stop").disabled = release.releasing;
+    get<HTMLButtonElement>("source-connect").disabled = sourceLocked;
     get<HTMLButtonElement>("source-stop").disabled =
       !cameraEpoch && !connecting;
+    if (startupBlocker) cameraMessage(release.message ?? startupBlocker);
   }
   function cameraMessage(value: string) {
     setText("camera-status", value);
@@ -543,13 +545,13 @@ export function mountRunnerGame(
     if (!disposed) tick();
     return released;
   }
-  const navigationStartup = new NavigationStartup();
   async function startCamera() {
     if (
       connecting ||
       cameraEpoch ||
       releases.state.pendingCount ||
       startupUncertain ||
+      navigationStartup.blocker ||
       disposed
     )
       return;
@@ -566,6 +568,7 @@ export function mountRunnerGame(
     updateReleaseControls();
     let acknowledged = false;
     const navigationAttempt = navigationStartup.begin();
+    updateReleaseControls();
     try {
       const response = await fetch("/api/start", {
         method: "POST",
@@ -581,7 +584,7 @@ export function mountRunnerGame(
       });
       const result = await response.json();
       navigationAttempt.acknowledge(response.ok, result);
-      if (typeof result.epoch === "string" && result.epoch) {
+      if (typeof result.epoch === "string" && result.epoch.trim()) {
         acknowledged = true;
         if (own !== generation || disposed || isDemo()) {
           await releases.release(result.epoch);

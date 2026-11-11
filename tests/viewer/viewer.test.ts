@@ -854,6 +854,8 @@ describe("independent diagnostic viewer", () => {
     "malformed-json",
     "missing-epoch",
     "empty-epoch",
+    "error-state-no-epoch",
+    "blank-epoch",
   ] as const)(
     "reports unknown ownership after a %s Start acknowledgment without adopting global status",
     async (failure) => {
@@ -874,8 +876,12 @@ describe("independent diagnostic viewer", () => {
         }
         return Promise.resolve(
           response({
-            state: "running",
-            ...(failure === "empty-epoch" ? { epoch: "" } : {}),
+            state: failure === "error-state-no-epoch" ? "error" : "running",
+            ...(failure === "empty-epoch"
+              ? { epoch: "" }
+              : failure === "blank-epoch"
+                ? { epoch: "   " }
+                : {}),
           }),
         );
       });
