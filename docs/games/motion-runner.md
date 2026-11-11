@@ -2,6 +2,8 @@
 
 ## Status and scope
 
+A manual pause offers one prominent **Resume** button inside the rendered game screen. It receives focus once for Enter/Space and supports one click or tap. One press waits for fresh standing input and the existing two-second countdown, then returns focus to the game without repeating setup/practice. Activation cannot also jump, roll or change lanes. Graphics loss, hidden presentation and identity/source changes keep their existing recovery gates. [The resume report](../../reports/game-resume.html) records verification.
+
 Experimental playable implementation at `runner.html`, requested before physical M1/M6 certification. Neon Rails and Gold Rush share a deterministic three-lane game engine, with original procedural 3D worlds and Nova, Moss and Ember skins. Subway Surfers and Talking Tom Gold Run are gameplay references; their code, characters and assets are not dependencies.
 
 The camera-free software slice implements the rules below. The existing canonical observation/session boundary supplies experimental camera controls. Numeric tuning is proposed and synthetic-tested; physical accuracy, body-size/reach coverage, exposure timing and end-to-end latency remain open milestone gates. [Issue #39](https://github.com/DupeisTaken/motion-capture-games/issues/39) / [PR #44](https://github.com/DupeisTaken/motion-capture-games/pull/44) tracks implementation; [the delivery report](../../reports/motion-runner-game.html) records actual verification and limitations.

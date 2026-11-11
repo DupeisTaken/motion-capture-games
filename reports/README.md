@@ -59,3 +59,5 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Motion Runner implementation](motion-runner-game.html) records the playable Neon Rails / Gold Rush games, original 3D skins/worlds, single-player recovery, actual software checks, real-server desktop/mobile evidence, reference-footage comparison and independent critical review. Physical control accuracy and visible latency remain unverified.
 
 [Runner motion and opening pace](runner-motion-pace.html) records the articulated gait, opt-in Fast start switch, fresh full-stride/desktop/mobile evidence, both-pace simulation checks and post-change render timings. Physical trials remain separate.
+
+[Single-press game resume](game-resume.html) records consistent in-game continuation across all four games and rig pointer practice, keyboard/touch behavior, preserved readiness gates, before/after real-server screenshots and actual checks.

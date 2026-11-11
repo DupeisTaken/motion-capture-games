@@ -12,6 +12,8 @@ The milestone IDs below are stable local references. Each milestone may become s
 
 [Issue #54](https://github.com/DupeisTaken/motion-capture-games/issues/54) adds the root game directory linking Slap a Mole, Dodgeball, Motion Runner and Virtual Maze, with separate tracking-console and two-camera operator links. `/diagnostics.html` replaces the root diagnostic entry; game URLs stay stable. See [entry points](../apps/mirror/README.md#entry-points) and [the delivery report](../reports/game-directory.html) for actual software/browser checks. This navigation work closes no physical milestone gate.
 
+**Single-press continuation:** [Issue #53](https://github.com/DupeisTaken/motion-capture-games/issues/53) covers in-game Resume actions for Slap a Mole, Dodgeball, Motion Runner, Virtual Maze and rig pointer practice. Preserve readiness/identity gates and existing countdowns while removing navigation back to operator controls. [The delivery report](../reports/game-resume.html) owns actual software and responsive-browser evidence; physical gates remain unchanged.
+
 ## M0: Documentation foundation
 
 **Scope:** Record the agreed product, ownership boundaries, repository conventions, proposal status and validation gates. Provide a self-contained report.

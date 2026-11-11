@@ -148,3 +148,17 @@
     flex: 1 0 auto;
   }
 }
+
+.rig-game-image > .game-resume {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  transform: translateX(-50%);
+  color: #173b35;
+  background: #d7efac;
+  border: 1px solid #d7efac;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -50,6 +50,7 @@ const report = `<!doctype html>
 <tr><td>Production preview</td><td>${production ? "PASS · all six linked destinations, root viewport/keyboard checks, no-JavaScript game link and return navigation" : "Pending build"}</td></tr>
 <tr><td>Root API / browser errors</td><td>${browser.rootApiRequests.length} API requests; ${browser.errors.length} uncaught errors. Static game navigation also passed with JavaScript disabled.</td></tr>
 <tr><td>Diagnostic lifecycle regression</td><td>${escape(checks.lifecycle ?? "Pending")}</td></tr>
+${checks.integration ? `<tr><td>Integration with main</td><td>${escape(checks.integration)}</td></tr>` : ""}
 <tr><td>Hosted software-checks</td><td>${escape(checks.ci ?? "Pending latest PR commit; required before merge")}</td></tr>
 </tbody></table>
 <p>Browser evidence comes from installed headless Chromium and real local Vite servers. Game/tool metadata GET responses were synthetic; camera control requests were rejected by the harness. Root request counts were observed independently. Screenshots contain no participant data. The report embeds its CSS and four screenshots for offline viewing.</p>

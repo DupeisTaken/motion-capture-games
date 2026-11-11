@@ -391,6 +391,30 @@ describe("Slap a Mole operator integration", () => {
     expect(element("game-overlay").hidden).toBe(true);
   });
 
+  it("offers one focused in-stage Resume and waits for recovered input after one press", () => {
+    startDemo();
+    element<HTMLButtonElement>("pause-round").click();
+    const resume = element<HTMLButtonElement>("resume-round");
+    expect(element("game-overlay").contains(resume)).toBe(true);
+    expect(resume.textContent).toBe("Resume");
+    expect(document.activeElement).toBe(resume);
+    const score = element("score-value").textContent;
+    const time = element("time-value").textContent;
+    element<HTMLInputElement>("demo-framing").checked = false;
+    element("demo-framing").dispatchEvent(new Event("change"));
+    resume.click();
+    advance(500);
+    expect(resume.hidden).toBe(true);
+    expect(element("score-value").textContent).toBe(score);
+    expect(element("time-value").textContent).toBe(time);
+    expect(element("game-overlay").hidden).toBe(false);
+    element<HTMLInputElement>("demo-framing").checked = true;
+    element("demo-framing").dispatchEvent(new Event("change"));
+    advance(2500);
+    expect(element("game-overlay").hidden).toBe(true);
+    expect(element<HTMLDialogElement>("pre-game-settings").open).toBe(false);
+  });
+
   it("keeps manual pause and resume outside setup", () => {
     startDemo();
     element<HTMLButtonElement>("pause-round").click();

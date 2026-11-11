@@ -78,6 +78,15 @@
 .maze-participant .maze-button {
   margin-top: 20px;
 }
+.maze-participant .game-resume {
+  min-height: 48px;
+  min-width: 170px;
+  padding: 12px 24px;
+  background: #c3f36b;
+  color: #203423;
+  border-color: #c3f36b;
+  font-weight: 750;
+}
 
 .maze-participant .maze-button:focus-visible {
   outline: 3px solid #8bbcff;

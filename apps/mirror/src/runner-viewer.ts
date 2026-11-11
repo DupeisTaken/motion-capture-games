@@ -1,3 +1,4 @@
+import { createResumeControl } from "./resume-control";
 import {
   RunnerGame,
   type RunnerOptions,
@@ -35,12 +36,12 @@ export function mountRunnerGame(
       <canvas id="game-canvas" aria-label="Original three-dimensional runner world. Gameplay is shown instead of camera video.">Your browser needs WebGL to display the runner world.</canvas>
       <div class="runner-top"><div><span class="stage-eyebrow" id="source-label">BODY TRACKING</span><strong id="world-title">Neon Rails</strong></div><span id="player-badge">WAITING FOR PLAYER</span></div>
       <div class="runner-hud"><div><span>SCORE</span><strong id="score-value">00000</strong></div><div><span>COINS</span><strong id="coins-value">0</strong></div><div><span>DISTANCE</span><strong><span id="distance-value">0</span><small> m</small></strong></div><div><span>SHIELDS</span><strong id="lives-value">3</strong></div></div>
-      <div class="runner-overlay" id="game-overlay"><div class="runner-overlay-card"><p id="overlay-kicker">YOUR BODY. YOUR CONTROLLER.</p><h2 id="overlay-title">A new kind of<br>runner's high.</h2><p id="overlay-copy">Step left or right. Jump the hurdles. Duck into a roll. The city is yours to explore.</p><button id="overlay-start" class="runner-primary">Start run <span>→</span></button></div></div>
+      <div class="runner-overlay" id="game-overlay"><div class="runner-overlay-card"><p id="overlay-kicker">YOUR BODY. YOUR CONTROLLER.</p><h2 id="overlay-title">A new kind of<br>runner's high.</h2><p id="overlay-copy">Step left or right. Jump the hurdles. Duck into a roll. The city is yours to explore.</p><button id="resume-round" class="runner-primary" hidden>Resume</button><button id="overlay-start" class="runner-primary">Start run <span>→</span></button></div></div>
       <div id="runner-feedback" class="runner-feedback" role="status" aria-live="polite" hidden></div>
       <button id="stage-pause" class="stage-pause" hidden>Pause</button>
       <div class="runner-bottom"><span id="action-label">CENTER · STANDING</span><span id="speed-label">0.0 m/s</span></div>
     </div>
-    <div class="runner-toolbar"><p id="game-status" role="status" aria-live="polite">Choose your input, then start your run.</p><div><button id="start-round" class="runner-primary">Start run →</button><button id="pause-round" hidden>Pause</button><button id="resume-round" class="runner-primary" hidden>Resume →</button><button id="new-round" hidden>New run</button><button id="end-round" hidden>End run</button></div></div>
+    <div class="runner-toolbar"><p id="game-status" role="status" aria-live="polite">Choose your input, then start your run.</p><div><button id="start-round" class="runner-primary">Start run →</button><button id="pause-round" hidden>Pause</button><button id="new-round" hidden>New run</button><button id="end-round" hidden>End run</button></div></div>
     <div class="runner-controls" id="demo-controls"><span>REHEARSAL CONTROLS</span><div class="lane-buttons" role="group" aria-label="Choose lane"><button id="lane-left" aria-label="Select left lane">← <span>Left</span></button><button id="lane-center" aria-label="Select center lane">● <span>Center</span></button><button id="lane-right" aria-label="Select right lane"><span>Right</span> →</button></div><div class="action-buttons"><button id="jump-action">↑ <span>Jump</span></button><button id="duck-action" aria-pressed="false">↓ <span>Roll</span></button></div><p>Keyboard: ← / C / → lanes · Space jump · hold ↓ to roll.<br>Touch: tap a lane or Jump; hold Roll.</p></div>
     <div class="runner-principles"><p><strong>Move to a lane</strong><span>Left, center or right. Holding a position keeps your lane.</span></p><p><strong>Jump & roll</strong><span>Jump low hurdles. Duck under the overhead gates.</span></p><p><strong>Your run stays yours</strong><span>Spectators can enter the frame. The game pauses if it loses your tracking.</span></p></div>
   </section><aside class="runner-settings" aria-label="Run setup"><div class="runner-section-label"><span>MAKE IT YOURS</span><span>01</span></div><h2>Choose your escape.</h2>
@@ -67,6 +68,11 @@ export function mountRunnerGame(
   function listen(target: EventTarget, name: string, callback: EventListener) {
     target.addEventListener(name, callback, { signal: listeners.signal });
   }
+  const resumeControl = createResumeControl(
+    get<HTMLButtonElement>("resume-round"),
+    get("game-stage"),
+    listeners.signal,
+  );
   const isDemo = () => select("source-select").value === "demo";
   const options = (): RunnerOptions => ({
     variant: select("world-select").value as RunnerOptions["variant"],
@@ -411,9 +417,14 @@ export function mountRunnerGame(
     get("pause-round").hidden = !["playing", "countdown"].includes(state.phase);
     get("stage-pause").hidden = !["playing", "countdown"].includes(state.phase);
     get("resume-round").hidden =
-      state.phase !== "paused" || state.requiresNewRound || ownershipChanged;
+      state.phase !== "paused" ||
+      state.requiresNewRound ||
+      ownershipChanged ||
+      !manualPause;
     get<HTMLButtonElement>("resume-round").disabled =
-      !ready || !input?.standing || document.hidden || renderingUnavailable;
+      (!manualPause && (!ready || !input?.standing)) ||
+      document.hidden ||
+      renderingUnavailable;
     get("new-round").hidden =
       state.phase !== "paused" && state.phase !== "results";
     get("end-round").hidden = !locked;
@@ -480,6 +491,7 @@ export function mountRunnerGame(
       );
     }
     updateReleaseControls();
+    resumeControl.update();
   }
   function tick() {
     if (disposed) return;
@@ -664,18 +676,18 @@ export function mountRunnerGame(
       tick();
     });
   listen(get("resume-round"), "click", () => {
-    const input = currentInput(now());
     if (
-      input &&
-      input.standing &&
-      !ownershipChanged &&
-      !document.hidden &&
-      game.resume(now(), input)
-    ) {
-      manualPause = false;
-      tick();
-      get("game-stage").focus();
-    }
+      document.hidden ||
+      renderingUnavailable ||
+      ownershipChanged ||
+      game.state.phase !== "paused" ||
+      game.state.requiresNewRound
+    )
+      return;
+    // Standing/readiness may recover after this press; never ask for it twice.
+    manualPause = false;
+    tick();
+    get("game-stage").focus({ preventScroll: true });
   });
   listen(get("end-round"), "click", () => {
     game.end();
