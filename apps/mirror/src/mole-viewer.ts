@@ -1,3 +1,4 @@
+import { moleArt } from "./mole-art";
 import {
   CameraChoice,
   cameraChoiceMarkup,
@@ -29,8 +30,6 @@ import {
 // Proposed continuity window: fresh input must remain ready before play/recovery.
 const READY_HOLD_MS = 600;
 const MAX_RECOVERY_GAP_MS = 2000;
-
-const moleArt = `<svg viewBox="0 0 120 110" aria-hidden="true"><ellipse cx="60" cy="96" rx="52" ry="11" fill="#071d1a"/><path d="M19 88V55a41 41 0 0 1 82 0v33" fill="#ce9364"/><circle cx="25" cy="37" r="14" fill="#ce9364"/><circle cx="95" cy="37" r="14" fill="#ce9364"/><circle cx="25" cy="37" r="8" fill="#a7654c"/><circle cx="95" cy="37" r="8" fill="#a7654c"/><path d="M19 88V57a41 41 0 0 1 82 0v31" fill="#ce9364"/><ellipse cx="60" cy="72" rx="23" ry="18" fill="#f4cc9c"/><ellipse cx="60" cy="62" rx="10" ry="7" fill="#492e2b"/><circle cx="43" cy="50" r="4" fill="#272d29"/><circle cx="78" cy="50" r="4" fill="#272d29"/><path d="m51 80 9 5 9-5" fill="none" stroke="#734a3b" stroke-width="3" stroke-linecap="round"/><path d="M13 94h94" stroke="#74aa81" stroke-width="5" stroke-linecap="round"/></svg>`;
 
 const targetSlots = ["mole-target", "mole-target-2", "bomb-target"] as const;
 const bombWarning = `Avoid bombs · −${TUNING.bombPenalty} points`;
@@ -66,7 +65,7 @@ export function mountMoleGame(
   );
   root.innerHTML = `
   <a class="skip" href="#game-stage">Skip to game</a>
-  <header class="mm-header"><a class="mm-brand" href="/">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/">Tracking console</a><a class="current" href="/mole.html" aria-current="page">Slap a Mole</a><a href="/dodgeball.html">Dodgeball</a></nav><span class="local-pill"><i></i> Local & private</span></header>
+  <header class="mm-header"><a class="mm-brand" href="/">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/">Tracking console</a><a class="current" href="/mole.html" aria-current="page">Slap a Mole</a><a href="/dodgeball.html">Dodgeball</a><a href="/runner.html">Runner</a></nav><span class="local-pill"><i></i> Local & private</span></header>
   <main class="mm-main"><div class="mm-heading"><div><p class="eyebrow">THE MOTION ARCADE <span>/</span> GAME 01</p><h1>Slap a Mole<span class="heading-dot">.</span></h1><p class="intro">A little reach. A little rhythm. A whole lot of moles.</p></div><span class="experiment">Single player <span>Experimental</span></span></div>
   <div class="mm-layout play-layout">
   <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="player-readiness" role="status">Press Start round. We’ll wait until your input is ready.</p><button id="source-stop" class="mm-text" disabled>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
@@ -658,6 +657,7 @@ export function mountMoleGame(
           tracker: "pose",
           ...camera,
           maxPeople: 3,
+          independentPreview: false,
           demoScenario: "three",
         }),
       });

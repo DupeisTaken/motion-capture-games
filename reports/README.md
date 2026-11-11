@@ -4,6 +4,8 @@
 
 [Slap a Mole rename](slap-a-mole-rename.html) records the display-name update, compatible routes and source paths, isolated software checks and synthetic desktop/mobile before/after screenshots.
 
+[Virtual Maze](virtual-maze.html) records configurable maze generation, verified loop-mode hand-rule failure, independent Head/Torso input, local corner annotations, browser audio, actual checks and embedded operator/participant screenshots. Live physical tracking and hardware buzzer acceptance remain open.
+
 [Two-camera operator workspace](two-camera-workspace.html) records paired synthetic XYZ rehearsal, physical camera-role planning, independent review, actual checks and responsive before/after screenshots. Planning inputs and simulated output do not establish physical calibration, synchronization, accuracy or maze readiness.
 
 [Vision issues #3 and #4](vision-issues.html) records the viewer audit/freshness fix, camera-free XYZ comparison, independent reviews, actual checks and real-server English desktop/mobile evidence. [XYZ measurements](xyz-results.json) contain coverage, unsafe acceptances and serial reconstruction-only timings. Physical calibration, camera, identity and external latency certification remain open.
@@ -15,6 +17,8 @@ Explain the problem, final change and rationale. Include relevant before/after s
 [The foundation report](foundation.html) describes the documentation-only initial change. It has no gameplay screenshots or runtime performance results because neither an application nor a tested installation exists. Its embedded previews document desktop/mobile report rendering only.
 
 Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.local/`.
+
+[Gameplay camera and operator views](displayed-camera.html) records the correction from a third skeleton output to actual Slap a Mole rehearsal gameplay, with both operator diagnostics retained. It covers explicit pointer input, selected synthetic background mapping, state/ownership isolation, player-window lifecycle and actual verification. Live dual-camera capture and body-driven XYZ gameplay remain deferred.
 
 [Camera defaults and mirrored movement](camera-default.html) records camera-first setup, the explicit viewer-left mapping, software checks and embedded synthetic desktop/mobile browser evidence.
 
@@ -47,3 +51,9 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Camera selection](camera-selection.html) documents the shared native selector, refresh/recovery behavior, actual checks and remaining hardware limits.
 
 [Pre-game settings](pre-game-settings.html) records the shared video/game setup menu, confirmation and camera-release behavior, synthetic before/after browser evidence and actual checks.
+
+[Camera tracking and game response](camera-tracking-latency.html) records three-person overlay transitions, paired-only game capture and before/after model processing times.
+
+[Motion Runner implementation](motion-runner-game.html) records the playable Neon Rails / Gold Rush games, original 3D skins/worlds, single-player recovery, actual software checks, real-server desktop/mobile evidence, reference-footage comparison and independent critical review. Physical control accuracy and visible latency remain unverified.
+
+[Runner motion and opening pace](runner-motion-pace.html) records the articulated gait, opt-in Fast start switch, fresh full-stride/desktop/mobile evidence, both-pace simulation checks and post-change render timings. Physical trials remain separate.

@@ -16,6 +16,7 @@ import { drawFrame, drawStandby } from "./renderer";
 import { CameraSetup } from "./camera-setup";
 import { CameraReleases } from "./camera-release";
 import { PreviewDiagnostics, sourceWorkMs } from "./diagnostics";
+import { overlayPeople } from "./pose-overlay";
 
 const icon = (name: "body" | "play" | "stop" | "expand" | "camera") => {
   const paths = {
@@ -33,7 +34,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <a class="skip-link" href="#workspace">Skip to viewer</a>
   <header class="app-header">
     <a class="brand" href="/" aria-label="Motion Studio home"><span class="brand-symbol">${icon("body")}</span>Motion<span class="brand-light">Studio</span><span class="subtle-badge">LAB</span></a>
-    <span class="header-section">Motion capture / Test console · <a href="/rig.html">Two-camera workspace ↗</a> · <a href="/mole.html">Slap a Mole ↗</a> · <a href="/dodgeball.html">Dodgeball ↗</a></span>
+    <span class="header-section">Motion capture / Test console · <a href="/rig.html">Two-camera workspace ↗</a> · <a href="/mole.html">Slap a Mole ↗</a> · <a href="/dodgeball.html">Dodgeball ↗</a> · <a href="/runner.html">Motion Runner ↗</a> · <a href="/maze.html">Virtual Maze ↗</a></span>
     <span class="local-indicator"><span></span> Local processing · no recording</span>
   </header>
   <main id="workspace">
@@ -152,6 +153,7 @@ let poseReceivedAt = 0;
 const renderRate = new FrameRate();
 const poseRate = new FrameRate();
 let lastFrame: Observation | null = null;
+let previousFrame: Observation | null = null;
 let lastImage: ImageBitmap | null = null;
 const MAX_PREVIEW_ARRIVAL_AGE_MS = 1500;
 let lastUpdate = 0;
@@ -261,6 +263,7 @@ function clearTelemetry() {
 function clearStalePreview() {
   lastUpdate = 0;
   lastFrame = null;
+  previousFrame = null;
   lastPreview = null;
   lastImage?.close();
   lastImage = null;
@@ -289,16 +292,23 @@ function redraw() {
   ) {
     const drawStarted = performance.now();
     const pose =
-      performance.now() - poseReceivedAt <= 500 &&
-      canOverlay(lastPreview, lastFrame)
+      drawStarted - poseReceivedAt <= 500 && canOverlay(lastPreview, lastFrame)
         ? lastFrame
         : null;
-    drawFrame(
-      canvas,
-      lastImage,
-      pose ?? { image: lastPreview.image, people: [] },
-      renderOptions(),
-    );
+    const options = renderOptions();
+    const people =
+      pose &&
+      options.showTracking &&
+      previousFrame &&
+      canOverlay(lastPreview, previousFrame)
+        ? overlayPeople(
+            previousFrame,
+            pose,
+            drawStarted - poseReceivedAt,
+            options.confidence,
+          )
+        : (pose?.people ?? []);
+    drawFrame(canvas, lastImage, { image: lastPreview.image, people }, options);
     lastDrawMs = performance.now() - drawStarted;
   } else drawStandby(canvas);
 }
@@ -442,6 +452,7 @@ function teardown(own: CaptureGeneration) {
   poseRate.reset();
   lastPreview = null;
   lastFrame = null;
+  previousFrame = null;
   lastImage?.close();
   lastImage = null;
   lastUpdate = 0;
@@ -582,6 +593,7 @@ async function start() {
               }
               if (message.state === "stale" && kind === "observations") {
                 lastFrame = null;
+                previousFrame = null;
                 clearObservations(
                   "Pose input is too old. Camera preview continues independently.",
                 );
@@ -595,6 +607,7 @@ async function start() {
               if (observation.sequence <= sequences.observations)
                 throw new Error("Outdated pose observation.");
               sequences.observations = observation.sequence;
+              previousFrame = lastFrame;
               lastFrame = observation;
               poseReceivedAt = performance.now();
               poseRate.record(poseReceivedAt);

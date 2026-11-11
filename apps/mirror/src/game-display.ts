@@ -2,6 +2,9 @@ import "./game-display.css";
 
 interface DisplayOptions {
   title: string;
+  windowLabel?: string;
+  placeholderMessage?: string;
+  returnButtonLabel?: string;
   onStateChange?: (open: boolean) => void;
   onVisibilityChange?: () => void;
 }
@@ -64,7 +67,7 @@ export function createGameDisplay(stage: HTMLElement, options: DisplayOptions) {
         '<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>',
       );
       doc.close();
-      doc.title = `${options.title} · Game display`;
+      doc.title = `${options.title} · ${options.windowLabel ?? "Game display"}`;
       doc.documentElement.lang = home.documentElement.lang || "en";
       const base = doc.createElement("base");
       base.href = home.baseURI;
@@ -99,9 +102,10 @@ export function createGameDisplay(stage: HTMLElement, options: DisplayOptions) {
       placeholder.className = "game-display-placeholder";
       const note = home.createElement("p");
       note.textContent =
+        options.placeholderMessage ??
         "Your game is in its own window. Camera and round controls stay here.";
       const bringBack = home.createElement("button");
-      bringBack.textContent = "Return game here";
+      bringBack.textContent = options.returnButtonLabel ?? "Return game here";
       bringBack.addEventListener("click", () => restore());
       placeholder.append(note, bringBack);
       stage.before(placeholder);

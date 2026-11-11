@@ -24,9 +24,7 @@ function scene() {
     arc: vi.fn(),
     fill: vi.fn(),
   };
-  vi.spyOn(canvas, "getContext").mockReturnValue(
-    context as unknown as CanvasRenderingContext2D,
-  );
+  Object.defineProperty(canvas, "getContext", { value: vi.fn(() => context) });
   return { canvas, context };
 }
 

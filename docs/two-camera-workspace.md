@@ -18,6 +18,24 @@ The two view diagrams show their own 2D observations. The floor map shows the ro
 
 Cases include normal observations, missing hips, uncertain identity, exposure timing problems, stale source input, weak geometry, changed calibration and hidden calibration bias. The bias case deliberately publishes an incorrect estimate despite plausible geometry; its reference comparison explains why physical scale checks matter. Simulated sample availability always remains separate from physically validated input.
 
+## Keep operator diagnostics separate from gameplay
+
+[Issue #38](https://github.com/DupeisTaken/motion-capture-games/issues/38) separates two operator camera views from the single camera chosen for gameplay presentation. Both recorded source diagrams remain prominent on the operator page, followed by XYZ inspection. **Gameplay camera** chooses the background of the player game; it does not replace either diagnostic panel, swap primary/reference and secondary/supporting roles, or alter reconstruction.
+
+[PR #41](https://github.com/DupeisTaken/motion-capture-games/pull/41) originally implemented a selected skeleton display. Investigation after the user's clarification found that this did not connect camera selection to gameplay. The corrected slice uses the existing Slap a Mole engine in its original single-target Practice/Touch rehearsal, with a contact cursor, countdown and score. The [report](../reports/displayed-camera.html) records the corrected scope and fresh verification; earlier ratings of diagram selection do not establish gameplay acceptance.
+
+Fresh independent review reached 10/10 for the corrected synthetic gameplay scope after real scoring, native mouse/touch, transform, visibility/recovery and full software/report verification. Live capture and body-driven XYZ remain separate gates.
+
+The choice is stored by synthetic camera identity in this browser, separately from physical role assignments. An unavailable saved identity remains selected until the operator chooses another view. The selected recorded camera supplies only the synthetic background, image geometry and source context. It has no live RGB footage. The paired source observations and reconstructed XYZ remain unchanged when the gameplay view changes.
+
+The game's input is an explicit synthetic pointer/keyboard controller in a stable normalized image space. Recorded bodies and XYZ do **not** control hits or ownership. The fixture spans only 2.2 seconds, shorter than the game's three-second countdown; looping or retimestamping its poses would invent fresh input. This controller instead publishes its own current synthetic input using one monotonic clock. Targets, cursor and selected background share one contain-fit/mirror transform, including inverse pointer mapping and rejection of letterboxed areas. Anatomical names and rig coordinates remain canonical.
+
+**Open gameplay window** moves the same game stage and HUD into a separate player window. Both diagnostic views, source context and XYZ stay with the operator. An optional inline preview is collapsed initially so it does not become a third operator diagnostic. Popup blocking exposes that preview. There is one game runtime and ticker, and the operator's monotonic time domain remains authoritative across window moves. Physical planning pauses gameplay, closes its window and hides synthetic output.
+
+Missing, stale or uncertain selected presentation suspends affected gameplay and clears the player scene rather than substituting another camera. Recovery preserves the same pointer player and score and requires explicit Resume through the game's countdown. Pointer input is not a claim that ambiguous recorded bodies are safely associated.
+
+The current service still owns one live source; this correction opens no cameras. Actual body input from both views needs a calibrated rig-input/session adapter. Existing games score in normalized image coordinates, while the fixture contains no complete target projection model. Changing which camera's body observations feed those games would change their coordinate/session revision, rather than being a harmless display switch. Live dual acquisition, view-independent body collisions, physical XYZ and maze gameplay remain separate work.
+
 ## Plan the physical rig
 
 Physical planning assigns distinct named-device references to primary and secondary roles. Explicit Refresh obtains device metadata without acquisition. Independent prefixed selectors preserve label relationships and device identity through list reordering; a disappeared selection clears rather than choosing a substitute. The same device cannot occupy both roles. Manual-index selection retains its documented reconnect limitations.
@@ -25,6 +43,10 @@ Physical planning assigns distinct named-device references to primary and second
 Planning mode starts no camera, invokes no capture endpoint and contains no live two-camera preview. It never inherits simulated coordinates, synthetic calibration or synthetic timing readiness. A single-camera inspection link returns to the existing console; operators start capture explicitly there. The current service owns one source, so two calls to its Start endpoint would replace that source rather than establish a pair.
 
 Placement dimensions, intended volume and operator notes are planning information. Recording notes or checking role assignments is not evidence of exposure synchronization, metric scale, confirmed association or physical accuracy. The UI keeps these missing gates visible. Camera discovery failure, an absent service, duplicates and disconnection provide useful recovery without enabling XYZ.
+
+The [Virtual Maze pre-game setup](games/virtual-maze.md) now offers an illustrated two-camera guide and a link to this physical planning route. Start with separated oblique views sharing the complete measured floor rectangle, then verify floor-to-head and movement coverage in both actual images. Avoid tiny baselines and near-parallel useful rays; balance geometric separation against overlap and self-occlusion. Its drawing is illustrative, not a lens model, universal mounting angle or accuracy guarantee. [Installation](installation.md#virtual-maze-a-practical-two-camera-setup) owns the step-by-step placement, exact-mode calibration and held-out validation procedure.
+
+The maze guide does not start cameras, change this workspace's readiness or certify the selected head/torso orientation. Correct physical input needs orientation error/coverage evidence alongside XYZ, plus verified exposure pairing, association and feedback timing. Moving a camera or changing image/focus geometry requires revalidation; checking planning items does not bypass that gate.
 
 ## Evidence and future maze input
 
@@ -47,6 +69,7 @@ Run from the checkout root with the existing pinned environment. `pnpm dev` serv
 pnpm rig:generate
 pnpm rig:check
 pnpm verify:rig
+pnpm verify:displayed-camera
 pnpm check
 pnpm build
 ```
@@ -54,3 +77,5 @@ pnpm build
 `rig:generate` recreates and formats the static fixture; `rig:check` checks semantic drift with an explicit numerical tolerance rather than requiring bit-identical linear algebra on every OS. `verify:rig` starts a task-owned Vite server and installed browser, uses synthetic device metadata for planning checks, and saves ignored screenshots/results under `reports/local/two-camera-workspace/`. `--report-only` validates the standalone report. No browser is downloaded automatically.
 
 UI acceptance includes scenario/scrub/playback behavior, missing values and explanations, mode isolation, independent camera selectors, duplicate/disappearing devices, explicit discovery, keyboard controls and cleanup. Real Vite-server screenshots cover desktop, mobile and narrow English layouts. Browser tests use synthetic device metadata; they do not certify actual enumeration, calibration, camera modes or physical XYZ accuracy. Use [the delivery report](../reports/two-camera-workspace.html) for commands and outcomes actually run.
+
+The gameplay-camera verifier additionally checks real countdown/target/hit/score behavior with each view, matching source geometry and inverse pointer mapping, stable game state/ownership during healthy display switches, source-quality pause/recovery, saved choices, player-window lifecycle and acquisition isolation. Its [standalone report](../reports/displayed-camera.html) records actual results and embedded before/after screenshots. Domain tests cover alternate aspect ratios, letterboxing, source-clock boundaries and a shared monotonic game clock across windows.

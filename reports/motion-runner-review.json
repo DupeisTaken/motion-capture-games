@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "reviewer": "Independent harsh-review subagent",
+  "scope": "Experimental single-player runner: game rules, original 3D models, GUI, canonical camera composition, synthetic simulation and reference-footage comparison.",
+  "verdict": "No known blocking correctness defect remains in the reviewed experimental software scope. The lead reports that the final isolated delivery tree passed the required local checks, build and declared simulation benchmark; it is ready for PR review. The evidence does not justify a perfect score in every dimension, commercial-game parity, or physical motion certification.",
+  "perfectInAllDimensions": false,
+  "ratings": [
+    {
+      "dimension": "Lane controls, jump/roll and collision correctness",
+      "scoreOutOf10": 9,
+      "basis": "Absolute lanes, hysteresis, causal source-time consumption, jump rearming, held duck, continuous train occupancy and coin removal are covered by focused behavior tests and code review."
+    },
+    {
+      "dimension": "Single-player ownership and fair pause/recovery",
+      "scoreOutOf10": 9,
+      "basis": "Extra participants freeze the entire timeline; identity/space changes require a fresh run. Identity loss takes priority when another person is detected simultaneously, so clearing the extra-person condition cannot restore an uncertain score owner. Confirmed standing evidence gates admission and recovery. Transport tests use synthetic people; physical detection reliability remains unverified."
+    },
+    {
+      "dimension": "3D models and action readability",
+      "scoreOutOf10": 8,
+      "basis": "Distinct rail/gold worlds and three skins, readable hurdle/overhead/train silhouettes, bounded tucked roll and visible jump. Geometry tests verify train contact, hurdle clearance and roll bounds. Art and animation remain a simple original low-poly treatment."
+    },
+    {
+      "dimension": "Desktop GUI clarity and interaction",
+      "scoreOutOf10": 9,
+      "basis": "Accepted live-server screenshot shows readable HUD backplates, visible in-stage Pause, controls, settings and an unobstructed game scene. Start, pause, results and recovery have explanatory copy."
+    },
+    {
+      "dimension": "Mobile GUI and touch play",
+      "scoreOutOf10": 8.5,
+      "basis": "The final 390x844 viewport shows the runner, in-stage Pause and all five touch actions together. The paused 320px view reflows legibly. The avatar is relatively small on mobile, and accessibility testing is bounded rather than a full compliance audit."
+    },
+    {
+      "dimension": "Automated software verification",
+      "scoreOutOf10": 9,
+      "basis": "Meaningful unit, DOM, synthetic transport, geometry, determinism and multi-rate simulation evidence. The lead owns final repository/build/CI results; unit tests do not replace hardware or browser performance measurements."
+    },
+    {
+      "dimension": "Gameplay and presentation parity with reference footage",
+      "scoreOutOf10": 6.5,
+      "basis": "The essential three-lane chase view, collectible trails and three obstacle/action categories are present. Commercial references have substantially greater environment, character-animation, audio and gameplay-content breadth. No reference timing was measured."
+    }
+  ],
+  "unratedDimensions": [
+    "Physical jump/duck/lane accuracy across participant heights and movement ranges",
+    "Physical spectator occlusion and identity stability",
+    "Externally measured action-to-display latency and exposure timing",
+    "Sustained browser/GPU frame rate and integrated-graphics performance"
+  ],
+  "resolvedFindings": [
+    {
+      "id": "R1",
+      "finding": "Train model initially looked several meters short of its collision boundary; a player could also enter its occupied lane after the front-plane check.",
+      "resolution": "Lengthened the visible model to match the collision envelope and retained continuous longitudinal train collision occupancy."
+    },
+    {
+      "id": "R2",
+      "finding": "Rolling the full upright model around its feet could cross the ground and overhead opening.",
+      "resolution": "Added a separate compact tucked roll. A real-Three vertex test samples 41 rotation poses against ground and opening bounds."
+    },
+    {
+      "id": "R3",
+      "finding": "Collected coins could remain visible after reward.",
+      "resolution": "Successful pickups are removed from exported world state in the same simulation substep."
+    },
+    {
+      "id": "R4",
+      "finding": "Bright scenery reduced HUD contrast, and night-themed copy contradicted the daylight art.",
+      "resolution": "Added dark readable HUD/title backplates and aligned copy with the rendered worlds."
+    },
+    {
+      "id": "R5",
+      "finding": "Graphics initialization failure or context loss could leave gameplay unavailable without a safe recovery flow.",
+      "resolution": "Actionable graphics errors, whole-world context-loss pause, and explicit manual resume after restoration are implemented and DOM-tested."
+    },
+    {
+      "id": "R6",
+      "finding": "A false jump event alone did not prove the physical participant had landed or was standing for admission/recovery.",
+      "resolution": "Added explicit standing evidence with a 100ms confirmation, grounded ankles, baseline-relative hips/shoulders and straight knees. Practice, start, countdown and resume consume it separately from jump events."
+    },
+    {
+      "id": "R7",
+      "finding": "Mobile touch controls initially sat below the visible game viewport.",
+      "resolution": "Added a compact fixed playing dock, safe-area padding and an in-stage Pause button; verified final viewport screenshots."
+    },
+    {
+      "id": "R8",
+      "finding": "Runner-specific pose interpretation initially lived in the shared motion package despite the owning design boundary.",
+      "resolution": "Moved it into games/motion-runner/src/pose-controls.ts and exposed it through the game module."
+    },
+    {
+      "id": "R9",
+      "finding": "Applying the newest control to an entire elapsed interval could retroactively prevent an earlier collision.",
+      "resolution": "Split simulation intervals at the input's source-mapped timestamp and added causal-control regressions."
+    },
+    {
+      "id": "R10",
+      "finding": "An extra-person condition could mask simultaneous identity loss and allow the old score to become resumable after that person left.",
+      "resolution": "Evaluate bound identity/provenance before participant count and latch the fresh-run requirement. The combined uncertain-identity plus two-person regression checks the preserved score, paused state, latched requirement and refusal to resume."
+    }
+  ],
+  "visualEvidenceProvenance": "The final rail desktop, gold mobile and extra-player mobile screenshots were recaptured from the isolated delivery checkout's real Vite server at http://127.0.0.1:5174/runner.html and independently inspected. Earlier accepted action, narrow-layout and reference images remain supporting evidence for the same feature; they are not represented as new captures.",
+  "acceptedVisualEvidence": [
+    {
+      "file": "reports/local/motion-runner/final-rail-desktop.jpg",
+      "observation": "Previously accepted current-task capture: Nova in the left lane, score182, five coins and57m; Slap a Mole navigation agrees with newly merged upstream PR43. Game geometry/HUD unchanged."
+    },
+    {
+      "file": "reports/local/motion-runner/07-jump-paused-desktop.jpg",
+      "observation": "Actual mid-jump simulation paused with visible lift and JUMPING label."
+    },
+    {
+      "file": "reports/local/motion-runner/08-roll-paused-desktop.jpg",
+      "observation": "Held native Down action produced a compact rolling silhouette and ROLLING label."
+    },
+    {
+      "file": "reports/local/motion-runner/09-gold-moss-desktop.jpg",
+      "observation": "Gold world with palms, warm buildings and Moss skin."
+    },
+    {
+      "file": "reports/local/motion-runner/final-gold-mobile.jpg",
+      "observation": "Isolated delivery server: 390x844 viewport, Ember in the right lane, score 84, zero coins, 84 meters, all touch controls and Pause visible together."
+    },
+    {
+      "file": "reports/local/motion-runner/final-extra-player-mobile.jpg",
+      "observation": "Isolated delivery server: score 87, zero coins, 87 meters, another-player status and explanatory whole-world pause overlay."
+    },
+    {
+      "file": "reports/local/motion-runner/final-extra-player-320.jpg",
+      "observation": "Narrow paused layout with readable message, recovery controls and wrapped rehearsal buttons."
+    }
+  ],
+  "rejectedVisualEvidence": [
+    {
+      "file": "reports/local/motion-runner/02-rail-playing-desktop.jpg",
+      "reason": "Still showed the Start overlay, score0 and distance0; not playing evidence."
+    },
+    {
+      "file": "reports/local/motion-runner/04-jump-desktop.jpg",
+      "reason": "Action had already ended; STANDING label and grounded model did not prove a jump."
+    },
+    {
+      "file": "reports/local/motion-runner/05-jump-active-desktop.jpg",
+      "reason": "Showed STANDING and a train hit; not accepted as jump evidence."
+    },
+    {
+      "file": "reports/local/motion-runner/ref-subway-23s.png",
+      "reason": "Blurred trailer transition rather than readable gameplay."
+    },
+    {
+      "file": "reports/local/motion-runner/ref-gold-19s.png",
+      "reason": "Character cutscene rather than gameplay."
+    }
+  ],
+  "referenceFootage": [
+    {
+      "title": "Subway Surfers World Tour Hollywood 2024 | Official Trailer",
+      "url": "https://www.youtube.com/watch?v=yyRHfdq9vD0",
+      "publisher": "Verified Subway Surfers channel",
+      "acceptedFrame": "reports/local/motion-runner/ref-subway-18s-gameplay.jpg",
+      "observations": "Rear chase camera, three foreshortened rail lanes, large green train blockers, readable character silhouette and curved distant tracks."
+    },
+    {
+      "title": "10 years of running, jumping and dodging! Talking Tom Gold Run Gameplay Trailer",
+      "url": "https://www.youtube.com/watch?v=31TH0htM6I0",
+      "publisher": "Verified Talking Tom channel; linked by Outfit7's 2026-07-30 announcement",
+      "acceptedFrames": [
+        "reports/local/motion-runner/ref-gold-14s-gameplay.jpg",
+        "reports/local/motion-runner/ref-gold-29s-gameplay.jpg"
+      ],
+      "observations": "Portrait three-lane road, gold-bar trails, vehicle and planter hazards, paired low barriers, colorful side scenery and alternate character outfits."
+    }
+  ],
+  "reviewerExecutedChecks": [
+    {
+      "command": "pnpm exec vitest run tests/viewer/runner-renderer.test.ts --maxWorkers=1",
+      "result": "5 tests passed; real Three geometry and transforms with a mocked GPU renderer, not a GPU benchmark."
+    }
+  ],
+  "completedLocalChecksReportedByLead": [
+    {
+      "command": "pnpm check",
+      "result": "Passed on the final isolated delivery tree: 537 TypeScript tests and 208 Python tests, plus the repository's required types, lint, format and convention checks."
+    },
+    {
+      "command": "pnpm build",
+      "result": "Passed: five application entries built and emitted assets verified. Vite reported a 545 KB chunk-size warning; this is not a measured browser performance result."
+    },
+    {
+      "command": "pnpm benchmark:runner",
+      "result": "Passed all 24 declared synthetic simulation cases on the isolated delivery tree."
+    }
+  ],
+  "simulationEvidence": {
+    "file": "reports/motion-runner-results.json",
+    "method": "Reviewed the declared 24-case safe-lane oracle workload and output: two worlds, four seeds, 30/60/120 Hz, approximately 60 active seconds plus a two-second extra-player pause.",
+    "observedResults": "Zero hits in every declared case; exact distance/score/game-time freeze during the alternate-player condition; matching score and coin totals across rates for each seed; maximum 33-34 world obstacles.",
+    "limits": "An oracle establishes solvability for these seeds, not human difficulty, physical recognition, commercial parity or browser rendering speed."
+  },
+  "renderTimingEvidence": {
+    "file": "reports/motion-runner-render-results.json",
+    "reviewStatus": "Accepted as qualified short renderer scheduling and CPU submission evidence; not accepted as verified display FPS, sustained GPU performance or physical latency evidence.",
+    "method": "Read-only review of the renderer harness and completed output: four serial rail/gold cases at actual CSS and buffer sizes of 1066x720 and 362x510, device pixel ratio 1, a five-second warm-up and approximately 15 seconds of sampling per case. Both interval endpoints are required to be after warm-up.",
+    "qualificationsVerified": [
+      "All four cases completed with 2599-2619 samples and measured durations of 14.9914-14.9968 seconds.",
+      "Every sampled phase was playing; sampled and warm-up interruption counts were zero in every case.",
+      "The tab ended visible and recorded zero hidden events.",
+      "Actual CSS dimensions and drawing-buffer dimensions match the declared case dimensions at device pixel ratio 1.",
+      "The preliminary pass is retained separately and disclosed as rejected because it included a warm-up-crossing interval and startup scheduling gaps."
+    ],
+    "observedResults": {
+      "schedulerCallbackRatePerSecondRange": [
+        173.351,
+        174.637
+      ],
+      "schedulerIntervalP95Ms": 6.1,
+      "cpuStateCopyAndRenderSubmissionP95MsRange": [
+        1.4,
+        1.9
+      ],
+      "schedulerIntervalsOver33_4Ms": 1,
+      "largestObservedSchedulerIntervalMs": 33.6,
+      "largestIntervalCase": "Gold, 1066x720"
+    },
+    "sourceFieldQualification": "The artifact's averageCallbackHz field measures requestAnimationFrame callback scheduling frequency. Its approximately 174 callbacks/second must not be presented as verified display frames/second.",
+    "limits": "One accepted short repeat after warm-up, using the original renderer and synthetic seeded practice runtime. It excludes the full GUI, cameras and inference. CPU submission includes the immutable state copy and does not measure GPU completion. GPU hardware, monitor refresh and verified pixel presentation are unknown. Startup behavior, sustained rendering performance, integrated-graphics capacity and physical action-to-display latency remain unverified. No participant data or camera imagery is collected."
+  },
+  "remainingDeliveryGates": [
+    "Latest PR commit must pass the repository software-checks gate before merge.",
+    "Physical M1/M6 certification remains open; no perfect physical score is claimed."
+  ]
+}

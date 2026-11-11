@@ -20,6 +20,10 @@ The milestone IDs below are stable local references. Each milestone may become s
 
 [PR #37](https://github.com/DupeisTaken/motion-capture-games/pull/37) delivers the nine-case operator rehearsal and planning UI, with independent software reviews at 10/10 and explicit physical gates.
 
+**Gameplay camera and operator views:** [Issue #38](https://github.com/DupeisTaken/motion-capture-games/issues/38) keeps both camera diagnostics on the operator page and selects one synthetic background for genuine Slap a Mole gameplay rehearsal. A stable pointer controller supplies current synthetic input; recorded bodies and XYZ do not control scoring. The same game/runtime/HUD moves into its player window. Selection cannot swap reconstruction roles or change XYZ. [The report](../reports/displayed-camera.html) owns actual software and browser evidence. Live dual acquisition and a calibrated body/rig-input adapter remain separate work.
+
+[PR #41](https://github.com/DupeisTaken/motion-capture-games/pull/41) is corrected after investigation of the operator/gameplay distinction. Fresh scoring, transform, lifecycle, full software checks and responsive report evidence support a new independent 10/10 review for this scope. Earlier diagram-selection ratings do not establish gameplay acceptance. The latest-head software gate remains required before merge.
+
 **Open-issue completion:** [The #3/#4 report](../reports/vision-issues.html) records a fresh viewer acceptance audit, decode-freshness correction and real synthetic-service browser verification. [The camera-free XYZ design](player-xyz-experiment.md) restores issue #4's isolated three-method comparison under current tooling, with strict metadata, per-joint refinement, coverage/unsafe-acceptance statistics and serial one-/three-player stage measurements. Earlier PR #7 was reverted by #9 with no recorded reason; this scoped implementation retains current capture/game boundaries. Software issue completion does not close physical M1 or enable depth scoring. Next issue-ready work: actual dual-camera calibration/USB modes, exposure synchronization, cross-view identity and independent static/dynamic accuracy and visible-latency validation using the owning physical protocol.
 
 [PR #31](https://github.com/DupeisTaken/motion-capture-games/pull/31) delivers this software completion. Both independent reviews reached 10/10 for the declared camera-free scope; the report retains failed experiment targets, unsafe acceptances and the separate physical gates.
@@ -121,6 +125,8 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 
 ## M6: Single-player motion runner
 
+**Experimental software slice:** [Issue #39](https://github.com/DupeisTaken/motion-capture-games/issues/39) / [PR #44](https://github.com/DupeisTaken/motion-capture-games/pull/44) implements Neon Rails / Gold Rush with single-player pause rules, calibrated image-space jump/duck controls, original 3D worlds/skins, camera-free rehearsal and deterministic simulation tests. [The report](../reports/motion-runner-game.html) records actual checks, reference-footage comparisons and independent review. This early implementation does not close M1 hardware or M6 physical accuracy/latency gates. Next issue-ready scope: participant trials for lane reach/hysteresis, jump/duck confusion, varied heights, spectator occlusion and external visible-latency measurement.
+
 **Problem:** Let one participant control an on-screen runner with left/center/right movement, jumping and squatting, without confusing tracking gaps with player mistakes.
 
 **Owns:** The [runner design](games/motion-runner.md), a future `games/motion-runner/` module, rendered-world presentation, lane/action calibration, obstacles, scoring and replay. Depends on the relevant M1 gates and M2's session/replay foundation. M3/M4 and final M5 packaging are not prerequisites; M6 preserves existing milestone IDs rather than forcing a new release order.
@@ -136,9 +142,36 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 - Measure recognition errors and action-to-visible timing for each control on the supported installation, including different participant heights and movement ranges. Perspective graphics alone do not justify calibrated 3D input.
 - Verify rendered gameplay and setup/recovery UI from a real server at the supported display aspect ratio and relevant desktop/mobile operator sizes; deliver tests, owning docs and the HTML report.
 
-**Current status:** Documentation scaffold only. Runtime controls, gesture thresholds, obstacle tuning, hardware capability and performance remain unimplemented and unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
+**Current status:** Experimental software controls, seeded obstacles, rendered worlds and source-timed pause/recovery are implemented. The gait/pace follow-up adds an articulated runner and an opt-in faster opening; [its report](../reports/runner-motion-pace.html) owns actual evidence. Physical recognition accuracy, camera hardware capability and end-to-end latency remain unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
 
 **Scaffold delivery:** [Issue #5](https://github.com/DupeisTaken/motion-capture-games/issues/5) and [PR #6](https://github.com/DupeisTaken/motion-capture-games/pull/6) track this documentation update; [the runner report](../reports/motion-runner.html) records its actual checks. M6 implementation needs its own issue when work begins; completing the scaffold does not close the game milestone.
+
+## M7: Single-player virtual maze
+
+**Problem:** Let one participant navigate a virtual maze using directional buzzer feedback while an operator sees the maze and current position. A position estimate alone cannot determine which wall is ahead; facing requires independent Head/Torso evidence.
+
+**Owns:** The [Virtual Maze design](games/virtual-maze.md), a source-only `games/virtual-maze/` module, explicit position/facing readiness, manual metric corner registration, seeded generation, directional wall/collision/goal rules, operator map and map-free participant intensity/audio. M7 preserves existing milestone IDs and starts a camera-free rehearsal at the user's request. Physical gameplay depends on relevant M1 geometry, timing, identity and accuracy evidence; the existing two-camera planning screen cannot enable it.
+
+**Software slice:** [Issue #40](https://github.com/DupeisTaken/motion-capture-games/issues/40) tracks `/maze.html`, rehearsing 5..10 m width and depth independently, Easy/Medium/Hard generation, internal loops, and explicit Head/Torso selection with Torso as default. Synthetic X/Z and independent heading controls exercise the game without cameras or Python inference. Four named local photo annotations are planning only; the separate metric registration API requires already-calibrated rig-ground coordinates. Browser audio requires explicit activation and follows normalized game intensity. [The delivery report](../reports/virtual-maze.html) owns actual check/browser results and hosting links when available. Software delivery does not close physical M7 or M1.
+
+**Software acceptance criteria:**
+
+- Validate independent finite dimensions in 5..10 m, preserve metric aspect/scale and generate reproducible connected mazes for all three difficulties and the same seed/code revision.
+- With internal loops enabled, verify BFS reachability of the selected interior goal and failure of both documented canonical hand-rule followers from the declared start/initial heading. Show that test's scope; a cycle count alone is insufficient and arbitrary human strategies are not covered.
+- Compute wall-ahead clearance/intensity in metric coordinates from the explicitly selected head or torso vector. Test stationary turns, differing headings, walls behind the participant, corridor openings, contact and goal behavior.
+- Validate named metric corners and reject malformed/degenerate/inconsistent input. Document the future adapter's duty to bind registration to rig calibration; the current pure registration object has no revision field. Keep photo image annotations separate from calibration and prevent local photos entering reports/fixtures.
+- Reject missing/stale/uncertain selected direction and incompatible identity/time/calibration. Treat out-of-bounds position explicitly without clamping or goal reward; never substitute orientation or infer it from position/velocity. Physical-origin input remains unavailable in the rehearsal.
+- Keep participant presentation free of maze/route/position data; provide an inline alternative and separate window. Require explicit sound enable, bounded gain and immediate silence on pause/lost input/unavailable presentation. Verify keyboard/touch, popup cleanup and English desktop/mobile layouts from a real server.
+- Run meaningful deterministic generation, registration/input, geometry, lifecycle/audio and UI tests; run `pnpm verify:maze`, `pnpm check` and `pnpm build`. Deliver owning documentation, self-contained HTML evidence and a focused linked PR when hosting access permits it.
+
+**Physical follow-up briefs, all open:**
+
+- **M7-P1: Trusted maze input.** Add simultaneous acquisition behind the vision boundary, verified exposure/clock mapping, cross-view identity and calibrated rig observations; preserve bounded queues and source provenance. Reuse M1 work rather than opening cameras in a game. Define and version the live input contract.
+- **M7-P2: Corners and cone evidence.** Establish actual corner labels/colors and calibrated floor-contact observations, manual fallback and held-out metric checks. Evaluate HSV segmentation/morphology/contours only against actual lighting and occlusion, documenting failure/uncertainty. Moving a cone/camera invalidates its registration evidence. Photo clicks remain planning until an independent calibration workflow is implemented and verified.
+- **M7-P3: Facing capability.** Measure Head and Torso separately, including neutral/front-back calibration, stationary/head-only/torso-only turns, backward walking, pitch/roll, occlusion and differing orientations. Head is not eye gaze. Publish angular error, coverage and failure policy; no selected-source fallback.
+- **M7-P4: Supervised installation trials.** Measure position and directional-clearance error, usable updates, motion-to-buzzer latency and signal perception on a declared 5..10 m installation. Check room boundaries, corridor/body clearance, operator stop and recovery. Record trial counts, rig/profile and limitations before enabling physical navigation.
+
+**Exit:** The software slice may be reviewed and delivered on its own with honest limitations. M7 closes only when the physical follow-up evidence and supervised participant acceptance exist; synthetic tests do not certify a room.
 
 ## Smooth diagnostic preview follow-up
 

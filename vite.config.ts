@@ -22,9 +22,13 @@ export default defineConfig({
           new URL("apps/mirror/index.html", import.meta.url),
         ),
         rig: fileURLToPath(new URL("apps/mirror/rig.html", import.meta.url)),
+        maze: fileURLToPath(new URL("apps/mirror/maze.html", import.meta.url)),
         mole: fileURLToPath(new URL("apps/mirror/mole.html", import.meta.url)),
         dodgeball: fileURLToPath(
           new URL("apps/mirror/dodgeball.html", import.meta.url),
+        ),
+        runner: fileURLToPath(
+          new URL("apps/mirror/runner.html", import.meta.url),
         ),
       },
     },

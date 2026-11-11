@@ -44,6 +44,7 @@ class StartRequest(BaseModel):
     cameraId: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     maxPeople: int = Field(default=6, ge=1, le=6)
     demoScenario: Literal["cycle", "three", "empty"] = "cycle"
+    independentPreview: bool = True
 
 
 def encode_packet(observation: dict[str, Any], jpeg: bytes) -> bytes:
@@ -365,13 +366,14 @@ class VisionRuntime:
                         return
                     self.camera = camera
                     camera.start()
-                    self.preview_worker = threading.Thread(
-                        target=self._preview_camera,
-                        args=(camera, settings, epoch, stop),
-                        name="motion-preview",
-                        daemon=True,
-                    )
-                    self.preview_worker.start()
+                    if settings.independentPreview:
+                        self.preview_worker = threading.Thread(
+                            target=self._preview_camera,
+                            args=(camera, settings, epoch, stop),
+                            name="motion-preview",
+                            daemon=True,
+                        )
+                        self.preview_worker.start()
             while not stop.is_set():
                 processing_started = self.clock_ns()
                 if camera is not None:
@@ -388,10 +390,10 @@ class VisionRuntime:
                         self._mark_stale()
                         continue
                     processing_started = self.clock_ns()
-                    # Inference and preview use the exact same resized image geometry.
-                    image = self._resize(image)
                     inference_started = self.clock_ns()
                     assert provider is not None
+                    # Use the original pixels for pose crops, especially for distant people.
+                    # Output joints are normalized, so the preview can be scaled separately.
                     detections = provider.infer(image, captured_at)
                     inference_ms = (self.clock_ns() - inference_started) / 1e6
                 else:
@@ -407,6 +409,7 @@ class VisionRuntime:
                     self._mark_stale()
                     continue
                 people = tracker.update(detections[: settings.maxPeople], captured_at, epoch=epoch)
+                image = self._resize(image)
                 ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 78])
                 if not ok:
                     raise RuntimeError("Could not encode the diagnostic preview.")
@@ -467,14 +470,15 @@ class VisionRuntime:
                     )
                     self.condition.notify_all()
                 if camera is None:
-                    self._publish_preview(
-                        image,
-                        previous_capture,
-                        captured_at,
-                        settings,
-                        epoch,
-                        demo_rate.record(previous_capture, captured_at),
-                    )
+                    if settings.independentPreview:
+                        self._publish_preview(
+                            image,
+                            previous_capture,
+                            captured_at,
+                            settings,
+                            epoch,
+                            demo_rate.record(previous_capture, captured_at),
+                        )
                     now = self.clock_ns()
                     demo_tick = next_preview_tick(demo_tick, now)
                     stop.wait((demo_tick - now) / 1e9)

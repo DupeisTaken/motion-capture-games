@@ -56,11 +56,11 @@ Test camera unplug/replug, source restart, clock discontinuity, profile change, 
 
 ## Motion runner acceptance scenarios
 
-These are future [M6](roadmap.md#m6-single-player-motion-runner) requirements, not completed tests. Use synthetic canonical pose input and game-input replays before physical trials; identify the rig/profile for recognition and timing measurements.
+These [M6](roadmap.md#m6-single-player-motion-runner) requirements have an experimental synthetic software implementation. Runner game/motion/viewer tests cover the bounded software behavior; physical accuracy and latency remain uncompleted gates. [The delivery report](../reports/motion-runner-game.html) identifies actual checks. Use synthetic canonical pose input and game-input replays before physical trials; identify the rig/profile for recognition and timing measurements.
 
 | Area | Required scenarios and evidence |
 | --- | --- |
-| One-player admission | A second join is rejected; spectator entry/exit and crossing do not change the controlling slot or transfer its score. Ambiguous identity pauses the runner. |
+| One-player admission | A second join is rejected; spectator entry/exit and crossing leave gameplay running when the joined track stays confident. The controlling slot and score stay with that track. Ambiguous identity pauses the runner. |
 | Lane selection | Left/center/right holds, return from either side to center, direct side-to-side movement, boundary jitter and different body sizes/depths. A held lane produces no repeated relative shifts. Check the same participant-relative mapping with mirrored practice video and rendered-world gameplay. |
 | Jump | One event per valid takeoff/landing cycle; repeated samples, small bobbing, squatting, missing feet and landing gaps cannot invent a second jump. Lane changes during a jump follow the documented rule. |
 | Squat/duck | Enter, hold and release; distinguish crouching from tracking loss, leaning, head motion and jump preparation/landing. No repeated rewards from a held squat. Conflicting vertical evidence produces no invented action. |
@@ -69,6 +69,25 @@ These are future [M6](roadmap.md#m6-single-player-motion-runner) requirements, n
 | Physical trials and UI | Per-control false activations, missed actions and action-to-visible timing with sample counts and configuration; varied heights/reach and safe lateral/jump/squat space. Real-server rendered-world, calibration, practice and recovery screenshots at supported display/operator sizes, English initially. |
 
 Recognition thresholds, hysteresis, action timing, supported capabilities and difficulty need measured evidence before acceptance. A docs check or synthetic replay does not establish physical jump/squat accuracy.
+
+## Virtual maze acceptance scenarios
+
+The [M7 design](games/virtual-maze.md) introduces camera-free software rehearsal. [Its delivery report](../reports/virtual-maze.html) owns actual results. The following matrix is the acceptance scope; entries are not claims that a test or physical trial has run.
+
+| Area | Required scenarios and evidence |
+| --- | --- |
+| Dimensions and generation | Independent 5/10 m endpoints, asymmetric rectangles, invalid/nonfinite/out-of-range dimensions; Easy/Medium/Hard and repeat seeds; connected cells, closed outside perimeter, reproducible start/goal/walls and metric layout. |
+| Internal loops | Cycles exist when requested; BFS reaches the chosen interior goal; exact canonical left/right-hand cell algorithms from the declared initial heading repeat a `(cell, heading)` state without finding that goal. Compare loops-off behavior. Test across a declared seed/difficulty/dimension set, with bounded generation work. A loop count alone is not acceptance. |
+| Directional signal | Ray hits/parallel rays, intersections at wall endpoints, near-wall/clear-corridor intensity, turning in place, opposite head/torso headings and walls behind the player. Geometry/audio/display share the same normalized output. |
+| Position and selected facing | Finite metric XYZ, selected floor-projected forward vector, zero/vertical/nonfinite/missing direction, backward motion and stationary rotation. Head selection cannot use torso when head is absent. Missing position/heading must never produce clear-space feedback. |
+| Registration | Four correctly named metric corners, rigid rotation/translation, each 5..10 m configured dimension, reversed/bow-tie/duplicate/degenerate corners, bad metric scale/side length and excessive residual. Image photo points remain normalized planning annotations and cannot satisfy physical readiness. |
+| Time and identity | Stale/future input, uncertainty crossing age/future limits, duplicate/out-of-order source sequence/time, wrong clock/track/slot/epoch/calibration, unconfirmed identity and physical-origin input. Outcomes/intensity freeze or become unavailable consistently; no guessed ownership/revision recovery. |
+| Lifecycle and outcomes | Shared setup opens on load and every New round; Close/Escape preserves the paused current round and draft choices; only valid Start round confirmation applies a candidate atomically. Native invalid fields stay in setup with focus; missing input cannot block reopening setup. Pause/Resume preserves current position, layout and active facing. Popup controls, hidden confirmation and pending audio cannot bypass setup. Verify goal/new-round cancellation, BFCache and final disposal. Repeat `generateMaze` configurations and `sampleMaze` endpoint inputs at the same code revision for deterministic outcomes. Endpoint queries do not implement swept collision, blocked traversal, scoring or command replay. |
+| Operator/participant UI | Shared two-column Video & input / Game settings dialog, centimetre dimension entry, seed/difficulty/loops/orientation drafts and a separate active-map readout; independent heading and position rehearsal; readiness fixtures; participant view without maze, route or coordinates; inline alternative, popup blocked/closed and resized displays; keyboard/touch and non-color state cues. Verify the camera placement schematic, disclosure/guide, scrollable mobile setup and fixed confirmation controls at desktop/mobile/narrow English widths. Guidance or photo labels cannot enable physical input. |
+| Audio | Explicit enable and unavailable-context handling, normalized gain cap, monotonic intensity response and silence on invalid input, pause, hidden/blurred presentation or participant-window loss. Synthetic/browser checks verify software state, not measured loudness or acoustic latency. |
+| Physical trials: open | Independent held-out corner/root/angular/clearance ground truth; calibration/remount repetitions, lighting/color/occlusion variations, head/torso disagreement, stationary turns/backward walking, boundaries and operator stop/recovery. Measure accepted error plus coverage/rejections, useful update intervals and external motion-to-buzzer latency on the actual rig. |
+
+Use synthetic fixtures and the existing environment; no participant footage, local planning photo or private device identifiers enter the committed report. Serialize browser verification and heavy test/build work. English desktop/mobile and map-free participant screenshots must come from the real `/maze.html` server. The existing [physical XYZ protocol](player-xyz-experiment.md#physical-validation-protocol-open) supplies position evidence requirements; orientation and buzzer perception require additional measurements. Neither software CI nor the planning photo closes physical M1/M7.
 
 ## UI verification
 

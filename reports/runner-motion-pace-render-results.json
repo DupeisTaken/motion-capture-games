@@ -1,0 +1,224 @@
+{
+  "version": 2,
+  "date": "2026-11-11",
+  "complete": true,
+  "method": "Visible browser rAF scheduling and CPU render-submission timing; original Three.js renderer and seeded synthetic game. Six serial cases (four Standard world/size cases plus two Fast-start desktop worlds); 5s warm-up and 15s sampling each. Both interval endpoints must be post-warm-up.",
+  "browser": "Chrome/157.0.0.0",
+  "devicePixelRatio": 1,
+  "rendererPixelRatioCap": 1.5,
+  "visibility": "visible",
+  "hiddenEvents": 0,
+  "limits": "Short renderer-only harness; excludes full GUI, cameras and inference. rAF scheduling is not verified display presentation or physical action-to-display latency. Concurrent desktop workloads and the in-app browser can affect results. CPU submission timing includes the immutable game-state copy evaluated inside the timed call.",
+  "results": [
+    {
+      "variant": "rail",
+      "width": 1066,
+      "height": 720,
+      "fastStart": false,
+      "samples": 2612,
+      "measuredSeconds": 14.994,
+      "averageCallbackHz": 174.203014539149,
+      "frameIntervalMs": {
+        "p50": 5.899999999997817,
+        "p95": 6.19999999999709,
+        "p99": 6.5,
+        "max": 13.600000000000364
+      },
+      "renderSubmissionMs": {
+        "p50": 0.8000000007450581,
+        "p95": 1.3999999985098839,
+        "p99": 1.699999999254942,
+        "max": 2.800000000745058
+      },
+      "framesOver33_4ms": 0,
+      "interruptions": 0,
+      "warmupInterruptions": 0,
+      "samplePhases": {
+        "playing": 2612
+      },
+      "canvasCss": {
+        "width": 1066,
+        "height": 720
+      },
+      "canvasPixels": {
+        "width": 1066,
+        "height": 720
+      }
+    },
+    {
+      "variant": "gold",
+      "width": 1066,
+      "height": 720,
+      "fastStart": false,
+      "samples": 2645,
+      "measuredSeconds": 14.990899999999998,
+      "averageCallbackHz": 176.4403738267883,
+      "frameIntervalMs": {
+        "p50": 5.600000000002183,
+        "p95": 6.100000000005821,
+        "p99": 6.30000000000291,
+        "max": 11.30000000000291
+      },
+      "renderSubmissionMs": {
+        "p50": 1,
+        "p95": 1.6000000014901161,
+        "p99": 2,
+        "max": 2.900000002235174
+      },
+      "framesOver33_4ms": 0,
+      "interruptions": 0,
+      "warmupInterruptions": 0,
+      "samplePhases": {
+        "playing": 2645
+      },
+      "canvasCss": {
+        "width": 1066,
+        "height": 720
+      },
+      "canvasPixels": {
+        "width": 1066,
+        "height": 720
+      }
+    },
+    {
+      "variant": "rail",
+      "width": 362,
+      "height": 510,
+      "fastStart": false,
+      "samples": 2604,
+      "measuredSeconds": 14.992700000000005,
+      "averageCallbackHz": 173.68452646954847,
+      "frameIntervalMs": {
+        "p50": 6,
+        "p95": 6.19999999999709,
+        "p99": 6.30000000000291,
+        "max": 7.30000000000291
+      },
+      "renderSubmissionMs": {
+        "p50": 0.8000000007450581,
+        "p95": 1.4000000022351742,
+        "p99": 1.800000000745058,
+        "max": 2.699999999254942
+      },
+      "framesOver33_4ms": 0,
+      "interruptions": 0,
+      "warmupInterruptions": 0,
+      "samplePhases": {
+        "playing": 2604
+      },
+      "canvasCss": {
+        "width": 362,
+        "height": 510
+      },
+      "canvasPixels": {
+        "width": 362,
+        "height": 510
+      }
+    },
+    {
+      "variant": "gold",
+      "width": 362,
+      "height": 510,
+      "fastStart": false,
+      "samples": 2622,
+      "measuredSeconds": 14.994899999999994,
+      "averageCallbackHz": 174.85945221375275,
+      "frameIntervalMs": {
+        "p50": 5.69999999999709,
+        "p95": 6.19999999999709,
+        "p99": 6.5,
+        "max": 10.599999999991269
+      },
+      "renderSubmissionMs": {
+        "p50": 1,
+        "p95": 1.699999999254942,
+        "p99": 2.100000001490116,
+        "max": 3
+      },
+      "framesOver33_4ms": 0,
+      "interruptions": 0,
+      "warmupInterruptions": 0,
+      "samplePhases": {
+        "playing": 2622
+      },
+      "canvasCss": {
+        "width": 362,
+        "height": 510
+      },
+      "canvasPixels": {
+        "width": 362,
+        "height": 510
+      }
+    },
+    {
+      "variant": "rail",
+      "width": 1066,
+      "height": 720,
+      "fastStart": true,
+      "samples": 2643,
+      "measuredSeconds": 14.992300000000004,
+      "averageCallbackHz": 176.29049578783773,
+      "frameIntervalMs": {
+        "p50": 5.600000000005821,
+        "p95": 6.100000000005821,
+        "p99": 6.400000000008731,
+        "max": 9.60000000000582
+      },
+      "renderSubmissionMs": {
+        "p50": 0.8000000007450581,
+        "p95": 1.300000000745058,
+        "p99": 1.800000000745058,
+        "max": 2.5
+      },
+      "framesOver33_4ms": 0,
+      "interruptions": 0,
+      "warmupInterruptions": 0,
+      "samplePhases": {
+        "playing": 2643
+      },
+      "canvasCss": {
+        "width": 1066,
+        "height": 720
+      },
+      "canvasPixels": {
+        "width": 1066,
+        "height": 720
+      }
+    },
+    {
+      "variant": "gold",
+      "width": 1066,
+      "height": 720,
+      "fastStart": true,
+      "samples": 2622,
+      "measuredSeconds": 14.991200000000012,
+      "averageCallbackHz": 174.90260953092468,
+      "frameIntervalMs": {
+        "p50": 5.7000000000116415,
+        "p95": 6.100000000005821,
+        "p99": 6.400000000008731,
+        "max": 17.79999999998836
+      },
+      "renderSubmissionMs": {
+        "p50": 1,
+        "p95": 1.6000000014901161,
+        "p99": 2,
+        "max": 2.900000002235174
+      },
+      "framesOver33_4ms": 0,
+      "interruptions": 0,
+      "warmupInterruptions": 0,
+      "samplePhases": {
+        "playing": 2622
+      },
+      "canvasCss": {
+        "width": 1066,
+        "height": 720
+      },
+      "canvasPixels": {
+        "width": 1066,
+        "height": 720
+      }
+    }
+  ]
+}

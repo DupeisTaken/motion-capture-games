@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "complete": true,
+  "checks": [
+    {
+      "command": "pnpm exec vitest run tests/viewer/runner-viewer.test.ts --maxWorkers=1",
+      "status": "passed",
+      "result": "13 tests passed, including Fast start locking/retention and fresh ready instructions after New run."
+    },
+    {
+      "command": "pnpm benchmark:runner",
+      "status": "passed",
+      "result": "48/48 declared oracle cases; zero hits and exact alternate-player freeze in both worlds, both opening paces, four seeds and 30/60/120 Hz."
+    },
+    {
+      "command": "pnpm check",
+      "status": "passed",
+      "result": "Repository checks, contracts, TypeScript types/lint/format, 563 Vitest tests in 29 files, Python types/lint/format and 208 pytest tests passed."
+    },
+    {
+      "command": "pnpm build",
+      "status": "passed",
+      "result": "All five application entries and emitted asset references verified. Runner chunk 548.96 kB / 146.05 kB gzip; Vite retains a >500 kB chunk advisory."
+    }
+  ],
+  "browser": {
+    "desktop": {
+      "width": 1440,
+      "height": 1000,
+      "horizontalOverflow": false
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "horizontalOverflow": false
+    },
+    "sourcePoseCount": 9,
+    "pausedJpegExactEquality": true,
+    "cameraStarted": false,
+    "method": "Real Vite development server; synthetic keyboard/touch rehearsal and exact-time gait inspector. Selected original reference frames compared with current renderer, without synchronized commercial speed/cadence measurement.",
+    "report": {
+      "desktop": {
+        "width": 1440,
+        "height": 1000,
+        "horizontalOverflow": false
+      },
+      "mobile": {
+        "width": 390,
+        "height": 844,
+        "horizontalOverflow": false
+      },
+      "embeddedImagesLoaded": 7
+    }
+  },
+  "hostedStatus": "Local verification complete. PR #44 must pass software-checks on its latest commit before merge; consult its current Checks tab",
+  "limits": [
+    "Live camera/body tests deferred by user to tomorrow's team session.",
+    "Stylized procedural animation; no measured biomechanics or physical action-to-display latency.",
+    "Renderer harness measures scheduling and CPU state-copy/render submission only; excludes GUI/camera/inference/GPU completion."
+  ]
+}

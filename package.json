@@ -11,6 +11,7 @@
     "setup": "node scripts/tasks.mjs setup",
     "models": "node scripts/tasks.mjs models",
     "benchmark:runtime": "node scripts/tasks.mjs benchmark",
+    "benchmark:runner": "node scripts/benchmark-runner.mjs",
     "vision": "node scripts/tasks.mjs vision",
     "dev": "node scripts/tasks.mjs dev",
     "build": "pnpm build:packages && pnpm build:mirror",
@@ -38,14 +39,18 @@
     "verify:vision": "node scripts/verify-vision-issues.mjs",
     "rig:generate": "node scripts/tasks.mjs rig-rehearsal && prettier --write apps/mirror/src/rig-rehearsal.json",
     "rig:check": "node scripts/tasks.mjs rig-rehearsal --check",
-    "verify:rig": "node scripts/verify-rig-workspace.mjs"
+    "verify:rig": "node scripts/verify-rig-workspace.mjs",
+    "verify:maze": "node scripts/verify-maze.mjs",
+    "verify:displayed-camera": "node scripts/verify-displayed-camera.mjs"
   },
   "dependencies": {
-    "ajv": "8.20.0"
+    "ajv": "8.20.0",
+    "three": "0.181.1"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "24.10.1",
+    "@types/three": "0.181.0",
     "eslint": "10.14.0",
     "happy-dom": "21.0.4",
     "json-schema-to-typescript": "16.0.0",

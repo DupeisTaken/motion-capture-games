@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Runner gait inspection · synthetic poses</title>
+    <style>
+      body {
+        margin: 20px;
+        font: 14px system-ui;
+        color: #eaf5ef;
+        background: #15343d;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 24px;
+      }
+      p {
+        max-width: 1000px;
+        line-height: 1.6;
+      }
+      .controls {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      select {
+        margin-left: 6px;
+        padding: 8px;
+      }
+      canvas {
+        display: block;
+        width: 960px;
+        height: 640px;
+        max-width: 100%;
+        margin-top: 12px;
+      }
+      #pose-label {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      pre {
+        white-space: pre-wrap;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Runner gait · timestamped pose inspection</h1>
+    <p>
+      Synthetic constant-speed samples through the real game renderer. Each step
+      advances one eighth of a stride; this is an inspection sequence, not a
+      gameplay recording or physical motion test.
+    </p>
+    <div class="controls">
+      <label
+        >Stride phase
+        <select id="phase"></select
+      ></label>
+      <label
+        >Opening pace
+        <select id="pace">
+          <option value="10">Standard · 10 m/s</option>
+          <option value="14" selected>Fast start · 14 m/s</option>
+        </select></label
+      >
+      <label
+        >Skin
+        <select id="skin">
+          <option value="nova">Nova</option>
+          <option value="moss">Moss</option>
+          <option value="ember">Ember</option>
+        </select></label
+      >
+      <label
+        >View state
+        <select id="phase-state">
+          <option value="playing">Playing</option>
+          <option value="paused">Paused</option>
+        </select></label
+      >
+    </div>
+    <p id="pose-label" role="status"></p>
+    <canvas
+      id="world"
+      aria-label="Real 3D renderer showing one exact synthetic stride pose"
+    ></canvas>
+    <pre id="pose-data"></pre>
+    <script type="module">
+      import { RunnerGame } from "../../games/motion-runner/src/index.ts";
+      import { sampleRunnerAnimation } from "../../apps/mirror/src/runner-animation.ts";
+      import { createRunnerRenderer } from "../../apps/mirror/src/runner-renderer.ts";
+      const get = (id) => document.getElementById(id);
+      for (let index = 0; index <= 8; index++) {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = `${index} / 8`;
+        get("phase").append(option);
+      }
+      const renderer = createRunnerRenderer(get("world"));
+      function render() {
+        const speed = Number(get("pace").value);
+        const index = Number(get("phase").value);
+        const base = new RunnerGame(
+          { variant: "gold", practice: true, fastStart: speed === 14 },
+          42,
+        ).state;
+        const cadence = sampleRunnerAnimation({
+          ...base,
+          elapsedMs: 1000,
+          distance: speed,
+          speed,
+        }).cycle;
+        const seconds = (2 + index / 8) / cadence;
+        const state = {
+          ...base,
+          phase: get("phase-state").value,
+          elapsedMs: seconds * 1000,
+          distance: speed * seconds,
+          speed,
+          obstacles: [],
+        };
+        const pose = sampleRunnerAnimation(state);
+        renderer.render(state, "gold", get("skin").value);
+        get("pose-label").textContent =
+          `Phase ${index}/8 · active time ${state.elapsedMs.toFixed(2)} ms · distance ${state.distance.toFixed(3)} m · ${speed} m/s · ${state.phase}`;
+        get("pose-data").textContent = JSON.stringify(
+          {
+            index,
+            elapsedMs: state.elapsedMs,
+            distance: state.distance,
+            speed,
+            cycle: pose.cycle,
+            phase: state.phase,
+            feet: pose.legs.map((leg) => ({
+              contact: leg.contact,
+              y: leg.foot.y,
+              z: leg.foot.z,
+              knee: leg.knee,
+            })),
+          },
+          null,
+          2,
+        );
+      }
+      for (const id of ["phase", "pace", "skin", "phase-state"])
+        get(id).addEventListener("change", render);
+      window.addEventListener("resize", render);
+      window.addEventListener("pagehide", () => renderer.dispose(), {
+        once: true,
+      });
+      render();
+    </script>
+  </body>
+</html>
