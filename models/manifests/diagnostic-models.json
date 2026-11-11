@@ -15,7 +15,7 @@
       "source": "https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker",
       "licenseNote": "MediaPipe code is Apache-2.0; review the selected model distribution terms before redistribution. Artifact hash is locally measured, not a publisher signature.",
       "input": "RGB upright unmirrored image; CPU MediaPipe Tasks VIDEO mode",
-      "output": "33 landmarks adapted to named COCO17 normalized-image joints; world/depth estimates are not exported"
+      "output": "Normalized-image COCO17 body joints plus optional anatomical index and pinky landmarks on each hand; no world/depth output"
     },
     "rtmpose": {
       "modelId": "openmmlab-rtmdet-nano-rtmpose-m-cpu-sdk-2023",

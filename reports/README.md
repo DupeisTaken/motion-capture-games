@@ -1,5 +1,7 @@
 # Change reports
 
+[Slap a Mole palm and foot contact](slap-a-mole-palm-contact.html) records the visible Touch rings, palm scoring, replay compatibility and synthetic browser verification.
+
 [Root game directory](game-directory.html) records the four-game landing page, explicit diagnostics route, navigation/build checks and embedded English desktop/mobile before/after screenshots.
 
 [Slap a Mole concurrent targets and bombs](slap-a-mole-bombs.html) records longer target lifetimes, bomb scoring, replay compatibility and English desktop/mobile browser verification.

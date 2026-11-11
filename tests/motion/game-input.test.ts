@@ -83,6 +83,28 @@ describe("canonical game-motion adaptation", () => {
     });
   });
 
+  it("derives each palm from its wrist and two observed same-side landmarks", () => {
+    const body = person();
+    body.joints.left_index_finger = joint({ x: 0.16, y: 0.58 });
+    body.joints.left_pinky_finger = joint({ x: 0.2, y: 0.58 });
+    body.joints.right_index_finger = joint({ x: 0.8, y: 0.5 });
+    body.joints.right_pinky_finger = joint({ x: 0.84, y: 0.5 });
+    const palms = observedContacts(body).filter(({ name }) =>
+      name.endsWith("_hand"),
+    );
+    expect(palms.map(({ name }) => name)).toEqual(["left_hand", "right_hand"]);
+    expect(palms[0].x).toBeCloseTo(0.19);
+    expect(palms[0].y).toBeCloseTo(0.64);
+    expect(palms[1].x).toBeCloseTo(0.81);
+    expect(palms[1].y).toBeCloseTo(0.6);
+
+    body.joints.left_pinky_finger = joint({ status: "estimated" });
+    body.joints.right_index_finger = joint({ x: 1.02, inFrame: false });
+    expect(
+      observedContacts(body).filter(({ name }) => name.endsWith("_hand")),
+    ).toEqual([]);
+  });
+
   it("requires both observed feet, and does not infer depth from hips or bounding boxes", () => {
     const value = observation();
     const body = person();

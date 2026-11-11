@@ -22,6 +22,7 @@ function scene() {
     lineTo: vi.fn(),
     stroke: vi.fn(),
     arc: vi.fn(),
+    ellipse: vi.fn(),
     fill: vi.fn(),
   };
   Object.defineProperty(canvas, "getContext", { value: vi.fn(() => context) });
@@ -71,5 +72,40 @@ describe("Mole camera composition", () => {
     drawMoleScene(canvas, null, null, [{ name: "left_wrist", x: 0.4, y: 0.5 }]);
     expect(context.arc).toHaveBeenCalledTimes(2);
     expect(context.strokeRect).not.toHaveBeenCalled();
+  });
+
+  it("draws gameplay regions in the mirrored, contain-fit image with diagnostics off", () => {
+    const { canvas, context } = scene();
+    const observation = {
+      ...structuredClone(fixture),
+      image: { width: 640, height: 480 },
+    } as Observation;
+    const region = {
+      name: "left_hand",
+      x: 0.25,
+      y: 0.5,
+      radius: 0.024,
+    } as const;
+    drawMoleScene(
+      canvas,
+      observation,
+      {} as ImageBitmap,
+      [],
+      true,
+      false,
+      false,
+      [region],
+    );
+    expect(context.ellipse).toHaveBeenCalledExactlyOnceWith(
+      680,
+      300,
+      800 * region.radius,
+      600 * region.radius,
+      0,
+      0,
+      Math.PI * 2,
+    );
+    expect(context.strokeRect).not.toHaveBeenCalled();
+    expect(context.fillText).not.toHaveBeenCalled();
   });
 });

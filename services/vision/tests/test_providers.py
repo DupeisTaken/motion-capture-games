@@ -17,11 +17,20 @@ def test_mediapipe_uses_anatomical_indices_and_retains_out_of_frame():
     landmarks = [SimpleNamespace(x=0.5, y=0.5, visibility=0.95, presence=0.95) for _ in range(33)]
     landmarks[15].x = -0.1
     landmarks[16].x = 0.8
+    landmarks[17].x = -0.2
+    landmarks[18].x = 0.84
+    landmarks[19].x = 0.12
+    landmarks[20].x = 0.88
     person = landmark_person(landmarks)
     assert person is not None
     assert person["joints"]["left_wrist"]["x"] == -0.1
     assert person["joints"]["left_wrist"]["inFrame"] is False
     assert person["joints"]["right_wrist"]["x"] == 0.8
+    assert person["joints"]["left_index_finger"]["x"] == 0.12
+    assert person["joints"]["right_index_finger"]["x"] == 0.88
+    assert person["joints"]["left_pinky_finger"]["inFrame"] is False
+    assert person["joints"]["right_pinky_finger"]["x"] == 0.84
+    assert person["box"]["x"] == -0.1
     assert len(MP_INDICES) == 17
 
 
