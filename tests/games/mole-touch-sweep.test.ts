@@ -240,21 +240,199 @@ describe("bounded palm and foot source sweeps", () => {
     expect(play.tick().hits).toBe(hits);
   });
 
-  it.each([
-    [121, 0.18],
-    [300, 0.18],
-    [100, 0.301],
-  ])(
-    "rejects a %dms gap / %d image-unit jump and does not hit when held afterward",
-    (gap, travel) => {
+  it.each([121, 150, 200, 300, 350])(
+    "accepts a directly observed endpoint entry at %dms without inferring a path",
+    (gap) => {
       const play = new SweepPlay();
       play.activate();
       const target = play.target();
-      play.point(target, -travel);
+      play.point(target, -0.09);
+      play.tick();
+      play.point(target, 0);
+      expect(play.tick(gap)).toMatchObject({
+        phase: "playing",
+        hits: 1,
+        score: 100,
+      });
+      // Reused observations and fresh held observations cannot repeat the hit.
+      const last = play.commands.at(-1)!;
+      if (last.type !== "update") throw new Error("Expected input.");
+      expect(play.game.update(play.now, last.frame).hits).toBe(1);
+      expect(play.tick(gap).hits).toBe(1);
+    },
+  );
+
+  it.each([121, 150, 200, 300, 350])(
+    "does not infer an outside-to-outside pass at %dms",
+    (gap) => {
+      const play = new SweepPlay();
+      play.activate();
+      const target = play.target();
+      play.point(target, -0.09);
+      play.tick();
+      play.point(target, 0.09);
+      expect(play.tick(gap)).toMatchObject({
+        phase: "playing",
+        hits: 0,
+        score: 0,
+      });
+    },
+  );
+
+  it.each([100, 150, 200, 300])(
+    "rejects a tracking jump at %dms even with an observed endpoint inside",
+    (gap) => {
+      const play = new SweepPlay();
+      play.activate();
+      const target = play.target();
+      play.point(target, -0.301);
       play.tick();
       play.point(target, 0);
       expect(play.tick(gap)).toMatchObject({ phase: "playing", hits: 0 });
       expect(play.tick().hits).toBe(0);
+    },
+  );
+
+  it.each([150, 200, 300])(
+    "does not bridge missing palm evidence or a held return at %dms",
+    (gap) => {
+      const play = new SweepPlay();
+      play.activate();
+      const target = play.target();
+      play.point(target, -0.09);
+      play.tick(gap);
+      play.contacts = [{ name: "right_foot", x: 0.01, y: 0.01 }];
+      play.tick(gap);
+      play.point(target, 0);
+      expect(play.tick(gap).hits).toBe(0);
+      expect(play.tick(gap).hits).toBe(0);
+      play.point(target, -0.09);
+      play.tick(gap);
+      play.point(target, 0);
+      expect(play.tick(gap).hits).toBe(1);
+    },
+  );
+
+  it.each([150, 200, 300])(
+    "does not use a pre-activation outside point for a slow %dms entry",
+    (gap) => {
+      const play = new SweepPlay();
+      play.start();
+      const target = play.target();
+      play.hold(TUNING.targetWarningMs - 50);
+      play.point(target, -0.09);
+      play.tick(10); // Outside evidence is still 40ms before activation.
+      play.point(target, 0);
+      expect(play.tick(gap)).toMatchObject({ phase: "playing", hits: 0 });
+      expect(play.tick(gap).hits).toBe(0);
+      play.point(target, -0.09);
+      play.tick(gap);
+      play.point(target, 0);
+      expect(play.tick(gap).hits).toBe(1);
+    },
+  );
+
+  it("accepts outside evidence exactly at activation followed by a later observed entry", () => {
+    const play = new SweepPlay();
+    play.start();
+    const target = play.target();
+    play.hold(TUNING.targetWarningMs - 20);
+    play.point(target, -0.09);
+    play.tick(20); // The outside reference belongs to the half-open active interval.
+    play.point(target, 0);
+    expect(play.tick(200).hits).toBe(1);
+  });
+
+  it("does not score an endpoint observed exactly at activation", () => {
+    const play = new SweepPlay();
+    play.start();
+    const target = play.target();
+    play.hold(240);
+    play.point(target, -0.09);
+    play.tick(10);
+    play.point(target, 0);
+    expect(play.tick(200).hits).toBe(0); // Current source time equals activation.
+  });
+
+  it.each([
+    { identity: "uncertain" as const },
+    { epoch: "other-source" },
+    { spaceRevision: "other-space" },
+    { feetVisible: false },
+  ])("rejects a slow endpoint across a continuity failure: %j", (override) => {
+    const play = new SweepPlay();
+    play.activate();
+    const target = play.target();
+    play.point(target, -0.09);
+    play.tick(200);
+    const before = play.game.state;
+    play.point(target, 0);
+    expect(play.tick(200, override)).toMatchObject({
+      phase: "paused",
+      hits: 0,
+      targets: before.targets,
+    });
+  });
+
+  it("cannot bridge pause and recovery using a slow endpoint inside", () => {
+    const play = new SweepPlay();
+    play.activate();
+    const target = play.target();
+    play.point(target, -0.09);
+    play.tick(200);
+    play.game.pause();
+    play.game.resume(play.now);
+    play.point(target, 0);
+    play.hold(TUNING.resumeCountdownMs);
+    expect(play.tick(200).hits).toBe(0);
+  });
+
+  it.each([351, 400])(
+    "rejects a source interruption of %dms even if its endpoint is inside",
+    (gap) => {
+      const play = new SweepPlay();
+      play.activate();
+      const target = play.target();
+      play.point(target, -0.09);
+      play.tick();
+      const before = play.game.state;
+      play.point(target, 0);
+      expect(play.tick(gap)).toMatchObject({
+        phase: "paused",
+        hits: 0,
+        targets: before.targets,
+      });
+    },
+  );
+
+  it("rejects a stale slow endpoint instead of treating its overlap as contact", () => {
+    const play = new SweepPlay();
+    play.activate();
+    const target = play.target();
+    play.point(target, -0.09);
+    play.tick();
+    const before = play.game.state;
+    play.point(target, 0);
+    expect(play.tick(352, { atMs: play.now + 1 })).toMatchObject({
+      phase: "paused",
+      reason: "Player input is stale. Wait for fresh tracking.",
+      hits: 0,
+      targets: before.targets,
+    });
+  });
+
+  it.each([150, 200, 300])(
+    "charges a slow sampled bomb entry once at %dms",
+    (gap) => {
+      const play = new SweepPlay();
+      play.activate();
+      const target = play.target("bomb");
+      play.point(target, -0.09);
+      play.tick();
+      play.point(target, 0);
+      expect(play.tick(gap)).toMatchObject({ hits: 0, score: -50, combo: 0 });
+      expect(play.tick(gap).score).toBe(-50);
+      expect(play.tick(gap).score).toBe(-50);
     },
   );
 
@@ -404,6 +582,29 @@ describe("new replay boundary", () => {
       expect(play.game.state).not.toHaveProperty("targetFeedback");
     }
   });
+
+  it.each([200, 300])(
+    "replays the sampled fallback at %dms deterministically",
+    (gap) => {
+      const play = new SweepPlay();
+      play.activate();
+      const target = play.target();
+      play.point(target, -0.09);
+      play.tick();
+      play.point(target, 0);
+      play.tick(gap);
+      const replay = {
+        version: 4 as const,
+        options: { mode: "practice" as const },
+        seed: 42,
+        commands: play.commands,
+      };
+      expect(replayGame(JSON.parse(JSON.stringify(replay))).at(-1)).toEqual(
+        play.game.state,
+      );
+      expect(play.game.state).toMatchObject({ hits: 1, score: 100 });
+    },
+  );
 
   it("replays version 4 warning, sparse hit, feedback and replacement deterministically", () => {
     const play = new SweepPlay();

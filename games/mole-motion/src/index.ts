@@ -38,7 +38,7 @@ export const TUNING = Object.freeze({
   targetWarningMs: 450,
   feedbackMs: 650,
   touch: Object.freeze({
-    // Adjacent mapped source samples only; reject gaps and tracking jumps.
+    // Interpolate only short source intervals; slower fresh input uses endpoints.
     maximumGapMs: 120,
     maximumTravel: 0.3,
   }),
@@ -859,7 +859,7 @@ export class MoleGame {
         if (touch) {
           consider(limb, contact, (target) =>
             this.rulesVersion >= 4
-              ? this.sweptTouch(previous, contact, target)
+              ? this.touchEntry(previous, contact, target)
               : overlaps(contact, target, this.touchRadius) &&
                 ![...this.previous.values()].some(
                   (old) =>
@@ -886,7 +886,7 @@ export class MoleGame {
     return new Set([...strikes.values()].map(({ id }) => id));
   }
 
-  private sweptTouch(
+  private touchEntry(
     from: MotionContact,
     to: MotionContact,
     target: GameTarget,
@@ -896,12 +896,21 @@ export class MoleGame {
     const travel = Math.hypot(to.x - from.x, to.y - from.y);
     if (
       gap <= 0 ||
-      gap > TUNING.touch.maximumGapMs ||
+      gap > TUNING.staleMs ||
       travel === 0 ||
       travel > TUNING.touch.maximumTravel
     )
       return false;
     const activeAt = this.targetActiveAt.get(target.id)!;
+    if (gap > TUNING.touch.maximumGapMs) {
+      // Low-rate input can establish an observed entry, but cannot establish
+      // the path between endpoints or an entry across target activation.
+      return (
+        this.previousAtMs >= activeAt &&
+        !overlaps(from, target, this.touchRadius) &&
+        overlaps(to, target, this.touchRadius)
+      );
+    }
     const fraction = Math.max(0, (activeAt - this.previousAtMs) / gap);
     const start = {
       ...from,
