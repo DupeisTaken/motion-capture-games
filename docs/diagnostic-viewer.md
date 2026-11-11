@@ -12,7 +12,7 @@ pnpm setup
 pnpm dev
 ```
 
-Open **http://127.0.0.1:5173**. Setup creates `.venv/`, downloads the Python interpreter/tools under ignored `.local/`, and downloads verified model files into ignored `models/artifacts/`. It needs network access once. The application makes no model/CDN/cloud request during gameplay preview. A later `pnpm models` repairs or redownloads missing artifacts.
+Open **http://127.0.0.1:5173/diagnostics.html**, or choose **Tracking console** from the game directory at `/`. The root URL and `/index.html` now show the game directory; update diagnostic bookmarks. Setup creates `.venv/`, downloads the Python interpreter/tools under ignored `.local/`, and downloads verified model files into ignored `models/artifacts/`. It needs network access once. The application makes no model/CDN/cloud request during gameplay preview. A later `pnpm models` repairs or redownloads missing artifacts.
 
 The header links to the two-camera workspace and each game on desktop and mobile.
 
@@ -29,6 +29,8 @@ Local preview shutdown does not prove that the service or camera driver has rele
 If the service accepts Start but its response is lost or cannot identify an epoch, the current protocol cannot safely recover ownership from global status: that status may belong to another tab. The console reports unknown ownership and keeps replacement blocked. Restart the local vision service, then reload this page to recover; this deliberately affects all tabs sharing that service. Closing the page before acknowledgment or failed keepalive delivery remains a best-effort cleanup limit, not confirmed release. A startup request token or lease would require a separate protocol change.
 
 [Issue #26](https://github.com/DupeisTaken/motion-capture-games/issues/26) and [the lifecycle report](../reports/diagnostic-capture-lifecycle.html) record the correction, synthetic regressions and actual verification. Physical camera/driver release and browser unload delivery remain unverified by these software checks.
+
+The preview benchmark defaults to `/diagnostics.html`. Diagnostic lifecycle and vision verification scripts also use this explicit entry point. Run `pnpm verify:directory` to check root navigation separately.
 
 ## What appears on screen
 

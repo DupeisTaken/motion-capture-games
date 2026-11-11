@@ -348,7 +348,9 @@ try {
           return nativeDraw.apply(this, args);
         };
       });
-      await probe.goto(url, { waitUntil: "networkidle" });
+      await probe.goto(new URL("diagnostics.html", url).href, {
+        waitUntil: "networkidle",
+      });
       await probe.locator("#source-demo").click();
       await probe.locator("#demo-scenario").selectOption("three");
       await probe.locator("#start").click();
@@ -439,7 +441,9 @@ try {
       "Self-contained report and embedded screenshots rendered at all three widths.",
     );
   } else {
-    await page.goto(url, { waitUntil: "networkidle" });
+    await page.goto(new URL("diagnostics.html", url).href, {
+      waitUntil: "networkidle",
+    });
     await page.locator("#source-demo").click();
     result.epochs = [await start(page, "cycle", 6, "pose")];
     result.countTransitions = [];

@@ -25,3 +25,5 @@ Console regression coverage also includes explicit permission requests, labeled 
 The final-viewer release test closes its socket and waits for actual asynchronous cleanup before leaving Starlette's cancelling WebSocket context. Its bounded completion event keeps the idle/resource-release assertion meaningful without depending on thread scheduling.
 
 Runner coverage uses synthetic canonical joints and semantic controls: calibration, held lanes/jump rearm/duck, identity and spectator safety, deterministic obstacle/collision outcomes, recovery, camera lifecycle and GUI controls. The [runner implementation report](../reports/motion-runner-game.html) separates these checks from physical accuracy/latency gates.
+
+Root-directory coverage checks every playable HTML entry is linked, named links have valid local targets, and the diagnostics entry retains the console runtime. `pnpm verify:directory` verifies actual desktop/mobile/narrow navigation, keyboard access, zero root API requests and return links; use `--production` after building to check emitted pages.

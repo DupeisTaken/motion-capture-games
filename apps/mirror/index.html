@@ -3,13 +3,253 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f3f5f9" />
-    <meta name="description" content="Local body skeleton and person-count diagnostics for motion capture games." />
-    <title>Motion Studio · Tracking console</title>
+    <meta name="theme-color" content="#f8f9f4" />
+    <meta
+      name="description"
+      content="Choose a local motion game: Slap a Mole, Dodgeball, Motion Runner or Virtual Maze. Find tracking and camera setup tools."
+    />
+    <title>Motion Studio · Game directory</title>
     <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/src/directory.css" />
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <a class="skip-link" href="#games">Skip to games</a>
+    <div class="directory-shell">
+      <header class="directory-header">
+        <a class="directory-brand" href="/" aria-label="Motion Studio home"
+          ><b class="directory-mark" aria-hidden="true">✳</b>
+          <div>Motion<span>Studio</span></div></a
+        >
+        <nav aria-label="Directory">
+          <a href="#games">The games</a><a href="#tools">Operator tools</a>
+        </nav>
+        <span class="local-note">Play locally</span>
+      </header>
+      <main>
+        <section class="directory-hero" aria-labelledby="directory-title">
+          <div>
+            <p class="eyebrow">The motion arcade / your local collection</p>
+            <h1 id="directory-title">
+              A little movement.<br />A lot of <em>play.</em>
+            </h1>
+          </div>
+          <div class="hero-note">
+            <p>
+              Reach, dodge, run or find your way.<br />Pick a game and make your
+              next move.
+            </p>
+            <span class="collection-tag">4 EXPERIMENTAL GAMES · 1 PLAYER</span>
+          </div>
+        </section>
+        <section id="games" tabindex="-1" aria-labelledby="games-title">
+          <div class="section-heading">
+            <h2 id="games-title">Choose your game</h2>
+            <span>Camera-free rehearsal available</span>
+          </div>
+          <div class="game-grid">
+            <a class="game-card" href="/mole.html" aria-labelledby="mole-title">
+              <div class="game-art art-mole">
+                <span class="game-number">01 / REACH</span
+                ><svg viewBox="0 0 280 200" fill="none" aria-hidden="true">
+                  <ellipse cx="140" cy="168" rx="85" ry="13" fill="#a9bc72" />
+                  <ellipse cx="140" cy="155" rx="55" ry="14" fill="#40573c" />
+                  <path d="M103 153v-38a37 37 0 0 1 74 0v38" fill="#ac7857" />
+                  <circle cx="106" cy="98" r="12" fill="#ac7857" />
+                  <circle cx="174" cy="98" r="12" fill="#ac7857" />
+                  <ellipse cx="140" cy="132" rx="24" ry="20" fill="#e5bf96" />
+                  <circle cx="127" cy="114" r="3.5" fill="#263b30" />
+                  <circle cx="153" cy="114" r="3.5" fill="#263b30" />
+                  <ellipse cx="140" cy="126" rx="6" ry="4" fill="#263b30" />
+                  <path d="m140 132-4 6h8z" fill="#fff7e5" />
+                  <path
+                    d="m189 60 9-13m-1 30 16-3M80 74 69 63"
+                    stroke="#536c3c"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </div>
+              <div class="game-copy">
+                <p class="game-kind">Reach & react</p>
+                <h3 id="mole-title">Slap a Mole</h3>
+                <p class="game-description">
+                  Catch the cheeky moles. Keep your reflexes sharp and watch out
+                  for the bomb.
+                </p>
+                <p class="game-input">Camera or pointer / keyboard</p>
+                <div class="game-action">
+                  Play game <span aria-hidden="true">↗</span>
+                </div>
+              </div>
+            </a>
+            <a
+              class="game-card"
+              href="/dodgeball.html"
+              aria-labelledby="dodgeball-title"
+            >
+              <div class="game-art art-dodge">
+                <span class="game-number">02 / DODGE</span
+                ><svg viewBox="0 0 280 200" fill="none" aria-hidden="true">
+                  <ellipse cx="151" cy="174" rx="72" ry="9" fill="#9fc7d1" />
+                  <circle cx="145" cy="67" r="13" fill="#24505a" />
+                  <path
+                    d="m142 88-17 39 20 18m-16-19-24 29m35-61 28 14 20-10m-49-3-28 2-12-21"
+                    stroke="#24505a"
+                    stroke-width="14"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <circle cx="66" cy="113" r="25" fill="#ea8365" />
+                  <path
+                    d="M43 105c17 12 28 9 43-7M63 89c-8 16-6 31 7 47"
+                    stroke="#a84b35"
+                    stroke-width="2"
+                  />
+                  <circle cx="219" cy="62" r="17" fill="#f1bb61" />
+                  <path
+                    d="m188 60 9-1m-9 10 8-4m-11-13 11 1"
+                    stroke="#689aab"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </div>
+              <div class="game-copy">
+                <p class="game-kind">Move & avoid</p>
+                <h3 id="dodgeball-title">Dodgeball</h3>
+                <p class="game-description">
+                  Read the warning rings, find a gap and move clear before the
+                  balls arrive.
+                </p>
+                <p class="game-input">Camera or pointer / keyboard</p>
+                <div class="game-action">
+                  Play game <span aria-hidden="true">↗</span>
+                </div>
+              </div>
+            </a>
+            <a
+              class="game-card"
+              href="/runner.html"
+              aria-labelledby="runner-title"
+            >
+              <div class="game-art art-runner">
+                <span class="game-number">03 / RUN</span
+                ><svg viewBox="0 0 280 200" fill="none" aria-hidden="true">
+                  <circle cx="208" cy="67" r="28" fill="#f4eed8" />
+                  <path
+                    d="M27 131V91h26v40m10 0V70h30v61m101 0V99h19v32m10 0V83h27v48"
+                    fill="#b3aad9"
+                  />
+                  <path d="m122 111-50 89h137l-50-89z" fill="#7776ad" />
+                  <path
+                    d="m134 111-14 89m26-89 15 89"
+                    stroke="#e8def9"
+                    stroke-width="2"
+                    stroke-dasharray="10 8"
+                  />
+                  <path d="m129 155 22-4v14l-22 5z" fill="#e5aa65" />
+                  <circle cx="148" cy="85" r="10" fill="#29494b" />
+                  <path
+                    d="m146 101-6 22 16 13-5 22m-11-35-15 14m20-33 18 10 12-10m-30-1-15 4-7-12"
+                    stroke="#29494b"
+                    stroke-width="9"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path d="M137 106h16l-5 15h-14z" fill="#8ed5b4" />
+                  <circle cx="98" cy="172" r="6" fill="#f8dc90" />
+                  <circle cx="113" cy="144" r="4" fill="#f8dc90" />
+                </svg>
+              </div>
+              <div class="game-copy">
+                <p class="game-kind">Jump & duck</p>
+                <h3 id="runner-title">Motion Runner</h3>
+                <p class="game-description">
+                  Three lanes, two worlds. Collect coins, jump hurdles and roll
+                  under gates.
+                </p>
+                <p class="game-input">Camera or touch / keyboard</p>
+                <div class="game-action">
+                  Play game <span aria-hidden="true">↗</span>
+                </div>
+              </div>
+            </a>
+            <a class="game-card" href="/maze.html" aria-labelledby="maze-title">
+              <div class="game-art art-maze">
+                <span class="game-number">04 / EXPLORE</span
+                ><svg viewBox="0 0 280 200" fill="none" aria-hidden="true">
+                  <path d="M67 54h146v109H67z" fill="#f9ecdd" />
+                  <path
+                    d="M67 135V54h146v109H94m0-109v54h31V81h29m59 0h-31v54h-28v28m-87-28h58m-31 28v-28m60-81v27m-29 54v-27h29m28 55v-28h31"
+                    stroke="#a57856"
+                    stroke-width="7"
+                    stroke-linecap="square"
+                  />
+                  <path
+                    d="M81 157v-36h27V68h32v27h28v26h29"
+                    stroke="#5c8970"
+                    stroke-width="3"
+                    stroke-dasharray="3 6"
+                  />
+                  <circle cx="81" cy="157" r="8" fill="#345c49" />
+                  <circle cx="197" cy="121" r="9" fill="#dd9c48" />
+                  <path
+                    d="m197 106 3 6m9 9h6m-18 9v6"
+                    stroke="#dd9c48"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </div>
+              <div class="game-copy">
+                <p class="game-kind">Listen & navigate</p>
+                <h3 id="maze-title">Virtual Maze</h3>
+                <p class="game-description">
+                  Build a maze and follow directional sound toward the hidden
+                  destination.
+                </p>
+                <p class="game-input">
+                  Synthetic rehearsal · physical input pending
+                </p>
+                <div class="game-action">
+                  Explore maze <span aria-hidden="true">↗</span>
+                </div>
+              </div>
+            </a>
+          </div>
+        </section>
+        <section
+          class="directory-tools"
+          id="tools"
+          aria-labelledby="tools-title"
+        >
+          <div class="tools-intro">
+            <h2 id="tools-title">Behind the movement</h2>
+            <p>
+              Setting up a camera or checking tracking?<br />Your operator tools
+              are right here.
+            </p>
+          </div>
+          <a class="tool-link" href="/diagnostics.html"
+            ><strong>Tracking console</strong
+            ><small>Single-camera preview & diagnostics</small
+            ><span aria-hidden="true">↗</span></a
+          >
+          <a class="tool-link" href="/rig.html"
+            ><strong>Two-camera workspace</strong
+            ><small>Rig planning & synthetic XYZ rehearsal</small
+            ><span aria-hidden="true">↗</span></a
+          >
+        </section>
+      </main>
+      <footer class="directory-footer">
+        <p>
+          Camera play needs local vision setup. Cameras start only when you
+          choose Start camera.
+        </p>
+        <p>Motion Studio / Experimental collection</p>
+      </footer>
+    </div>
+    <script type="module" src="/src/directory.ts"></script>
   </body>
 </html>
