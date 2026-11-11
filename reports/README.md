@@ -45,3 +45,5 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Camera selection](camera-selection.html) documents the shared native selector, refresh/recovery behavior, actual checks and remaining hardware limits.
 
 [Pre-game settings](pre-game-settings.html) records the shared video/game setup menu, confirmation and camera-release behavior, synthetic before/after browser evidence and actual checks.
+
+[Camera tracking and game response](camera-tracking-latency.html) records three-person overlay transitions, paired-only game capture and before/after model processing times.
