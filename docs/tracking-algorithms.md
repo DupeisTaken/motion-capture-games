@@ -27,7 +27,7 @@ The identity-switch failure addressed here was a prediction-driven reassignment:
 
 - A new track is `tentative`. Three consecutive clear matches produce the local diagnostic label `confident`.
 - Close overlapping boxes, near-tied matching candidates or competing feasible observed-position and predicted-position assignments produce `ambiguous`, with `trackId: null`. The observed skeleton is still displayed and counted; its former identity is not asserted.
-- Ambiguity retires implicated old IDs. Unseen retained tracks are also retired while ambiguity is present because they may be hidden in the uncertain group. Clearly associated, unaffected detections can keep their IDs.
+- Ambiguity retires spatially implicated old IDs. Implication uses feasible observed/predicted association, actual old-box overlap, or the elapsed-time center gate around observed/predicted centers. It does not use the maximum 0.30 gate at every frame interval. Before reassignment, uncertainty propagates to current detections that any retired row could feasibly explain, repeating to capacity-bounded closure. Removing a plausible owner therefore cannot manufacture a clear match to somebody else. An isolated, unaffected incumbent can keep its ID even when a separate spectator group overlaps. Missing candidates outside that group's reachable geometry retain only their existing 0.45 s lifetime; reacquisition still restarts confirmation.
 - After separation, retired identities are not reconstructed by screen position. New tentative IDs are issued.
 - A short clear absence may retain an internal candidate, but reacquisition restarts confirmation and is tentative. A long absence expires it.
 - Restart/epoch changes clear history. Local IDs are meaningful only together with the stream epoch. Out-of-order or repeated timestamps are rejected.
@@ -36,6 +36,8 @@ The identity-switch failure addressed here was a prediction-driven reassignment:
 These are camera-local association states, not rig identity verification or session membership. No code here owns scores. Later scoring must independently require a valid session-slot association, sufficient joint quality and fresh observations. Complete occlusion or an unobserved crossing can make identity unobservable; more confident rendering must not hide that limit.
 
 ## Capacity and tuning
+
+MediaPipe constructs person bounds from its body landmarks, excluding optional facial and finger landmarks. Face disappearance or a displaced face estimate therefore cannot move the body association box or admit a face-only detection. Out-of-frame body coordinates remain explicit and unclamped. This does not restore an invisible torso, infer a hidden wrist, or establish measured side/back-facing pose accuracy. RTMPose continues to use its detector box; neither adapter changes anatomical left/right on a turn.
 
 The provider's person cap bounds computation; it is not a selected number of participants. `detectedCount` is the number of returned current observations. The service can report `capacityReached` when that count reaches the configured cap, warning that additional people may be missed. No claim is made that a detector returning fewer people has seen everyone.
 
@@ -93,3 +95,42 @@ python services/vision/tools/tracking_stability.py
 Use `.venv/Scripts/python.exe` on Windows or `.venv/bin/python` on macOS when the environment is not activated. The tool compares the immutable pre-fix commit recorded in its source with the current tracker, alternates detection order, and writes [the result JSON](../reports/tracking-stability-results.json). Its timing workload uses three or six separated moving boxes, 20 warmup updates and 100 measured updates per mode by default; it excludes camera, model, transport and rendering work. Synthetic subject labels establish the reference identity only for these fixtures.
 
 [Issue #11](https://github.com/DupeisTaken/motion-capture-games/issues/11) tracks this focused fix. The [tracking stability report](../reports/tracking-stability.html) records its implementation, executed verification and remaining limits.
+
+## Playtest continuity evaluation and bounded session memory
+
+[Issue #61](https://github.com/DupeisTaken/motion-capture-games/issues/61) and the [playtest tracking report](../reports/playtest-tracking.html) cover the subsequent spectator/turn/working-memory repair. Games can opt into the [single-player recovery contract](../packages/session/README.md#bounded-same-track-recovery) without changing the observation wire schema. The session remembers one explicit association token and two clock references for at most 450 ms since its last fresh confident input. It stores no images, clothing signatures, facial features, body measurements or joint snapshots. The tracker already keeps bounded recent body observations for geometry matching; estimated/missing joints remain unusable as observed input.
+
+Body geometry is useful during an observable narrow or unilateral pose, so synthetic turns exercise fewer than four usable common joints and the geometry fallback. A token or old torso sample cannot justify giving a **new track ID** an old slot. A clothing cue would require new pixel sampling, nuisance/lighting/turn tests, bounded retention and participant/session-separated false-match evidence; it is deliberately not introduced without that evidence. Complete occlusion, retired IDs and indistinguishable replacement still require explicit rejoin. The 450 ms ceiling is a provisional bound inherited from tracker retention, not a measured optimal setting.
+
+Run the camera-free, tracker-only fixture comparison with the local Python environment:
+
+```text
+.venv/Scripts/python.exe services/vision/tools/tracking_continuity.py --baseline-ref 2cea8d7033a8be02f4f9d7079ecc0e6ca676a6fa
+```
+
+Use `.venv/bin/python` on macOS/Linux. This writes [synthetic aggregate results](../reports/playtest-tracking-results.json). It alternates detection order and measures an isolated incumbent beside overlapping spectators, a short missing frame beside that group, sparse narrow turns, and genuine ownership overlap. It does not execute either pose model or a game. Metrics use explicit reference subject labels, withheld from tracking, and per-frame `durationMs`:
+
+- **Continuity coverage:** time with fresh confident original incumbent ID divided by all evaluated reference-subject time, including missing, tentative and ambiguous samples. Warmup (`evaluate: false`) is excluded. A fresh new ID still loses original-slot continuity.
+- **Confident wrong association:** emitted confident IDs previously attached to a different labelled subject, including spectators outside the target set; count and labelled observation-duration are separate from coverage.
+- **Ambiguous duration:** evaluated target-subject time explicitly marked ambiguous. Missing and tentative samples additionally count toward suspension.
+- **Suspension/recovery:** all target-subject time without original confident continuity, maximum uninterrupted span, completed recovery spans and unresolved subjects at the end. Freezing throughout yields zero continuity, not perfect correctness.
+
+For local held-out evaluation, put normalized labelled provider observations in ignored `.local/heldout-tracking.json` (or `datasets/`), then run:
+
+```text
+.venv/Scripts/python.exe services/vision/tools/tracking_continuity.py --input .local/heldout-tracking.json --output .local/heldout-tracking-results.json
+```
+
+The JSON root maps local sequence names to arrays of frames. Each frame contains `atMs`, positive `durationMs` (up to 1000), `expected` reference subject labels, and `detections`: `{ "subject": "anonymous-reference-label", "detection": { "box": { "x": 0.35, "y": 0.15, "width": 0.1, "height": 0.65 }, "joints": {} } }`. Use an empty detection array during reference-labelled absence and `subject: null` for an unlabelled false detection; label all people when measuring wrong association. Optional `epoch` records source resets. Labels must be unique within a frame. Each batch is bounded to 16 MiB and 10,000 frames; detection and retained-track bounds remain unchanged. Input/output must stay in ignored paths; aggregate output replaces sequence names with ordinal names and never includes coordinates or reference labels. Human validation of annotations and source timing remains necessary.
+
+Freeze the existing pretrained RTMPose and MediaPipe artifacts and current thresholds first; separate development/tuning clips from held-out participants, sessions and clothing/lighting conditions. Include front/side/back turns, fast reach, peripheral framing, partial/full occlusion and spectator replacement. Record joint visibility/error, count coverage, wrong-ID events, suspension and recovery alongside end-to-end timing. The local route consumes labelled provider observations, so capture/model failures must also appear as absent or low-quality detections; it does not perform media annotation or model inference itself. No participant footage or labelled clips were supplied for this change, and no training or GPU benchmark ran. A 99% field-continuity claim requires that distinct held-out evidence, not these regression fixtures.
+
+Secondary views should first demonstrate that a hidden body becomes observable from the proposed placement. Their observations cannot authorize cross-view identity or replace hidden primary joints without calibrated geometry, source-time evidence, correspondence and an uncertainty policy. Disconnect, bad calibration and timing mismatch must be evaluated before any fusion. This repair makes no synchronized/calibrated cross-view identity claim.
+
+### Separate throughput and model-robustness follow-up
+
+The current RTMPose adapter explicitly requests `CPUExecutionProvider` for both ONNX sessions, and the locked environment includes CPU `onnxruntime`. This path does not use the available RTX 4070. Slow inference can widen source gaps and reduce continuity opportunities; an association bug and a throughput bottleneck need separate measurements. This change neither installs GPU packages nor claims GPU acceleration or training results.
+
+Issue-ready acceleration experiment: record the current model hashes, provider, input sizes, visible-person count, per-stage p50/p95 latency, skipped/expired work and output joint agreement using the same consented labelled clips; create a separate ignored local GPU environment with explicitly compatible runtime/driver dependencies; compare the same model/output contract sequentially under the campaign resource limit. Verify actual execution-provider placement and CPU fallback, bound queues and threads, and retain CPU portability. Keep preprocessing/decoding constant. Adopt acceleration only if observed latency improves without unacceptable output regressions. This does not itself recover identity hidden by a new ID.
+
+Training needs consented, labelled varied-view body joints and visibility plus anonymous association truth through turns/occlusions/replacements, enough participant/session variation, dataset/checkpoint license and privacy handling, and an untouched held-out split. Measure the pretrained baseline failures first. Capacity, framing, exposure and score-quality problems may require capture or policy fixes rather than training. No such footage/labels were supplied, so training is deferred.

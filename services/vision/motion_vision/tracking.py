@@ -314,14 +314,31 @@ class Tracker:
             for row, track in enumerate(self._tracks):
                 old_box = _box(track.detection)
                 old_center = _center(old_box)
+                elapsed_s = (timestamp_ns - track.timestamp_ns) / 1e9
+                gate = min(
+                    config.maximum_center_gate,
+                    config.base_center_gate + config.center_speed_gate * elapsed_s,
+                )
+                prediction_s = min(elapsed_s, config.prediction_limit_s)
+                predicted_center = (
+                    old_center[0] + track.velocity[0] * prediction_s,
+                    old_center[1] + track.velocity[1] * prediction_s,
+                )
                 for column in ambiguous:
                     new_box = _box(current[column])
                     new_center = _center(new_box)
                     if (
                         costs[row][column] is not None
+                        or observed_costs[row][column] is not None
                         or _iou(old_box, new_box) > 0
-                        or hypot(old_center[0] - new_center[0], old_center[1] - new_center[1])
-                        <= config.maximum_center_gate
+                        or min(
+                            hypot(old_center[0] - new_center[0], old_center[1] - new_center[1]),
+                            hypot(
+                                predicted_center[0] - new_center[0],
+                                predicted_center[1] - new_center[1],
+                            ),
+                        )
+                        <= gate
                     ):
                         retired.add(row)
                         break
@@ -379,6 +396,18 @@ class Tracker:
         # Every retry retires at least one column, so work remains bounded.
         while True:
             retired = retired_rows()
+            # Removing a plausible owner must not manufacture a clear match to
+            # somebody else. Close affected detection candidates before solving
+            # again; each pass adds a column, so closure is capacity-bounded.
+            implicated = {
+                column
+                for row in retired
+                for column in range(len(current))
+                if costs[row][column] is not None or observed_costs[row][column] is not None
+            }
+            if implicated - ambiguous:
+                ambiguous.update(implicated)
+                continue
             usable_rows = [row for row in range(len(costs)) if row not in retired]
             usable_columns = [column for column in range(len(current)) if column not in ambiguous]
             best_cost, chosen = assign(costs, usable_rows, usable_columns)
@@ -477,10 +506,9 @@ class Tracker:
         for track in retained:
             if track.track_id not in matched:
                 track.misses += 1
-        if ambiguous:
-            # An unseen old track could be hidden in the ambiguous group. Only
-            # clear current associations survive; absence is not recovery proof.
-            retained = [track for track in retained if track.track_id in matched]
+        # retired_rows already removes tracks spatially implicated in ambiguity.
+        # A distant spectator group must not erase an isolated missing candidate;
+        # retention still expires and reacquisition restarts confirmation.
         # Missing tracks remain internal and bounded. They never inflate count.
         retained.sort(key=lambda track: track.timestamp_ns, reverse=True)
         self._tracks = retained[: config.max_tracks]
