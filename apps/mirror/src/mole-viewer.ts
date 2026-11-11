@@ -645,6 +645,7 @@ export function mountMoleGame(
           tracker: "pose",
           ...camera,
           maxPeople: 3,
+          independentPreview: false,
           demoScenario: "three",
         }),
       });

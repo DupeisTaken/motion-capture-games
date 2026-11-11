@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import os
 from collections.abc import Sequence
 from typing import Any, Protocol
 
@@ -224,9 +225,12 @@ class RTMPoseProvider:
 
         paths = artifact_paths("rtmpose")
         options = ort.SessionOptions()
-        options.intra_op_num_threads = 2
+        # Pose crops run once per person. Reserve CPU for capture, JPEG and the browser.
+        options.intra_op_num_threads = min(4, max(1, (os.cpu_count() or 2) // 2))
         options.inter_op_num_threads = 1
         options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+        # The two sessions run in series; idle workers must not compete with the active one.
+        options.add_session_config_entry("session.intra_op.allow_spinning", "0")
         self.detector = ort.InferenceSession(
             str(paths["detector"]), sess_options=options, providers=["CPUExecutionProvider"]
         )

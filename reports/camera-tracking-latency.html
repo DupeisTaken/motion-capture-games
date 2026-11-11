@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Camera tracking and game response</title>
+    <style>
+      body { background: #f4f6f4; color: #1c342d; font: 16px/1.6 system-ui, sans-serif; margin: 0; }
+      main { max-width: 760px; margin: auto; padding: 32px 20px 56px; }
+      h1, h2 { line-height: 1.2; }
+      section { margin: 28px 0; }
+      table { width: 100%; border-collapse: collapse; background: white; }
+      th, td { padding: 8px; text-align: left; border-bottom: 1px solid #cbd8cf; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Camera tracking and game response</h1>
+      <p>Tracking console bones advanced only on new pose observations. Three people also required three separate RTMPose crops per frame, which increased the gap between the pose and the independent preview. Slap a Mole and Dodgeball needed the paired stream but still paid for the extra preview encoder.</p>
+      <section>
+        <h2>Changes</h2>
+        <ul>
+          <li>Run pose inference before resizing the preview to retain detail in small person crops.</li>
+          <li>Use up to four ONNX Runtime threads per operation and disable idle thread spinning for the two sequential model sessions.</li>
+          <li>Ease small canvas movements over at most 32 ms when both observations are aligned to the preview and the joint belongs to the same confident track. Large movements and missing or uncertain observations use the current result directly.</li>
+          <li>Use the paired stream alone during games. The original observation, identity checks and scoring inputs are preserved.</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Measured processing time</h2>
+        <table>
+          <thead><tr><th scope="col">Pose crops</th><th scope="col">Median, before → after</th><th scope="col">95th percentile, before → after</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">One</th><td>31.6 → 26.5 ms</td><td>37.3 → 29.6 ms</td></tr>
+            <tr><th scope="row">Three</th><td>86.5 → 56.0 ms</td><td>89.4 → 58.8 ms</td></tr>
+          </tbody>
+        </table>
+        <p>Baseline <code>999fb92</code> and the revised code ran on the same 20 logical CPU Windows machine. Each case used 10 warmups and 60 measured iterations on a 1280×720 generated image. Each iteration ran the installed RTMDet and RTMPose models, supplied fixed synthetic boxes to control crop count, and encoded the paired JPEG. This measures model and JPEG work under a controlled load. It excludes camera capture, transport, browser processing and concurrent preview encoding.</p>
+      </section>
+      <section>
+        <h2>Verification</h2>
+        <p>494 TypeScript tests and 209 Python tests passed. Type checks, lint, contract checks and the four-entry Vite build passed. The regressions cover reordered three-person detections, missing and uncertain joints, paired camera mode and inference at the original capture resolution.</p>
+        <p>The real-server browser check rendered three synthetic people on desktop and mobile, verified counts as people entered and left, and exercised overlay controls and source recovery. The benchmark table records the before and after timing comparison.</p>
+        <p>Recognition accuracy, occlusion performance and end-to-end latency still need measurements with real camera footage and participants.</p>
+      </section>
+    </main>
+  </body>
+</html>
