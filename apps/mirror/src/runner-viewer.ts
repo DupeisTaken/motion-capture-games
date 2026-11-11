@@ -46,6 +46,7 @@ export function mountRunnerGame(
   </section><aside class="runner-settings" aria-label="Run setup"><div class="runner-section-label"><span>MAKE IT YOURS</span><span>01</span></div><h2>Choose your escape.</h2>
     <label for="world-select">World</label><select id="world-select"><option value="rail">Neon Rails · the mint skyline</option><option value="gold">Gold Rush · a sunlit getaway</option></select><p class="field-note" id="world-description">A mint skyline, railway runs and colorful city streets.</p>
     <label for="skin-select">Runner skin</label><select id="skin-select"><option value="nova">Nova · cobalt & mint</option><option value="moss">Moss · forest explorer</option><option value="ember">Ember · sunset sprint</option></select><div class="skin-swatches" aria-hidden="true"><i class="nova"></i><i class="moss"></i><i class="ember"></i><span>All skins included. Same abilities.</span></div>
+    <div class="runner-pace"><label class="runner-check pace-option"><input id="fast-start" type="checkbox" role="switch" aria-label="Fast start" aria-describedby="pace-description"><span><strong>Fast start</strong><small>A quicker opening pace.</small></span></label><p class="field-note" id="pace-description">Off: 10 m/s · On: 14 m/s. Both build up to 18 m/s.</p></div>
     <label class="runner-check"><input id="practice-mode" type="checkbox"> Practice · no penalties</label>
     <div class="runner-section-label input-section"><span>YOUR CONTROLLER</span><span>02</span></div><label for="source-select">Input</label><select id="source-select"><option value="demo">Rehearsal · keyboard & touch</option><option value="camera">Camera · body tracking</option></select>
     <div id="camera-controls">${cameraChoiceMarkup}<div class="camera-actions"><button id="source-connect">Start camera</button><button id="source-stop" disabled>Stop camera</button></div><p class="field-note" id="camera-status" role="status">Camera stays off until you choose Start camera. Gameplay never displays camera images.</p><div id="camera-release" hidden><p id="camera-release-message" role="status"></p><button id="retry-camera-stop">Retry camera stop</button></div><button id="calibrate-player" disabled>Set standing center</button><p class="field-note">Stand comfortably at center, whole body and both feet in view. Then rehearse each move below.</p><div id="practice-checklist" aria-label="Camera movement practice">${practiceLabels.map((label, index) => `<span id="practice-${index}">${label}</span>`).join("")}</div><p class="field-note" id="practice-status" role="status">Practice all moves before starting your first run.</p></div>
@@ -70,6 +71,7 @@ export function mountRunnerGame(
   const options = (): RunnerOptions => ({
     variant: select("world-select").value as RunnerOptions["variant"],
     practice: checked("practice-mode"),
+    fastStart: checked("fast-start"),
   });
   const seed = () => deps.seed ?? Math.floor(Math.random() * 0x100000000);
   let game = new RunnerGame(options(), seed());
@@ -140,6 +142,9 @@ export function mountRunnerGame(
   }
   function resetRun() {
     game = new RunnerGame(options(), seed());
+    // Reset status here so a new ready run cannot retain a pause/result cue.
+    // Ordinary ready renders preserve actionable failed-start guidance.
+    setText("game-status", "Choose your input, then start your run.");
     manualPause = false;
     ownershipChanged = false;
     demoEpoch++;
@@ -340,7 +345,10 @@ export function mountRunnerGame(
     setText("coins-value", String(state.coins));
     setText("distance-value", String(Math.floor(state.distance)));
     setText("lives-value", state.options.practice ? "∞" : String(state.lives));
-    setText("speed-label", `${state.speed.toFixed(1)} m/s`);
+    setText(
+      "speed-label",
+      `${state.options.fastStart ? "FAST · " : ""}${state.speed.toFixed(1)} m/s`,
+    );
     setText(
       "action-label",
       `${["LEFT", "CENTER", "RIGHT"][(input?.lane ?? 0) + 1]} · ${state.jumpHeight > 0 ? "JUMPING" : state.duck ? "ROLLING" : "STANDING"}`,
@@ -408,7 +416,12 @@ export function mountRunnerGame(
       );
     }
     const locked = active();
-    for (const id of ["world-select", "source-select", "practice-mode"])
+    for (const id of [
+      "world-select",
+      "source-select",
+      "practice-mode",
+      "fast-start",
+    ])
       get<HTMLInputElement>(id).disabled = locked;
     get("start-round").hidden = state.phase !== "ready";
     get("pause-round").hidden = !["playing", "countdown"].includes(state.phase);
@@ -690,6 +703,15 @@ export function mountRunnerGame(
     tick();
   });
   listen(get("practice-mode"), "change", () => {
+    resetRun();
+    tick();
+  });
+  listen(get("fast-start"), "change", () => {
+    if (active()) {
+      get<HTMLInputElement>("fast-start").checked =
+        game.state.options.fastStart;
+      return;
+    }
     resetRun();
     tick();
   });

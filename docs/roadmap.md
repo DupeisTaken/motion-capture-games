@@ -136,7 +136,7 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 - Measure recognition errors and action-to-visible timing for each control on the supported installation, including different participant heights and movement ranges. Perspective graphics alone do not justify calibrated 3D input.
 - Verify rendered gameplay and setup/recovery UI from a real server at the supported display aspect ratio and relevant desktop/mobile operator sizes; deliver tests, owning docs and the HTML report.
 
-**Current status:** Documentation scaffold only. Runtime controls, gesture thresholds, obstacle tuning, hardware capability and performance remain unimplemented and unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
+**Current status:** Experimental software controls, seeded obstacles, rendered worlds and source-timed pause/recovery are implemented. The gait/pace follow-up adds an articulated runner and an opt-in faster opening; [its report](../reports/runner-motion-pace.html) owns actual evidence. Physical recognition accuracy, camera hardware capability and end-to-end latency remain unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
 
 **Scaffold delivery:** [Issue #5](https://github.com/DupeisTaken/motion-capture-games/issues/5) and [PR #6](https://github.com/DupeisTaken/motion-capture-games/pull/6) track this documentation update; [the runner report](../reports/motion-runner.html) records its actual checks. M6 implementation needs its own issue when work begins; completing the scaffold does not close the game milestone.
 

@@ -190,6 +190,35 @@ describe("runner application", () => {
     advance(50);
     expect(state().duck).toBe(false);
   });
+  it("defaults to Standard, snapshots Fast start for the run, and retains it for a new run", () => {
+    expect(element<HTMLInputElement>("fast-start").checked).toBe(false);
+    expect(state().speed).toBe(10);
+    toggle("fast-start", true);
+    expect(state().options.fastStart).toBe(true);
+    expect(state().speed).toBe(14);
+    expect(element("pace-description").textContent).toContain("14 m/s");
+    click("start-round");
+    expect(element<HTMLInputElement>("fast-start").disabled).toBe(true);
+    advance(3400);
+    expect(state().speed).toBeGreaterThan(14);
+    expect(element("speed-label").textContent).toContain("FAST");
+    // A late synthetic change event must not reset an active run or its score.
+    toggle("fast-start", false);
+    expect(state().phase).toBe("playing");
+    expect(state().options.fastStart).toBe(true);
+    expect(element<HTMLInputElement>("fast-start").checked).toBe(true);
+    click("pause-round");
+    expect(element<HTMLInputElement>("fast-start").disabled).toBe(true);
+    click("new-round");
+    expect(element<HTMLInputElement>("fast-start").disabled).toBe(false);
+    expect(element<HTMLInputElement>("fast-start").checked).toBe(true);
+    expect(state().speed).toBe(14);
+    expect(element("game-status").textContent).toBe(
+      "Choose your input, then start your run.",
+    );
+    toggle("fast-start", false);
+    expect(state().speed).toBe(10);
+  });
   it("freezes the world, distance and score when a second participant appears", () => {
     click("start-round");
     advance(3300);

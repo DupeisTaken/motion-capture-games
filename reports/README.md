@@ -47,3 +47,5 @@ Keep unredacted local diagnostic artifacts under ignored `reports/local/` or `.l
 [Pre-game settings](pre-game-settings.html) records the shared video/game setup menu, confirmation and camera-release behavior, synthetic before/after browser evidence and actual checks.
 
 [Motion Runner implementation](motion-runner-game.html) records the playable Neon Rails / Gold Rush games, original 3D skins/worlds, single-player recovery, actual software checks, real-server desktop/mobile evidence, reference-footage comparison and independent critical review. Physical control accuracy and visible latency remain unverified.
+
+[Runner motion and opening pace](runner-motion-pace.html) records the articulated gait, opt-in Fast start switch, fresh full-stride/desktop/mobile evidence, both-pace simulation checks and post-change render timings. Physical trials remain separate.

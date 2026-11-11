@@ -28,10 +28,10 @@
   <body>
     <h1>Runner rendering · synthetic controls only</h1>
     <p>
-      No camera or inference. Keep this tab visible. Four cases, 5-second
-      warm-up and 15-second sample each.
+      No camera or inference. Keep this tab visible. Six cases, 5-second warm-up
+      and 15-second sample each.
     </p>
-    <button id="run">Run all four cases</button>
+    <button id="run">Run all six cases</button>
     <p id="progress" role="status">Ready</p>
     <canvas
       id="world"
@@ -47,10 +47,12 @@
       const progress = document.querySelector("#progress");
       const output = document.querySelector("#results");
       const cases = [
-        { variant: "rail", width: 1066, height: 720 },
-        { variant: "gold", width: 1066, height: 720 },
-        { variant: "rail", width: 362, height: 510 },
-        { variant: "gold", width: 362, height: 510 },
+        { variant: "rail", width: 1066, height: 720, fastStart: false },
+        { variant: "gold", width: 1066, height: 720, fastStart: false },
+        { variant: "rail", width: 362, height: 510, fastStart: false },
+        { variant: "gold", width: 362, height: 510, fastStart: false },
+        { variant: "rail", width: 1066, height: 720, fastStart: true },
+        { variant: "gold", width: 1066, height: 720, fastStart: true },
       ];
       const percentile = (values, p) => {
         const sorted = [...values].sort((a, b) => a - b);
@@ -78,7 +80,11 @@
             canvas.style.width = `${config.width}px`;
             canvas.style.height = `${config.height}px`;
             const game = new RunnerGame(
-              { variant: config.variant, practice: true },
+              {
+                variant: config.variant,
+                practice: true,
+                fastStart: config.fastStart,
+              },
               42,
             );
             let sequence = 0;
@@ -181,18 +187,18 @@
               canvasPixels: { width: canvas.width, height: canvas.height },
             });
             output.textContent = JSON.stringify(
-              { version: 1, complete: false, results },
+              { version: 2, complete: false, results },
               null,
               2,
             );
           }
           output.textContent = JSON.stringify(
             {
-              version: 1,
+              version: 2,
               date: "2026-11-11",
               complete: true,
               method:
-                "Visible browser rAF scheduling and CPU render-submission timing; original Three.js renderer and seeded synthetic game. Four serial cases; 5s warm-up and 15s sampling each. Both interval endpoints must be post-warm-up.",
+                "Visible browser rAF scheduling and CPU render-submission timing; original Three.js renderer and seeded synthetic game. Six serial cases (four Standard world/size cases plus two Fast-start desktop worlds); 5s warm-up and 15s sampling each. Both interval endpoints must be post-warm-up.",
               browser:
                 navigator.userAgent.match(/Chrome\/[\d.]+/)?.[0] ||
                 "In-app Chromium",

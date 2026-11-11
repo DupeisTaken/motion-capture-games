@@ -55,6 +55,76 @@ class Play {
 }
 
 describe("single-player motion runner timeline", () => {
+  it("keeps standard opening pace as the default and preserves the seeded world when fast start is explicitly enabled", () => {
+    const defaultGame = new RunnerGame({}, 2026);
+    const standard = new RunnerGame({ fastStart: false }, 2026);
+    const fast = new RunnerGame({ fastStart: true }, 2026);
+    expect(defaultGame.state).toEqual(standard.state);
+    expect(standard.state.options.fastStart).toBe(false);
+    expect(standard.state.speed).toBe(10);
+    expect(fast.state.options.fastStart).toBe(true);
+    expect(fast.state.speed).toBe(14);
+    expect(fast.state.obstacles).toEqual(standard.state.obstacles);
+  });
+  it.each([null, 0, 1, "true", "false", NaN, {}, []])(
+    "rejects malformed fast-start option %j",
+    (fastStart) => {
+      expect(() => new RunnerGame({ fastStart: fastStart as boolean })).toThrow(
+        "Fast start must be boolean.",
+      );
+    },
+  );
+  it.each([false, true])(
+    "keeps the same active-time acceleration and maximum speed with fastStart=%s",
+    (fastStart) => {
+      const play = new Play({ fastStart, practice: true });
+      const openingSpeed = fastStart
+        ? TUNING.fastStartSpeed
+        : TUNING.startSpeed;
+      play.start();
+      expect(play.game.state.speed).toBe(openingSpeed);
+      for (let frame = 0; frame < 40; frame++) play.tick(250);
+      expect(play.game.state.speed).toBeCloseTo(
+        openingSpeed + 10 * TUNING.speedGainPerSecond,
+        10,
+      );
+      for (let frame = 0; frame < 920; frame++) play.tick(250);
+      expect(play.game.state.speed).toBe(TUNING.maximumSpeed);
+      expect(play.game.state.phase).toBe("playing");
+      play.tick(250);
+      expect(play.game.state.speed).toBe(TUNING.maximumSpeed);
+    },
+  );
+  it.each([false, true])(
+    "retains the chosen opening profile and active pace across participant pause and recovery with fastStart=%s",
+    (fastStart) => {
+      const play = new Play({ fastStart, practice: true });
+      play.start();
+      play.advance(1000);
+      const before = play.game.state;
+      play.controls.participantCount = 2;
+      play.tick();
+      play.advance(1000);
+      expect(play.game.state).toMatchObject({
+        phase: "paused",
+        speed: before.speed,
+        elapsedMs: before.elapsedMs,
+        distance: before.distance,
+        options: { fastStart },
+      });
+      play.controls.participantCount = 1;
+      expect(play.game.resume(play.now, play.input())).toBe(true);
+      play.advance(TUNING.resumeCountdownMs);
+      expect(play.game.state.speed).toBe(before.speed);
+      expect(play.game.state.distance).toBe(before.distance);
+      play.advance(1000);
+      expect(play.game.state.speed).toBeCloseTo(
+        before.speed + TUNING.speedGainPerSecond,
+        10,
+      );
+      expect(play.game.state.options.fastStart).toBe(fastStart);
+    },
+  );
   it("starts a seeded bounded world, holds absolute lanes, returns center and crosses during a jump", () => {
     const play = new Play();
     play.start();

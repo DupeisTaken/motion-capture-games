@@ -42,7 +42,7 @@ These are early experimental game slices. Physical framing/collision accuracy, p
 
 ## Play Motion Runner
 
-Open **http://127.0.0.1:5173/runner.html**. Choose **Neon Rails** or **Gold Rush** and Nova, Moss or Ember. Rehearsal starts without a camera: select left/center/right with the buttons or Left / C / Right, Space or Up to jump, and hold Down or Roll to duck. Three shields end a competitive run; Practice removes the life limit. The game shows an original 3D world, never camera imagery.
+Open **http://127.0.0.1:5173/runner.html**. Choose **Neon Rails** or **Gold Rush** and Nova, Moss or Ember. Rehearsal starts without a camera: select left/center/right with the buttons or Left / C / Right, Space or Up to jump, and hold Down or Roll to duck. Choose **Fast start** for a 14 m/s opening instead of the standard 10 m/s; both gradually build to 18 m/s. The setting is fixed during a run and remains selected for New run. Three shields end a competitive run; Practice removes the life limit. The game shows an original 3D world, never camera imagery.
 
 For body control choose Camera, explicitly start the selected device, set a comfortable standing center, and rehearse all six movement checks. Exactly one person may remain in camera view. Extra people or unavailable tracking freeze the world, distance, hazards and score; confirmed identity/source changes require a new run. The camera remains off until explicitly started. Physical recognition thresholds, varied body sizes and visible latency still need M1/M6 trials. See [the runner design](docs/games/motion-runner.md) and [implementation report](reports/motion-runner-game.html).
 

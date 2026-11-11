@@ -5,6 +5,7 @@ export { RunnerPoseControls, RUNNER_POSE_TUNING } from "./pose-controls";
 export interface RunnerOptions {
   variant: "rail" | "gold";
   practice: boolean;
+  fastStart: boolean;
 }
 export type ObstacleKind = "barrier" | "overhead" | "train" | "coin";
 export interface RunnerObstacle {
@@ -47,6 +48,7 @@ export const TUNING = Object.freeze({
   maximumStepMs: 250,
   substepMs: 1000 / 120,
   startSpeed: 10,
+  fastStartSpeed: 14,
   maximumSpeed: 18,
   speedGainPerSecond: 0.035,
   rowSpacingM: 30,
@@ -93,6 +95,11 @@ export class RunnerGame {
       throw new Error("Unknown runner variant.");
     if (options.practice !== undefined && typeof options.practice !== "boolean")
       throw new Error("Practice must be boolean.");
+    if (
+      options.fastStart !== undefined &&
+      typeof options.fastStart !== "boolean"
+    )
+      throw new Error("Fast start must be boolean.");
     if (!Number.isSafeInteger(seed))
       throw new Error("Runner seed must be a safe integer.");
     this.randomState = seed >>> 0;
@@ -103,7 +110,7 @@ export class RunnerGame {
       countdownMs: 0,
       elapsedMs: 0,
       distance: 0,
-      speed: TUNING.startSpeed,
+      speed: options.fastStart ? TUNING.fastStartSpeed : TUNING.startSpeed,
       score: 0,
       coins: 0,
       hits: 0,
@@ -117,6 +124,7 @@ export class RunnerGame {
       options: {
         variant: options.variant ?? "rail",
         practice: options.practice ?? false,
+        fastStart: options.fastStart ?? false,
       },
       result: null,
     };
@@ -345,7 +353,9 @@ export class RunnerGame {
     this.value.elapsedMs += ms;
     this.value.speed = Math.min(
       TUNING.maximumSpeed,
-      TUNING.startSpeed +
+      (this.value.options.fastStart
+        ? TUNING.fastStartSpeed
+        : TUNING.startSpeed) +
         (this.value.elapsedMs / 1000) * TUNING.speedGainPerSecond,
     );
     const travel = this.value.speed * seconds;

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { RunnerState } from "../../../games/motion-runner/src/index";
+import { RUNNER_RIG, sampleRunnerAnimation } from "./runner-animation";
 
 export type RunnerSkin = "nova" | "moss" | "ember";
 export type RunnerWorld = "rail" | "gold";
@@ -23,6 +24,10 @@ export function createRunnerRenderer(canvas: HTMLCanvasElement) {
   renderer.toneMappingExposure = 1.2;
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 190);
+  const motionPreference =
+    typeof window.matchMedia === "function"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)")
+      : null;
   const hemisphere = new THREE.HemisphereLight(0xe5f9ff, 0x67768b, 2.7);
   scene.add(hemisphere);
   const sunLight = new THREE.DirectionalLight(0xffeed2, 3);
@@ -293,7 +298,16 @@ export function createRunnerRenderer(canvas: HTMLCanvasElement) {
   const roll = new THREE.Group();
   roll.name = "rolling-runner";
   avatar.add(roll);
-  let limbs: THREE.Group[] = [];
+  let pelvis = new THREE.Group();
+  let spine = new THREE.Group();
+  let head = new THREE.Group();
+  let limbs: {
+    hip: THREE.Group;
+    knee: THREE.Group;
+    ankle: THREE.Group;
+    shoulder: THREE.Group;
+    elbow: THREE.Group;
+  }[] = [];
   function makeAvatar(skin: RunnerSkin) {
     rig.clear();
     roll.clear();
@@ -305,22 +319,32 @@ export function createRunnerRenderer(canvas: HTMLCanvasElement) {
     box(roll, p.accent, 0, 0.08, 0.35, 0.35, 0.32, 0.15);
     for (const side of [-1, 1])
       box(roll, p.dark, side * 0.21, -0.25, -0.18, 0.22, 0.18, 0.32);
-    mesh(rig, sphereGeometry, p.jacket, 0, 1.12, 0, 0.39, 0.48, 0.3);
-    box(rig, p.dark, 0, 0.77, 0, 0.55, 0.2, 0.38);
+    pelvis = new THREE.Group();
+    pelvis.name = "runner-pelvis";
+    rig.add(pelvis);
+    box(pelvis, p.dark, 0, 0, 0, 0.52, 0.22, 0.34);
+    spine = new THREE.Group();
+    spine.name = "runner-spine";
+    rig.add(spine);
+    mesh(spine, sphereGeometry, p.jacket, 0, 0.36, 0, 0.34, 0.43, 0.27);
     // The rear-facing hood, backpack and soles establish forward orientation.
-    mesh(rig, sphereGeometry, p.face, 0, 1.81, 0, 0.33, 0.34, 0.3);
-    mesh(rig, sphereGeometry, p.jacket, 0, 1.91, 0.09, 0.37, 0.31, 0.27);
-    box(rig, p.dark, 0, 1.93, -0.19, 0.65, 0.13, 0.3);
-    box(rig, p.accent, 0, 1.14, 0.29, 0.46, 0.47, 0.2);
-    box(rig, 0xfff1d3, 0, 1.17, 0.405, 0.14, 0.08, 0.02);
+    head = new THREE.Group();
+    head.position.y = 0.96;
+    head.name = "runner-head";
+    spine.add(head);
+    mesh(head, sphereGeometry, p.face, 0, 0, 0, 0.29, 0.31, 0.27);
+    mesh(head, sphereGeometry, p.jacket, 0, 0.1, 0.07, 0.33, 0.28, 0.25);
+    box(head, p.dark, 0, 0.12, -0.19, 0.59, 0.11, 0.28);
+    box(spine, p.accent, 0, 0.39, 0.27, 0.43, 0.43, 0.18);
+    box(spine, 0xfff1d3, 0, 0.42, 0.367, 0.14, 0.08, 0.02);
     if (skin === "moss") {
       for (const side of [-1, 1]) {
         const ear = mesh(
-          rig,
+          head,
           coneGeometry,
           p.dark,
           side * 0.25,
-          2.22,
+          0.4,
           0.03,
           0.15,
           0.3,
@@ -329,25 +353,91 @@ export function createRunnerRenderer(canvas: HTMLCanvasElement) {
         ear.rotation.z = side * -0.25;
       }
     } else if (skin === "ember") {
-      mesh(rig, sphereGeometry, p.accent, 0, 2.22, 0.04, 0.15, 0.15, 0.15);
-      box(rig, p.accent, 0, 1.55, 0.25, 0.68, 0.13, 0.15);
+      mesh(head, sphereGeometry, p.accent, 0, 0.4, 0.04, 0.15, 0.15, 0.15);
+      box(spine, p.accent, 0, 0.8, 0.25, 0.62, 0.13, 0.15);
     }
     for (const side of [-1, 1]) {
-      const leg = new THREE.Group();
-      leg.position.set(side * 0.18, 0.77, 0);
-      rig.add(leg);
-      box(leg, p.dark, 0, -0.27, 0, 0.21, 0.55, 0.24);
-      box(leg, p.accent, 0, -0.59, -0.06, 0.28, 0.2, 0.44);
-      box(leg, 0xf6efde, 0, -0.69, -0.06, 0.29, 0.065, 0.45);
-      limbs.push(leg);
-    }
-    for (const side of [-1, 1]) {
-      const arm = new THREE.Group();
-      arm.position.set(side * 0.36, 1.4, 0);
-      rig.add(arm);
-      box(arm, p.jacket, 0, -0.2, 0, 0.2, 0.46, 0.23);
-      mesh(arm, sphereGeometry, p.face, 0, -0.46, 0, 0.12, 0.13, 0.12);
-      limbs.push(arm);
+      const name = side < 0 ? "left" : "right";
+      const hip = new THREE.Group();
+      hip.name = `${name}-hip`;
+      hip.position.x = side * RUNNER_RIG.hipHalfWidthM;
+      // Belt/spine yaw is decorative. Keep the sagittal leg chains outside it
+      // so an otherwise planted shoe cannot skate as the pelvis counterturns.
+      rig.add(hip);
+      box(
+        hip,
+        p.dark,
+        0,
+        -RUNNER_RIG.thighM / 2,
+        0,
+        0.19,
+        RUNNER_RIG.thighM,
+        0.2,
+      );
+      const knee = new THREE.Group();
+      knee.name = `${name}-knee`;
+      knee.position.y = -RUNNER_RIG.thighM;
+      hip.add(knee);
+      mesh(knee, sphereGeometry, p.dark, 0, 0, 0, 0.097, 0.1, 0.1);
+      box(
+        knee,
+        p.dark,
+        0,
+        -RUNNER_RIG.shinM / 2,
+        0,
+        0.16,
+        RUNNER_RIG.shinM,
+        0.17,
+      );
+      const ankle = new THREE.Group();
+      ankle.name = `${name}-ankle`;
+      ankle.position.y = -RUNNER_RIG.shinM;
+      knee.add(ankle);
+      box(ankle, p.accent, 0, -0.045, -0.02, 0.24, 0.12, 0.34);
+      box(ankle, 0xf6efde, 0, -0.105, -0.02, 0.245, 0.035, 0.35);
+      box(ankle, p.dark, 0, -0.017, 0.1, 0.22, 0.1, 0.08);
+      const shoulder = new THREE.Group();
+      shoulder.name = `${name}-shoulder`;
+      shoulder.position.set(side * 0.35, 0.63, 0);
+      shoulder.rotation.z = side * 0.08;
+      spine.add(shoulder);
+      mesh(shoulder, sphereGeometry, p.jacket, 0, 0, 0, 0.115, 0.13, 0.12);
+      box(
+        shoulder,
+        p.jacket,
+        0,
+        -RUNNER_RIG.upperArmM / 2,
+        0,
+        0.19,
+        RUNNER_RIG.upperArmM,
+        0.21,
+      );
+      const elbow = new THREE.Group();
+      elbow.name = `${name}-elbow`;
+      elbow.position.y = -RUNNER_RIG.upperArmM;
+      shoulder.add(elbow);
+      box(
+        elbow,
+        p.jacket,
+        0,
+        -RUNNER_RIG.forearmM / 2,
+        0,
+        0.16,
+        RUNNER_RIG.forearmM,
+        0.18,
+      );
+      mesh(
+        elbow,
+        sphereGeometry,
+        p.face,
+        0,
+        -RUNNER_RIG.forearmM,
+        0,
+        0.1,
+        0.11,
+        0.1,
+      );
+      limbs.push({ hip, knee, ankle, shoulder, elbow });
     }
   }
   const shadow = mesh(
@@ -472,13 +562,6 @@ export function createRunnerRenderer(canvas: HTMLCanvasElement) {
       height = h;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
-      camera.fov = camera.aspect < 0.8 ? 66 : 56;
-      camera.position.set(
-        0,
-        camera.aspect < 0.8 ? 5.1 : 4.4,
-        camera.aspect < 0.8 ? 10.8 : 8.2,
-      );
-      camera.lookAt(0, 1.1, -15);
       camera.updateProjectionMatrix();
     }
     for (const item of scrolling)
@@ -510,26 +593,40 @@ export function createRunnerRenderer(canvas: HTMLCanvasElement) {
       coinAt = -1000;
       hitAt = -1000;
     }
-    const running = state.phase !== "ready" && state.phase !== "results";
+    const reducedMotion = motionPreference?.matches ?? false;
+    const gait = sampleRunnerAnimation(state, reducedMotion);
+    const fov = (camera.aspect < 0.8 ? 66 : 56) + gait.cameraFovOffset;
+    if (camera.fov !== fov || camera.aspect !== w / h) {
+      camera.fov = fov;
+      camera.updateProjectionMatrix();
+    }
+    camera.position.set(
+      gait.cameraX,
+      camera.aspect < 0.8 ? 5.1 : 4.4,
+      camera.aspect < 0.8 ? 10.8 : 8.2,
+    );
+    camera.lookAt(gait.cameraLookX, 1.1, -15);
     avatar.position.set(state.avatarX * LANE_WIDTH, state.jumpHeight, 0);
     rig.visible = !state.duck;
     roll.visible = state.duck;
     roll.position.y = 0.48;
-    roll.rotation.x = -time * 8;
-    rig.position.y = state.duck
-      ? 0.43
-      : 0.04 + (running ? Math.abs(Math.sin(time * 10)) * 0.07 : 0);
-    rig.rotation.set(state.duck ? -Math.PI / 2 : -0.08, 0, 0);
-    rig.scale.setScalar(state.duck ? 0.82 : 1);
+    roll.rotation.x = reducedMotion ? 0 : -time * 8;
+    rig.position.y = 0;
+    rig.rotation.set(0, 0, 0);
+    rig.scale.setScalar(1);
+    pelvis.position.y = gait.hipY;
+    pelvis.rotation.y = gait.pelvisYaw;
+    spine.position.y = gait.hipY + 0.04;
+    spine.rotation.set(-gait.spineLean, gait.shoulderYaw, gait.spineRoll);
+    head.rotation.x = gait.spineLean * 0.65;
     limbs.forEach((limb, i) => {
-      limb.rotation.x =
-        state.jumpHeight > 0.1
-          ? i < 2
-            ? -0.55
-            : -1.5
-          : running
-            ? Math.sin(time * 10 + (i % 2) * Math.PI) * (i < 2 ? 0.7 : -0.65)
-            : 0;
+      const pose = gait.legs[i];
+      limb.hip.position.y = gait.hipY;
+      limb.hip.rotation.x = pose.hip;
+      limb.knee.rotation.x = pose.knee;
+      limb.ankle.rotation.x = pose.ankle;
+      limb.shoulder.rotation.x = pose.shoulder;
+      limb.elbow.rotation.x = pose.elbow;
     });
     shadow.position.x = avatar.position.x;
     shadow.scale.set(
@@ -551,7 +648,8 @@ export function createRunnerRenderer(canvas: HTMLCanvasElement) {
         obstacleModels.set(obstacle.id, model);
       }
       model.group.position.set(obstacle.lane * LANE_WIDTH, 0, -obstacle.z);
-      if (obstacle.kind === "coin") model.group.rotation.y = time * 2.5;
+      if (obstacle.kind === "coin")
+        model.group.rotation.y = reducedMotion ? 0 : time * 2.5;
     }
     for (const [id, model] of obstacleModels)
       if (!ids.has(id)) {
@@ -563,7 +661,7 @@ export function createRunnerRenderer(canvas: HTMLCanvasElement) {
     lastCoins = state.coins;
     lastHits = state.hits;
     const burst = time - coinAt;
-    sparkles.visible = burst >= 0 && burst < 0.45;
+    sparkles.visible = !reducedMotion && burst >= 0 && burst < 0.45;
     sparkles.position.set(avatar.position.x, 0.9 + state.jumpHeight, 0);
     sparkles.children.forEach((particle, i) =>
       particle.position.set(
@@ -572,7 +670,8 @@ export function createRunnerRenderer(canvas: HTMLCanvasElement) {
         Math.sin(i * 3) * burst,
       ),
     );
-    avatar.visible = time - hitAt > 0.7 || Math.floor(time * 16) % 2 === 0;
+    avatar.visible =
+      reducedMotion || time - hitAt > 0.7 || Math.floor(time * 16) % 2 === 0;
     renderer.render(scene, camera);
   }
   return {

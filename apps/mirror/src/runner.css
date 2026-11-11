@@ -381,6 +381,36 @@
   height: 15px;
   margin: 0;
 }
+.runner-pace {
+  padding: 10px 12px;
+  border: 1px solid #d8dfcf;
+  border-radius: 8px;
+  background: #f0f5e8;
+}
+.runner-pace .pace-option {
+  min-height: 44px;
+  margin: 0;
+  gap: 12px;
+}
+.pace-option input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.pace-option span {
+  display: grid;
+  gap: 2px;
+}
+.pace-option strong {
+  font-size: 12px;
+}
+.pace-option small {
+  color: #60715b;
+  font-size: 10px;
+}
+.runner-pace .field-note {
+  margin: 5px 0 0;
+}
 .input-section {
   border-top: 1px solid #e0e3d9;
   padding-top: 22px;
