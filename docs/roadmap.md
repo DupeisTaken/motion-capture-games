@@ -8,6 +8,9 @@ The Git remote is [DupeisTaken/motion-capture-games](https://github.com/DupeisTa
 
 The milestone IDs below are stable local references. Each milestone may become several focused issues/PRs rather than one large change. This sequence has no promised dates; hardware and experiment results determine effort.
 
+
+**Single-press continuation:** [Issue #53](https://github.com/DupeisTaken/motion-capture-games/issues/53) covers in-game Resume actions for Slap a Mole, Dodgeball, Motion Runner, Virtual Maze and rig pointer practice. Preserve readiness/identity gates and existing countdowns while removing navigation back to operator controls. [The delivery report](../reports/game-resume.html) owns actual software and responsive-browser evidence; physical gates remain unchanged.
+
 ## M0: Documentation foundation
 
 **Scope:** Record the agreed product, ownership boundaries, repository conventions, proposal status and validation gates. Provide a self-contained report.

@@ -2,6 +2,8 @@
 
 ## Purpose and scope
 
+The pointer-practice **Resume** button stays on the paused game stage, both inline and in its separate game display. One click/tap or focused Enter/Space returns through the existing countdown while preserving score and logical aim. The resume event cannot move the aim cursor; selected-source validity and display visibility still gate play. [The shared resume report](../reports/game-resume.html) records verification.
+
 [Issue #34](https://github.com/DupeisTaken/motion-capture-games/issues/34) adds `/rig.html` after [PR #31](https://github.com/DupeisTaken/motion-capture-games/pull/31). The user chose an operator workspace and synthetic rehearsal first, to understand and prepare more accurate rig-space XYZ for a possible virtual maze. A second angle supplies geometry only when calibration, exposure timing, identity and useful coverage are supported by evidence.
 
 [PR #37](https://github.com/DupeisTaken/motion-capture-games/pull/37) delivers this software slice and its verification report. Both independent reviews reached 10/10 within this camera-free scope; physical validation and live capture remain separate work.

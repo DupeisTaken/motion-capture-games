@@ -1,3 +1,4 @@
+import { createResumeControl } from "./resume-control";
 import {
   CameraChoice,
   cameraChoiceMarkup,
@@ -61,9 +62,9 @@ export function mountDodgeballGame(
  <div class="mm-layout play-layout">
  <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="field-note" role="status">Press Start. We will find one ready player.</p><button id="source-stop" class="mm-text" disabled>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
   <section class="mm-game" aria-label="Dodgeball game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>DODGES</span><strong id="dodges-value">0</strong></div><div class="score-item"><span id="shields-label">HITS</span><strong id="hits-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
- <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Dodgeball play area. Rehearsal: move your pointer, touch or use arrow keys to move the whole body."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera view and virtual ball warning"></canvas><div class="stage-label"><i></i><span>READ THE RING · DODGE THE BALL</span></div><div class="display-hud" aria-label="Live game score"><span>SCORE <strong id="display-score">000</strong></span><span id="display-clock-label">TIME <strong id="display-time">1:00</strong></span><span>DODGES <strong id="display-dodges">0</strong></span></div><div class="player-label">P1 <span id="stage-player">WAITING</span></div><div id="dodge-feedback" class="hit-feedback" aria-hidden="true" hidden></div><div class="mm-overlay" id="game-overlay"><div class="overlay-ball">${ballArt}</div><p id="overlay-kicker">READY, SET, SIDESTEP</p><h2 id="overlay-title">A little space.<br>A great escape.</h2><p id="overlay-copy">Press Start, then move clear of each warning ring. Keep your whole body in view.</p></div><div class="stage-bottom"><span id="stage-help">Rehearsal · pointer, touch or arrow keys to move</span><span>MIRRORED VIEW</span></div></div>
+ <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Dodgeball play area. Rehearsal: move your pointer, touch or use arrow keys to move the whole body."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera view and virtual ball warning"></canvas><div class="stage-label"><i></i><span>READ THE RING · DODGE THE BALL</span></div><div class="display-hud" aria-label="Live game score"><span>SCORE <strong id="display-score">000</strong></span><span id="display-clock-label">TIME <strong id="display-time">1:00</strong></span><span>DODGES <strong id="display-dodges">0</strong></span></div><div class="player-label">P1 <span id="stage-player">WAITING</span></div><div id="dodge-feedback" class="hit-feedback" aria-hidden="true" hidden></div><div class="mm-overlay" id="game-overlay"><div class="overlay-ball">${ballArt}</div><p id="overlay-kicker">READY, SET, SIDESTEP</p><h2 id="overlay-title">A little space.<br>A great escape.</h2><p id="overlay-copy">Press Start, then move clear of each warning ring. Keep your whole body in view.</p><button id="resume-round" class="mm-primary" hidden>Resume</button></div><div class="stage-bottom"><span id="stage-help">Rehearsal · pointer, touch or arrow keys to move</span><span>MIRRORED VIEW</span></div></div>
  <div class="target-track" id="warning-track"><span id="warning-life">Waiting for your first ball</span><progress id="warning-progress" max="1" value="0" aria-label="Ball phase time remaining"></progress><span id="streak-value">Best streak 0</span></div>
- <div class="game-actions"><button id="start-round" class="mm-primary">Set up round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="resume-round" class="mm-primary" hidden>Resume · countdown</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start when you are ready.</span></div>
+ <div class="game-actions"><button id="start-round" class="mm-primary">Set up round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start when you are ready.</span></div>
  <p class="source-disclosure" id="source-disclosure">Synthetic full-body rehearsal. Camera accuracy and physical latency still require hardware trials.</p></section></div>
  <section class="how-grid" aria-label="How to play"><article><span class="how-number">01</span><div><h2>Read the warning</h2><p>A striped amber ring shows where the ball will land. The ring stays still.</p></div></article><article><span class="how-number">02</span><div><h2>Move all of you</h2><p>Get your head, torso, arms and legs clear before the ring turns coral. Each clean escape builds your streak.</p></div></article><article><span class="how-number">03</span><div><h2>Stay in the picture</h2><p>Missing feet? Step back, adjust the camera or clear an occlusion. Tracking issues pause play fairly.</p></div></article></section>
  <footer class="mm-footer"><span>Built for movement. Played in your space.</span><span>One player · English · M4 software preview</span></footer>${setupMarkup}</main>`;
@@ -98,6 +99,11 @@ export function mountDodgeballGame(
     },
   });
   const hidden = () => document.hidden && !display.visible;
+  const resumeControl = createResumeControl(
+    get<HTMLButtonElement>("resume-round"),
+    get("game-stage"),
+    listeners.signal,
+  );
   const session = new SinglePlayerSession();
   const nextSeed = () => deps.seed ?? Math.floor(Math.random() * 4_294_967_296);
   let game = new DodgeGame({}, nextSeed());
@@ -402,8 +408,7 @@ export function mountDodgeballGame(
     get("pause-round").hidden = ["paused", "results"].includes(state.phase);
     get("resume-round").hidden =
       state.phase !== "paused" || needsNewRound || !manualPause;
-    get<HTMLButtonElement>("resume-round").disabled =
-      !isJoined() || !readiness.ready || hidden();
+    get<HTMLButtonElement>("resume-round").disabled = hidden();
     get<HTMLButtonElement>("end-round").disabled = !locked;
     get("restart-round").hidden = state.phase !== "results" && !needsNewRound;
     setup.setLocked(configurationLocked);
@@ -422,6 +427,10 @@ export function mountDodgeballGame(
           : state.phase === "countdown"
             ? "FIND YOUR SPACE"
             : "READY, SET, SIDESTEP";
+    get("game-overlay").classList.toggle(
+      "resume-menu",
+      state.phase === "paused",
+    );
     const title = get("overlay-title"),
       copy = get("overlay-copy");
     if (state.phase === "countdown") {
@@ -489,6 +498,7 @@ export function mountDodgeballGame(
     lastDodges = state.dodges;
     get("dodge-feedback").hidden =
       t > feedbackUntil || feedbackUntil === 0 || state.phase !== "playing";
+    resumeControl.update();
   }
   function tick() {
     if (disposed) return;
@@ -742,16 +752,16 @@ export function mountDodgeballGame(
   });
   listen(get("resume-round"), "click", () => {
     if (
-      isJoined() &&
-      !ownershipChanged &&
-      !hidden() &&
-      game.readiness(now(), frame).ready
-    ) {
-      manualPause = false;
-      game.resume(now());
-      tick();
-      get("game-stage").focus();
-    }
+      hidden() ||
+      ownershipChanged ||
+      game.state.phase !== "paused" ||
+      game.readiness(now(), frame).requiresNewRound
+    )
+      return;
+    // One press records intent; the normal recovery path still gates countdown.
+    manualPause = false;
+    tick();
+    get("game-stage").focus({ preventScroll: true });
   });
   listen(get("end-round"), "click", () => {
     armed = false;

@@ -254,6 +254,33 @@ describe("runner application", () => {
     expect(state().phase).toBe("ready");
     expect(state().score).toBe(0);
   });
+  it("takes one in-stage Resume press while rolling and waits for standing", () => {
+    click("start-round");
+    advance(3400);
+    click("pause-round");
+    const resume = element<HTMLButtonElement>("resume-round");
+    expect(element("game-overlay").contains(resume)).toBe(true);
+    expect(document.activeElement).toBe(resume);
+    const frozen = state();
+    now += 16;
+    element("duck-action").dispatchEvent(
+      new PointerEvent("pointerdown", { pointerId: 1 }),
+    );
+    click("resume-round");
+    advance(500);
+    expect(state().phase).toBe("paused");
+    expect(state().score).toBe(frozen.score);
+    expect(state().distance).toBe(frozen.distance);
+    expect(resume.hidden).toBe(true);
+    element("duck-action").dispatchEvent(
+      new PointerEvent("pointerup", { pointerId: 1 }),
+    );
+    advance(50);
+    expect(state().phase).toBe("countdown");
+    expect(document.activeElement).toBe(element("game-stage"));
+    advance(2100);
+    expect(state().phase).toBe("playing");
+  });
   it("exposes both worlds and three skins without changing the gameplay contract", () => {
     choose("world-select", "gold");
     choose("skin-select", "ember");

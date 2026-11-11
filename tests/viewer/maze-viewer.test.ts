@@ -341,6 +341,20 @@ describe("virtual maze operator workflow", () => {
     click("maze-start");
     expect(audio.setLevel).toHaveBeenCalled();
   });
+  it("resumes the inline participant display with one focused button and preserves the player", () => {
+    confirmRound();
+    change("maze-x", "3");
+    click("maze-start");
+    expect(document.activeElement).toBe(get("maze-start"));
+    click("maze-view");
+    expect(get("maze-participant").contains(get("maze-resume"))).toBe(true);
+    expect(document.activeElement).toBe(get("maze-resume"));
+    click("maze-resume");
+    expect(status()).toContain("running");
+    expect(get<HTMLInputElement>("maze-x").value).toBe("3");
+    expect(dialog().open).toBe(false);
+    expect(get("maze-resume").hidden).toBe(true);
+  });
   it("has a map-free participant preview and an explicit way back", () => {
     click("close-settings");
     click("maze-view");

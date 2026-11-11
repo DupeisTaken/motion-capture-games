@@ -16,7 +16,7 @@ export function mazeParticipantContent(
 ): string {
   const popup = buttonId === "participant-toggle";
   const heading = popup ? "h1" : "h2";
-  return `<div><p class="maze-eyebrow">Virtual maze / Synthetic rehearsal</p><${heading}>Listen for the open path.</${heading}>${mazeCueMarkup()}<p data-participant-status>Rehearsal paused</p><button id="${buttonId}" class="maze-button">${popup ? "Resume rehearsal" : "Return to operator map"}</button>${popup ? "<p>Keep the operator page open. Sound is controlled there.</p>" : ""}</div>`;
+  return `<div><p class="maze-eyebrow">Virtual maze / Synthetic rehearsal</p><${heading}>Listen for the open path.</${heading}>${mazeCueMarkup()}<p data-participant-status>Rehearsal paused</p>${popup ? "" : '<button id="maze-resume" class="maze-button" hidden>Resume</button>'}<button id="${buttonId}" class="maze-button">${popup ? "Resume" : "Return to operator map"}</button>${popup ? "<p>Keep the operator page open. Sound is controlled there.</p>" : ""}</div>`;
 }
 
 /** Vite supplies the same CSS source to the page bundle and the local popup. */

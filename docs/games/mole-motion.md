@@ -2,6 +2,8 @@
 
 Slap a Mole is the experimental single-player whack-a-mole slice tracked by [issue #12](https://github.com/DupeisTaken/motion-capture-games/issues/12). It starts M2 software development at the user's request; M1 camera, identity, latency and hardware certification remain open. It must not claim production readiness or multiplayer certification.
 
+**Resume** is the single primary action on the paused game screen, including the separate game window. It receives focus once, so Enter, Space, a click or a tap continues the same round without reopening setup. One press waits for fresh, stable input and the existing two-second countdown; no second press is needed after tracking recovers. Resume activation is isolated from rehearsal aiming, flicks and pushes. Identity/source changes still require a new round. [The resume report](../../reports/game-resume.html) records verification.
+
 The public name is **Slap a Mole**. The existing `/mole.html` route and `games/mole-motion` source path stay stable for existing links and imports. [Issue #42](https://github.com/DupeisTaken/motion-capture-games/issues/42) and the [rename verification report](../../reports/slap-a-mole-rename.html) record the branding change.
 
 ## Rules and controls

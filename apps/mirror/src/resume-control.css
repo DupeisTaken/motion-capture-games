@@ -1,0 +1,37 @@
+button.game-resume,
+.runner-main .game-resume {
+  min-height: 48px;
+  min-width: 170px;
+  max-width: 100%;
+  margin-top: 16px;
+  touch-action: manipulation;
+  pointer-events: auto;
+}
+.game-resume:focus-visible {
+  outline: 3px solid #f1cf75;
+  outline-offset: 4px;
+}
+
+/* A paused game has one primary action, with room for it on small screens. */
+.mm-overlay.resume-menu {
+  inset: 0;
+  padding: 20px 16px;
+  background: #102722ed;
+  border: 0;
+  border-radius: 0;
+  pointer-events: auto;
+}
+.resume-menu .overlay-mole,
+.resume-menu .overlay-ball,
+.resume-menu #overlay-kicker {
+  display: none;
+}
+.resume-menu #overlay-title {
+  font-size: clamp(24px, 3vw, 36px);
+  margin: 0 0 8px;
+}
+.resume-menu #overlay-copy {
+  max-width: 330px;
+  font-size: 12px;
+  line-height: 1.5;
+}
