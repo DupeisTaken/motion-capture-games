@@ -1,3 +1,8 @@
+import {
+  NavigationStartup,
+  sourceNavigationBlocker,
+  type NavigationOwner,
+} from "./app-navigation";
 import { createResumeControl } from "./resume-control";
 import {
   RunnerGame,
@@ -25,7 +30,7 @@ const practiceLabels = ["Left", "Center", "Right", "Jump", "Roll", "Stand"];
 export function mountRunnerGame(
   root: HTMLElement,
   deps: { now?: () => number; autoTick?: boolean; seed?: number } = {},
-): { tick(): void; dispose(): void } {
+): NavigationOwner & { tick(): void; dispose(): void } {
   const now = deps.now ?? (() => performance.now());
   root.innerHTML = `
   <a class="skip" href="#game-stage">Skip to game</a>
@@ -538,6 +543,7 @@ export function mountRunnerGame(
     if (!disposed) tick();
     return released;
   }
+  const navigationStartup = new NavigationStartup();
   async function startCamera() {
     if (
       connecting ||
@@ -559,6 +565,7 @@ export function mountRunnerGame(
     cameraMessage("Starting local body tracking…");
     updateReleaseControls();
     let acknowledged = false;
+    const navigationAttempt = navigationStartup.begin();
     try {
       const response = await fetch("/api/start", {
         method: "POST",
@@ -573,6 +580,7 @@ export function mountRunnerGame(
         }),
       });
       const result = await response.json();
+      navigationAttempt.acknowledge(response.ok, result);
       if (typeof result.epoch === "string" && result.epoch) {
         acknowledged = true;
         if (own !== generation || disposed || isDemo()) {
@@ -658,6 +666,7 @@ export function mountRunnerGame(
           error instanceof Error ? error.message : String(error),
         );
     } finally {
+      navigationAttempt.finish();
       if (own === generation) connecting = false;
       if (!disposed) tick();
     }
@@ -862,6 +871,15 @@ export function mountRunnerGame(
   if (!isDemo()) void cameraChoice.refresh();
   tick();
   return {
+    navigationBlocker() {
+      return (
+        navigationStartup.blocker ??
+        sourceNavigationBlocker(
+          !!cameraEpoch || connecting || startupUncertain,
+          releases.state.pendingCount,
+        )
+      );
+    },
     tick,
     dispose() {
       disposed = true;

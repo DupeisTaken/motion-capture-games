@@ -82,6 +82,10 @@ Virtual Maze now has a [camera-free rehearsal](docs/games/virtual-maze.md) at **
 - Target Windows, macOS and Linux. A Windows machine with an RTX 3070 is the proposed reference rig; physical capture and integrated graphics require separate validation per platform.
 - Run gameplay locally and offline after installation.
 
+## Switch games and operator tools
+
+Every page has **All games**, its current location and **Switch view** for all games, tracking diagnostics and the two-camera workspace. Navigation stays with the operator when a participant window opens. Stop active capture and confirm release before switching; failed release retains Retry camera stop. See [operator navigation](docs/operator-navigation.md) for keyboard/mobile use, recovery and limits.
+
 ## Read first
 
 | Document | Purpose |

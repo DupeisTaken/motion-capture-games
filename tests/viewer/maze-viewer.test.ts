@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountMaze } from "../../apps/mirror/src/maze-viewer";
+import type { NavigationOwner } from "../../apps/mirror/src/app-navigation";
 import { generateMaze } from "../../games/virtual-maze/src/index";
 
 const audio = vi.hoisted(() => ({
@@ -75,6 +76,11 @@ afterEach(() => {
 });
 
 describe("virtual maze operator workflow", () => {
+  it("exposes the shared departure contract as a callable method", () => {
+    const owner: NavigationOwner = workspace;
+    expect(typeof owner.navigationBlocker).toBe("function");
+    expect(owner.navigationBlocker()).toBeNull();
+  });
   it("requires shared setup confirmation before the first round and restores focus on Close or Escape", () => {
     expect(dialog().open).toBe(true);
     expect(document.activeElement).toBe(get("close-settings"));

@@ -682,6 +682,7 @@ describe("Slap a Mole operator integration", () => {
     element<HTMLButtonElement>("source-connect").click();
     await flushPromises();
     choose("source-select", "demo");
+    expect(app.navigationBlocker()).toMatch(/startup is still pending/i);
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 409,
@@ -694,6 +695,7 @@ describe("Slap a Mole operator integration", () => {
     await flushPromises();
     expect(FakeWebSocket.instances).toHaveLength(0);
     expect(element("camera-release").hidden).toBe(false);
+    expect(app.navigationBlocker()).toMatch(/Retry camera stop/i);
     expect(element("setup-camera-release").hidden).toBe(false);
     expect(
       element("pre-game-settings").contains(element("setup-retry-camera-stop")),
@@ -704,6 +706,7 @@ describe("Slap a Mole operator integration", () => {
     element<HTMLButtonElement>("setup-retry-camera-stop").click();
     await flushPromises();
     expect(element("camera-release").hidden).toBe(true);
+    expect(app.navigationBlocker()).toBeNull();
     expect(element("setup-camera-release").hidden).toBe(true);
     const stops = fetchMock.mock.calls.filter(([path]) => path === "/api/stop");
     expect(
@@ -794,11 +797,23 @@ describe("Slap a Mole operator integration", () => {
     element<HTMLButtonElement>("source-connect").click();
     await flushPromises();
     element<HTMLButtonElement>("source-stop").click();
+    expect(app.navigationBlocker()).toMatch(/startup is still pending/i);
+    let finishStop!: (value: object) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishStop = resolve;
+        }),
+    );
     finishStart({
       ok: true,
       json: async () => ({ state: "running", epoch: "late-owned-epoch" }),
     });
     await flushPromises();
+    expect(app.navigationBlocker()).toMatch(/startup is still pending/i);
+    finishStop({ ok: true, json: async () => ({ state: "idle" }) });
+    await flushPromises();
+    expect(app.navigationBlocker()).toBeNull();
     expect(FakeWebSocket.instances).toHaveLength(0);
     const stops = fetchMock.mock.calls.filter(([path]) => path === "/api/stop");
     expect(stops).toHaveLength(1);
@@ -1190,6 +1205,7 @@ describe("Slap a Mole operator integration", () => {
     element<HTMLButtonElement>("source-connect").click();
     await flushPromises();
     expect(element("game-status").textContent).toMatch(/offline.*pnpm dev/i);
+    expect(app.navigationBlocker()).toMatch(/ownership is unknown/i);
     expect(element<HTMLButtonElement>("source-connect").disabled).toBe(false);
     expect(element<HTMLButtonElement>("start-round").disabled).toBe(false);
   });

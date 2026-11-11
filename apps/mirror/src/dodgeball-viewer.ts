@@ -1,3 +1,8 @@
+import {
+  NavigationStartup,
+  sourceNavigationBlocker,
+  type NavigationOwner,
+} from "./app-navigation";
 import { createResumeControl } from "./resume-control";
 import {
   CameraChoice,
@@ -40,7 +45,7 @@ const modeCopy: Record<string, string> = {
 export function mountDodgeballGame(
   root: HTMLElement,
   deps: { now?: () => number; autoTick?: boolean; seed?: number } = {},
-): { tick(): void; dispose(): void } {
+): NavigationOwner & { tick(): void; dispose(): void } {
   const now = deps.now || (() => performance.now());
   const setupMarkup = preGameSettingsMarkup(
     "Dodgeball",
@@ -565,6 +570,7 @@ export function mountDodgeballGame(
     if (!disposed) render();
     return released;
   }
+  const navigationStartup = new NavigationStartup();
   async function startCamera() {
     if (connecting || epoch || releases.state.pendingCount > 0) return;
     let camera: CameraSelection;
@@ -590,6 +596,7 @@ export function mountDodgeballGame(
     get<HTMLButtonElement>("source-connect").disabled = true;
     get<HTMLButtonElement>("source-stop").disabled = false;
     let decoding = false;
+    const navigationAttempt = navigationStartup.begin();
     try {
       const response = await fetch("/api/start", {
         method: "POST",
@@ -605,6 +612,7 @@ export function mountDodgeballGame(
         }),
       });
       const result = await response.json();
+      navigationAttempt.acknowledge(response.ok, result);
       if (!response.ok || result.state === "error")
         throw new Error(
           result.detail || result.message || "Camera could not start.",
@@ -707,6 +715,8 @@ export function mountDodgeballGame(
         await stopCamera(
           `Camera unavailable: ${error instanceof Error ? error.message : String(error)} Run pnpm dev to start the local vision service.`,
         );
+    } finally {
+      navigationAttempt.finish();
     }
     if (!disposed) render();
   }
@@ -847,6 +857,17 @@ export function mountDodgeballGame(
   tick();
   setup.open();
   return {
+    navigationBlocker() {
+      if (display.isOpen)
+        return "Return the participant game window to controls (or close it) before switching pages.";
+      return (
+        navigationStartup.blocker ??
+        sourceNavigationBlocker(
+          !!epoch || connecting,
+          releases.state.pendingCount,
+        )
+      );
+    },
     tick,
     dispose() {
       disposed = true;

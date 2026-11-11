@@ -346,6 +346,7 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
     vi.spyOn(popup, "focus").mockImplementation(() => {});
     click("rig-game-open");
     expect(popup.document.getElementById("rig-game-stage")).toBe(stage);
+    expect(controller.navigationBlocker()).toMatch(/participant game window/i);
     controller.setSource(sample(), "camera-1");
     expect(controller.state).toEqual(before);
     const scene = popup.document.getElementById("rig-game-scene")!;
@@ -370,6 +371,7 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
     advance(50);
     expect(controller.state.phase).toBe("playing");
     controller.setEnabled(false);
+    expect(controller.navigationBlocker()).toBeNull();
     expect(popup.close).toHaveBeenCalledOnce();
     expect(stage.ownerDocument).toBe(document);
     expect(controller.state.phase).toBe("paused");

@@ -1,0 +1,126 @@
+.studio-navigation {
+  color: #18332d;
+  background: #f8f9f4;
+  border-bottom: 1px solid #d7dfd6;
+  font:
+    14px/1.5 "Segoe UI",
+    system-ui,
+    sans-serif;
+  padding: 10px max(22px, calc((100% - 1232px) / 2));
+}
+.studio-navigation [hidden],
+header > nav[hidden],
+.rig-console-link[hidden] {
+  display: none !important;
+}
+.studio-nav-bar {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+.studio-navigation a,
+.studio-navigation button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: #18332d;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  text-decoration: none;
+  font: inherit;
+  font-weight: 600;
+}
+.studio-navigation a:hover,
+.studio-navigation button:hover {
+  background: #e8eee4;
+}
+.studio-navigation a[aria-current="page"] {
+  background: #e2ecdf;
+  border-color: #a5baa6;
+}
+.studio-navigation a:focus-visible,
+.studio-navigation button:focus-visible,
+.studio-navigation-message:focus-visible {
+  outline: 3px solid #216a53;
+  outline-offset: 3px;
+}
+.studio-location {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #506257;
+  font-size: 12px;
+}
+.studio-location strong {
+  color: #18332d;
+  font-size: 14px;
+}
+.studio-nav-bar button {
+  margin-left: auto;
+  cursor: pointer;
+  border-color: #aabcae;
+  gap: 14px;
+}
+.studio-destinations {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 32px;
+  padding: 20px 0 4px;
+}
+.studio-destinations > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: start;
+  gap: 4px;
+}
+.studio-destinations h2 {
+  flex-basis: 100%;
+  margin: 0 12px 8px;
+  color: #506257;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+.studio-destinations p {
+  flex-basis: 100%;
+  margin: 8px 12px;
+  color: #506257;
+  font-size: 12px;
+  max-width: 60ch;
+}
+.studio-destinations .studio-nav-note {
+  grid-column: 1 / -1;
+  max-width: none;
+  padding-top: 10px;
+  border-top: 1px solid #d7dfd6;
+}
+.studio-navigation-message {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #a78545;
+  border-radius: 8px;
+  background: #fff4db;
+  color: #523d15;
+}
+@media (max-width: 640px) {
+  .studio-nav-bar {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .studio-location {
+    order: 3;
+    flex-basis: 100%;
+    padding: 0 12px 2px;
+    flex-wrap: wrap;
+  }
+  .studio-destinations {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .studio-navigation a,
+  .studio-navigation button {
+    padding: 8px 10px;
+  }
+}

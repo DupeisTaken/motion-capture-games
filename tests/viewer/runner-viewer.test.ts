@@ -367,6 +367,7 @@ describe("runner application", () => {
     click("source-stop");
     await flush();
     expect(acknowledge).not.toBeNull();
+    expect(app.navigationBlocker()).toMatch(/startup is still pending/i);
     (acknowledge as unknown as (value: unknown) => void)({
       ok: true,
       json: async () => ({ epoch: "late-runner", state: "running" }),
@@ -376,6 +377,7 @@ describe("runner application", () => {
     expect(stops).toHaveLength(1);
     expect(JSON.parse(stops[0][1].body)).toEqual({ epoch: "late-runner" });
     expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(app.navigationBlocker()).toBeNull();
   });
   it("pauses immediately on lost WebGL, freezes outcomes and waits for explicit Resume after restoration", () => {
     click("start-round");

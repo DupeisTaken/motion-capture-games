@@ -917,6 +917,7 @@ describe("Dodgeball operator integration", () => {
     element<HTMLButtonElement>("source-connect").click();
     await flushPromises();
     choose("source-select", "demo");
+    expect(app.navigationBlocker()).toMatch(/startup is still pending/i);
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 409,
@@ -929,6 +930,7 @@ describe("Dodgeball operator integration", () => {
     await flushPromises();
     expect(FakeWebSocket.instances).toHaveLength(0);
     expect(element("camera-release").hidden).toBe(false);
+    expect(app.navigationBlocker()).toMatch(/Retry camera stop/i);
     expect(element("setup-camera-release").hidden).toBe(false);
     expect(
       element("pre-game-settings").contains(element("setup-retry-camera-stop")),
@@ -939,6 +941,7 @@ describe("Dodgeball operator integration", () => {
     element<HTMLButtonElement>("setup-retry-camera-stop").click();
     await flushPromises();
     expect(element("camera-release").hidden).toBe(true);
+    expect(app.navigationBlocker()).toBeNull();
     expect(element("setup-camera-release").hidden).toBe(true);
     const stops = fetchMock.mock.calls.filter(([path]) => path === "/api/stop");
     expect(

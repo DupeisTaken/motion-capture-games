@@ -1,3 +1,4 @@
+import { mountAppNavigation } from "./app-navigation";
 import "./style.css";
 import "./rig.css";
 import rawDataset from "./rig-rehearsal.json";
@@ -523,8 +524,16 @@ export function createRigWorkspace(
     reference.dispose();
     support.dispose();
   }
-  return { dispose };
+  return { dispose, navigationBlocker: () => gameplay.navigationBlocker() };
 }
 
 const app = document.querySelector<HTMLElement>("#app");
-if (app) createRigWorkspace(app);
+if (app) {
+  const workspace = createRigWorkspace(app);
+  const navigation = mountAppNavigation({ owner: workspace });
+  if (import.meta.hot)
+    import.meta.hot.dispose(() => {
+      navigation.dispose();
+      workspace.dispose();
+    });
+}
