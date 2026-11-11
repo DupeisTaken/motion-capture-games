@@ -52,7 +52,7 @@ Run the scenarios in [multiplayer](multiplayer.md#required-diagnostic-scenarios)
 
 The target is no observed wrong-slot scoring in the agreed repeatable scenario set. A pass is scoped to that set and rig; it is not a guarantee against all complete occlusions. If there is no reliable evidence of identity, verify that affected input is suspended rather than guessed.
 
-Test camera unplug/replug, source restart, clock discontinuity, profile change, calibration invalidation, out-of-order/stale messages, spectator entry and a disappearing/reappearing player. Verify score retention and motion-trail reset.
+Test camera unplug/replug, source restart, clock discontinuity, profile change, calibration invalidation, out-of-order/stale messages, spectator entry and a disappearing/reappearing player. Verify score retention and motion-trail reset. For active camera rounds, vary detection order as spectators enter and leave. Verify that valid input from the joined player keeps time and hazards moving, only that player's input affects scoring, and the round pauses when that track is lost even if a spectator remains.
 
 ## Motion runner acceptance scenarios
 
