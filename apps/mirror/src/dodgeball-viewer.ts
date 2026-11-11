@@ -105,7 +105,7 @@ export function mountDodgeballGame(
     get("game-stage"),
     listeners.signal,
   );
-  const session = new SinglePlayerSession();
+  const session = new SinglePlayerSession({ recoveryWindowMs: 450 });
   const nextSeed = () => deps.seed ?? Math.floor(Math.random() * 4_294_967_296);
   let game = new DodgeGame({}, nextSeed());
   let demoJoined = true,
@@ -160,6 +160,7 @@ export function mountDodgeballGame(
     config,
     now,
     nextSeed(),
+    () => display.close(),
   );
   function setMessage(message: string) {
     if (get("setup-input-status").textContent !== message)
@@ -233,43 +234,34 @@ export function mountDodgeballGame(
       : candidates.length === 1 && source.people.length === 1
         ? candidates[0]
         : null;
-    const unique =
+    if (
+      !owner &&
       participant &&
-      source.people.filter((person) => person.trackId === participant.trackId)
-        .length === 1;
-    if (!unique || !participant) {
-      if (owner) {
-        ownershipChanged = true;
-        game.pause("Player identity was lost. Start a new round.");
-      }
-      session.ingest(source, receivedAt);
-      frame = null;
-      lastCaptured = BigInt(source.capturedAtNs);
-      lastProcessed = BigInt(source.processedAtNs);
-      setPlayerStatus(
-        owner
-          ? "Player identity changed. Start a new round."
-          : "Waiting for one clearly tracked player.",
-      );
-      return;
-    }
-    const base = session.binding
+      session.binding?.trackId !== participant.trackId
+    )
+      session.release();
+    const previousBinding = session.binding;
+    const base = previousBinding
       ? session.ingest(source, receivedAt)
-      : session.join(source, participant.trackId!, receivedAt);
-    frame = cameraFrame(base);
-    if (!base && !session.binding) {
-      if (
-        owner &&
-        /clock|timing|geometry|source.*changed/i.test(session.reason || "")
-      )
-        ownershipChanged = true;
-      else
-        frame = cameraFrame(
-          session.join(source, participant.trackId!, receivedAt),
-        );
-    }
+      : !owner && participant
+        ? session.join(source, participant.trackId!, receivedAt)
+        : null;
+    // An absence may retain a bounded association; only fresh same-ID evidence
+    // resumes it. A terminal invalidation can never attach an old score again.
+    if (session.recovered)
+      game.pause(
+        "Tracking recovered. Reset movement for the recovery countdown.",
+      );
+    if (owner && previousBinding && !session.binding) ownershipChanged = true;
+    frame = ownershipChanged ? null : cameraFrame(base);
+    if (ownershipChanged)
+      game.pause("Player or source changed. Start a new round.");
     if (!owner && armed && frame && game.readiness(now(), frame).ready)
-      owner = { trackId: participant.trackId!, epoch: source.epoch, revision };
+      owner = {
+        trackId: session.binding!.trackId,
+        epoch: source.epoch,
+        revision,
+      };
     if (frame && owner) lastOwnerAt = receivedAt;
     lastCaptured = BigInt(source.capturedAtNs);
     lastProcessed = BigInt(source.processedAtNs);
@@ -522,6 +514,10 @@ export function mountDodgeballGame(
       return;
     }
     const t = now();
+    if (!isDemo() && session.expire(t)) {
+      frame = null;
+      if (owner) ownershipChanged = true;
+    }
     if (isDemo()) frame = demoFrame(t);
     if (owner && t - lastOwnerAt > RECOVERY_GRACE_MS && active())
       ownershipChanged = true;
@@ -666,7 +662,6 @@ export function mountDodgeballGame(
               observation = null;
               image?.close();
               image = null;
-              session.release();
               game.pause("Camera input is stale. Waiting for recovery.");
             }
           } else {

@@ -6,6 +6,7 @@ import {
   syntheticBody,
   type Observation,
 } from "../../packages/motion/src/index";
+import { PLAYER_SLOT_IDS } from "../../packages/session/src/index";
 import fixture from "../../contracts/examples/synthetic-observation.json";
 
 function scene(sequence: number, at: number): Observation {
@@ -47,7 +48,7 @@ describe("independent multiplayer game adapters", () => {
     let observation = scene(++seq, at);
     match.ingest(observation, at);
     for (const [i, track] of ["a", "b", "c"].entries())
-      expect(match.join(`player-${i + 1}` as "player-1", track, at)).toBe(true);
+      expect(match.join(PLAYER_SLOT_IDS[i], track, at)).toBe(true);
     expect(match.session.spectators(observation).map((p) => p.trackId)).toEqual(
       ["spectator"],
     );
@@ -152,6 +153,47 @@ describe("independent multiplayer game adapters", () => {
     expect(match.session.status("player-1").status).toBe("rejoin-required");
     expect(match.session.status("player-2").status).toBe("rejoin-required");
     expect(b.game.state.phase).toBe("paused");
+  });
+
+  it("breaks gesture history when missing and recovered packets arrive between display ticks", () => {
+    const match = new MultiplayerGame("mole", () => ({ mode: "practice" }), 42);
+    let at = 0,
+      seq = 1;
+    match.ingest(scene(seq, at), at);
+    match.join("player-1", "a", at);
+    match.join("player-2", "b", at);
+    match.start();
+    for (let i = 0; i < 65; i++) {
+      at += 50;
+      match.ingest(scene(++seq, at), at);
+      match.tick(at);
+    }
+    const a = match.runtimes.get("player-1")!,
+      b = match.runtimes.get("player-2")!;
+    expect(a.game.state.phase).toBe("playing");
+    at += 50;
+    const missing = scene(++seq, at);
+    missing.people = missing.people.filter((p) => p.trackId !== "a");
+    match.ingest(missing, at);
+    // No display tick observes the null input. Recovery must still break history.
+    at += 50;
+    match.ingest(scene(seq + 1, at), at);
+    expect(a.game.state.phase).toBe("paused");
+    expect(b.game.state.phase).toBe("playing");
+    match.tick(at);
+    expect(a.game.state.phase).toBe("countdown");
+    expect(a.game.state.countdownMs).toBe(2000);
+  });
+
+  it("cannot enroll from interrupted preview data or restart an invalidated score", () => {
+    const match = new MultiplayerGame("mole", () => ({}));
+    match.ingest(scene(1, 0), 0);
+    match.join("player-1", "a", 0);
+    match.interrupt("Camera stopped", true);
+    expect(match.join("player-2", "b", 10)).toBe(false);
+    expect(match.session.status("player-1").status).toBe("rejoin-required");
+    match.start();
+    expect(match.runtimes.get("player-1")!.requested).toBe(false);
   });
 
   it("does not admit stale preview data or advance hidden games", () => {

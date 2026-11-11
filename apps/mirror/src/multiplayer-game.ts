@@ -9,7 +9,7 @@ import {
 import {
   MultiplayerSession,
   type PlayerSlotId,
-} from "../../../packages/session/src/multiplayer";
+} from "../../../packages/session/src/index";
 import {
   observationToDodgeFrame,
   type GameMotionFrame,
@@ -80,6 +80,10 @@ export class MultiplayerGame {
     this.receivedAtMs = receivedAtMs;
     for (const result of this.session.ingest(observation, receivedAtMs)) {
       const runtime = this.runtimes.get(result.slotId);
+      if (runtime && result.recovered)
+        runtime.game.pause(
+          "Tracking recovered. Reset movement for the recovery countdown.",
+        );
       if (runtime)
         runtime.frame = this.adapt(result.frame, result.binding?.trackId ?? "");
     }
@@ -129,6 +133,7 @@ export class MultiplayerGame {
   }
 
   tick(now: number, visible = true) {
+    this.session.expire(now);
     for (const runtime of this.runtimes.values()) {
       const { game } = runtime;
       if (!visible) {

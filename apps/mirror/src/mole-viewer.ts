@@ -101,7 +101,7 @@ export function mountMoleGame(
     get("game-stage"),
     listeners.signal,
   );
-  const session = new SinglePlayerSession();
+  const session = new SinglePlayerSession({ recoveryWindowMs: 450 });
   const nextSeed = () => deps.seed ?? Math.floor(Math.random() * 4_294_967_296);
   let game = new MoleGame({}, nextSeed());
   let interaction: GameOptions["interaction"] = "touch";
@@ -173,6 +173,7 @@ export function mountMoleGame(
     config,
     now,
     nextSeed(),
+    () => display.close(),
   );
   function setMessage(message: string) {
     if (get("setup-input-status").textContent !== message)
@@ -554,13 +555,7 @@ export function mountMoleGame(
     );
     const override = select("player-track").value;
     // Explicit identity loss cannot prove who returned: restart rather than attach an old score.
-    if (
-      roundOwner &&
-      (receiptGap > MAX_RECOVERY_GAP_MS ||
-        tracks.filter((person) => person.trackId === roundOwner!.trackId)
-          .length !== 1)
-    )
-      needsNewOwner = true;
+    if (roundOwner && receiptGap > MAX_RECOVERY_GAP_MS) needsNewOwner = true;
     if (!roundOwner && !override && tracks.length !== 1) {
       session.release();
       readySince = null;
@@ -573,14 +568,13 @@ export function mountMoleGame(
       needsNewOwner = true;
     const previousBinding = session.binding;
     frame = previousBinding ? session.ingest(observation, receivedAt) : null;
+    if (session.recovered)
+      game.pause(
+        "Tracking recovered. Reset movement for the recovery countdown.",
+      );
     if (previousBinding && !session.binding) {
       readySince = null;
-      if (
-        !/missing or uncertain|Tracking was interrupted/.test(
-          session.reason || "",
-        )
-      )
-        needsNewOwner = !!roundOwner;
+      needsNewOwner = !!roundOwner;
     }
     if (!session.binding && !needsNewOwner) {
       // Automatic admission is only for a unique confident identity, never array order.
@@ -614,6 +608,11 @@ export function mountMoleGame(
       return;
     }
     const t = now();
+    if (!isDemo() && session.expire(t)) {
+      frame = null;
+      readySince = null;
+      needsNewOwner = !!roundOwner;
+    }
     if (isDemo()) {
       demoJoined = true;
       frame = demoFrame(t);
@@ -751,7 +750,6 @@ export function mountMoleGame(
               observation = null;
               image?.close();
               image = null;
-              session.release();
               readySince = null;
               game.pause(
                 "Camera input is stale. Waiting for the same participant.",

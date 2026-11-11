@@ -304,3 +304,12 @@ export class SinglePlayerSession {
     };
   }
 }
+
+export { MultiplayerSession, PLAYER_SLOT_IDS } from "./multiplayer";
+export type {
+  MultiplayerBinding,
+  PlayerSlotId,
+  PlayerSlotState,
+  PlayerSlotResult,
+  SlotGameMotionFrame,
+} from "./multiplayer";

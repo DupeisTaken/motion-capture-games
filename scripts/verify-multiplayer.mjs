@@ -282,7 +282,10 @@ try {
     );
     await page.waitForTimeout(200);
     const status = await page.locator("#setup-input-status").innerText();
-    assert(!/Invalid observation|unavailable|could not|failed/i.test(status),status);
+    assert(
+      !/Invalid observation|unavailable|could not|failed/i.test(status),
+      status,
+    );
   }
   async function enroll(id, track) {
     await page.selectOption(`#${id}-track`, track);

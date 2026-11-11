@@ -34,6 +34,7 @@ export interface SlotGameMotionFrame {
 
 export interface PlayerSlotResult extends PlayerSlotState {
   frame: GameMotionFrame | null;
+  recovered: boolean;
 }
 
 interface SlotEntry extends PlayerSlotState {
@@ -63,7 +64,9 @@ function packetKey(observation: Observation): string {
 export class MultiplayerSession {
   readonly capacity: 1 | 2 | 3;
   private readonly entries: SlotEntry[];
-  private readonly clockGuard = new SinglePlayerSession();
+  private readonly clockGuard = new SinglePlayerSession({
+    recoveryWindowMs: 450,
+  });
   private revision = "";
   private latestSequence = -1;
   private latestPacket = "";
@@ -80,7 +83,7 @@ export class MultiplayerSession {
       binding: null,
       status: "empty",
       reason: null,
-      engine: new SinglePlayerSession(),
+      engine: new SinglePlayerSession({ recoveryWindowMs: 450 }),
     }));
   }
 
@@ -99,7 +102,11 @@ export class MultiplayerSession {
       slotId,
       binding: this.binding(slotId),
       status: entry.status,
-      reason: entry.reason,
+      reason:
+        entry.reason?.replaceAll(
+          "Player 1",
+          `Player ${PLAYER_SLOT_IDS.indexOf(slotId) + 1}`,
+        ) ?? null,
     };
   }
 
@@ -115,6 +122,7 @@ export class MultiplayerSession {
     return this.entries.map((entry) => ({
       ...this.status(entry.slotId),
       frame: frames.get(entry.slotId) ?? null,
+      recovered: entry.engine.recovered || this.clockGuard.recovered,
     }));
   }
 
@@ -145,7 +153,9 @@ export class MultiplayerSession {
   }
 
   /** Explicit source teardown invalidates membership without deleting its score owner. */
-  invalidate(reason: string): void { this.freezeAll(reason); }
+  invalidate(reason: string): void {
+    this.freezeAll(reason);
+  }
 
   join(
     slotId: PlayerSlotId,
@@ -157,6 +167,14 @@ export class MultiplayerSession {
     if (entry.binding) return null;
     if (PLAYER_SLOT_IDS.indexOf(slotId) >= this.capacity) {
       entry.reason = "This slot exceeds the declared software player capacity.";
+      return null;
+    }
+    if (
+      this.entries.filter((candidate) => candidate.binding).length >=
+      Math.min(this.capacity, observation.capacity)
+    ) {
+      entry.reason =
+        "The current source and declared software capacity do not admit another player.";
       return null;
     }
     if (
@@ -304,6 +322,20 @@ export class MultiplayerSession {
       }
     }
     return this.results(frames);
+  }
+
+  /** Expiry is checked even if no further camera packet arrives. */
+  expire(nowMs: number): void {
+    if (this.clockGuard.expire(nowMs)) {
+      this.freezeAll("Source recovery expired. Leave and rejoin.");
+      return;
+    }
+    for (const entry of this.entries) {
+      if (entry.binding && entry.engine.expire(nowMs)) {
+        entry.status = "rejoin-required";
+        entry.reason = entry.engine.reason;
+      }
+    }
   }
 
   spectators(observation: Observation): Person[] {

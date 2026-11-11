@@ -138,6 +138,14 @@ describe("explicit multiplayer membership", () => {
     }
   });
 
+  it("also respects the source's declared observation capacity", () => {
+    const session = new MultiplayerSession(3);
+    const source = observation(0, { capacity: 1, people: [body("one")] });
+    expect(session.join("player-1", source, "one", 1000)).not.toBeNull();
+    expect(session.join("player-2", source, "two", 1000)).toBeNull();
+    expect(session.status("player-2").reason).toMatch(/capacity/);
+  });
+
   it("keeps explicit associations when arrays reorder and people cross", () => {
     const session = joined();
     const results = session.ingest(
@@ -171,7 +179,7 @@ describe("explicit multiplayer membership", () => {
     ).toEqual(["spectator"]);
   });
 
-  it.each(["ambiguous", "tentative"] as const)(
+  it.each(["ambiguous"] as const)(
     "freezes only a %s slot and never silently resumes or transfers its owner",
     (identity) => {
       const session = joined();
@@ -207,6 +215,62 @@ describe("explicit multiplayer membership", () => {
       ).toBe(true);
     },
   );
+
+  it("suspends a tentative same-track slot briefly and marks confirmed recovery", () => {
+    const session = joined();
+    const result = session.ingest(
+      observation(30, {
+        people: [
+          body("one"),
+          { ...body("two"), identity: "tentative" },
+          body("three"),
+        ],
+      }),
+      1030,
+    );
+    expect(result[1]).toMatchObject({
+      status: "waiting",
+      frame: null,
+      binding: { trackId: "two" },
+    });
+    expect(result[0].frame).not.toBeNull();
+    const recovered = session.ingest(observation(60), 1060);
+    expect(recovered[1]).toMatchObject({ status: "ready", recovered: true });
+    expect(recovered[1].frame).not.toBeNull();
+  });
+
+  it("expires only the missing player while a fresh shared source and others continue", () => {
+    const session = joined();
+    for (let elapsed = 50; elapsed <= 500; elapsed += 50)
+      session.ingest(
+        observation(elapsed, {
+          people: [body("one"), body("three"), body("spectator")],
+        }),
+        1000 + elapsed,
+      );
+    session.expire(1500);
+    expect(session.status("player-2")).toMatchObject({
+      status: "rejoin-required",
+      binding: { trackId: "two" },
+    });
+    expect(session.status("player-1").status).toBe("ready");
+    expect(session.status("player-3").status).toBe("ready");
+    expect(session.ingest(observation(550), 1550)[1].frame).toBeNull();
+  });
+
+  it("allows a 400ms compatible shared transport gap then expires idle input without packets", () => {
+    const session = joined();
+    session.expire(1400);
+    expect(
+      session
+        .ingest(observation(400), 1400)
+        .every((result) => result.frame && result.recovered),
+    ).toBe(true);
+    session.expire(1851);
+    expect(
+      session.slots.every((slot) => slot.status === "rejoin-required"),
+    ).toBe(true);
+  });
 
   it("preserves membership and never borrows a spectator when a participant disappears", () => {
     const session = joined();

@@ -938,6 +938,8 @@ describe("Slap a Mole operator integration", () => {
     );
     departed.detectedCount = 1;
     await send(departed);
+    expect(element("restart-round").hidden).toBe(true);
+    advance(500);
     expect(element("restart-round").hidden).toBe(false);
     expect(element("mole-target").hidden).toBe(true);
     expect(Number(element("score-value").textContent)).toBe(
@@ -1117,7 +1119,7 @@ describe("Slap a Mole operator integration", () => {
     expect(display.open).toHaveBeenCalledOnce();
     expect(element("display-status").textContent).toMatch(/allow pop-ups/i);
   });
-  it.each([500, 2500])(
+  it.each([350, 500])(
     "handles a %i ms transport gap without transferring score",
     async (gap) => {
       const socket = await startCamera();
@@ -1138,7 +1140,7 @@ describe("Slap a Mole operator integration", () => {
         now += 50;
         await socket.receive(packet(observation(sequence)));
       }
-      if (gap > 2000) {
+      if (gap > 450) {
         expect(element("restart-round").hidden).toBe(false);
         expect(element("time-value").textContent).toBe(time);
         expect(element("mole-target").hidden).toBe(true);

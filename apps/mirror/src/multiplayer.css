@@ -111,6 +111,16 @@
 .multiplayer-slot[data-status="rejoin-required"] {
   border-color: #f8bd8e;
 }
+.multiplayer-board .mm-text {
+  color: #e7efca;
+}
+.multiplayer-enrollment [data-action="leave"] {
+  border: 1px solid #91ad9c;
+  border-radius: 6px;
+}
+.multiplayer-board button:disabled {
+  opacity: .55;
+}
 .multiplayer-state {
   min-height: 3em;
   color: #e8f0b8;
