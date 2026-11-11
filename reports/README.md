@@ -1,5 +1,7 @@
 # Change reports
 
+[Slap a Mole concurrent targets and bombs](slap-a-mole-bombs.html) records longer target lifetimes, bomb scoring, replay compatibility and English desktop/mobile browser verification.
+
 [Slap a Mole rename](slap-a-mole-rename.html) records the display-name update, compatible routes and source paths, isolated software checks and synthetic desktop/mobile before/after screenshots.
 
 [Virtual Maze](virtual-maze.html) records configurable maze generation, verified loop-mode hand-rule failure, independent Head/Torso input, local corner annotations, browser audio, actual checks and embedded operator/participant screenshots. Live physical tracking and hardware buzzer acceptance remain open.

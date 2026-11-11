@@ -163,13 +163,41 @@ function movePointer(x: number, y: number): void {
   app.tick();
 }
 
-function targetPosition(): { x: number; y: number } {
-  const target = element("mole-target");
+function targetPosition(id = "mole-target"): { x: number; y: number } {
+  const target = element(id);
   return {
     x: Number.parseFloat(target.style.left),
     y: Number.parseFloat(target.style.top),
   };
 }
+
+it("shows two independently timed moles, a bomb, and the bomb penalty in both score displays", () => {
+  startDemo();
+  const targets = ["mole-target", "mole-target-2", "bomb-target"].map(element);
+  expect(targets.every((target) => !target.hidden)).toBe(true);
+  const moleIds = targets.slice(0, 2).map((target) => target.dataset.targetId);
+  const bombId = targets[2].dataset.targetId;
+
+  movePointer(0, 0);
+  const bomb = targetPosition("bomb-target");
+  movePointer(bomb.x, bomb.y);
+  expect(element("score-value").textContent).toBe("-50");
+  expect(element("display-score").textContent).toBe("-50");
+  expect(element("hits-value").textContent).toBe("0");
+  expect(element("hit-feedback").textContent).toBe("BOMB! −50");
+  expect(element("hit-feedback").hidden).toBe(false);
+  expect(targets[2].dataset.targetId).not.toBe(bombId);
+  expect(targets.slice(0, 2).map((target) => target.dataset.targetId)).toEqual(
+    moleIds,
+  );
+  expect(targets[0].querySelector("progress")!.value).toBeLessThan(
+    targets[2].querySelector("progress")!.value,
+  );
+  advance(200);
+  expect(element("score-value").textContent).toBe("-50");
+  element<HTMLButtonElement>("pause-round").click();
+  expect(targets.every((target) => target.hidden)).toBe(true);
+});
 
 beforeEach(() => {
   vi.clearAllMocks();

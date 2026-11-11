@@ -45,10 +45,14 @@ export const TUNING = Object.freeze({
     maximumSamples: 16,
   }),
   hardCandidates: 32,
-  easy: Object.freeze({ radius: 0.065, lifetimeMs: 3_600 }),
-  normal: Object.freeze({ radius: 0.052, lifetimeMs: 2_500 }),
-  hard: Object.freeze({ radius: 0.04, lifetimeMs: 1_700 }),
+  moleCount: 2,
+  bombPenalty: 50,
+  easy: Object.freeze({ radius: 0.065, lifetimeMs: 5_000 }),
+  normal: Object.freeze({ radius: 0.052, lifetimeMs: 4_000 }),
+  hard: Object.freeze({ radius: 0.04, lifetimeMs: 3_000 }),
 });
+
+const LEGACY_LIFETIME_MS = { easy: 3_600, normal: 2_500, hard: 1_700 };
 
 export const DEFAULT_OPTIONS: Readonly<GameOptions> = Object.freeze({
   mode: "timed",
@@ -57,8 +61,9 @@ export const DEFAULT_OPTIONS: Readonly<GameOptions> = Object.freeze({
   reachArea: Object.freeze({ x: 0.12, y: 0.16, width: 0.76, height: 0.68 }),
 });
 
-export interface MoleTarget {
+export interface GameTarget {
   id: number;
+  kind: "mole" | "bomb";
   x: number;
   y: number;
   radius: number;
@@ -78,7 +83,12 @@ export interface GameState {
   elapsedMs: number;
   remainingMs: number | null;
   countdownMs: number;
-  target: MoleTarget | null;
+  targets: GameTarget[];
+  lastStrike: {
+    sequence: number;
+    molePoints: number;
+    bombPenalty: number;
+  } | null;
   result: GameResult | null;
 }
 
@@ -110,7 +120,7 @@ function group(name: ContactName): string {
   return name.replace(/_(hand|wrist)$/, "_upper");
 }
 
-function overlaps(contact: MotionContact, target: MoleTarget): boolean {
+function overlaps(contact: MotionContact, target: GameTarget): boolean {
   return (
     Math.hypot(contact.x - target.x, contact.y - target.y) <= target.radius
   );
@@ -129,11 +139,12 @@ interface FlickHistory {
   armed: boolean;
 }
 interface FlickPath {
+  limb: string;
   from: FlickSample;
   to: FlickSample;
 }
 
-function flickOverlaps({ from, to }: FlickPath, target: MoleTarget): boolean {
+function flickOverlaps({ from, to }: FlickPath, target: GameTarget): boolean {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const along = Math.max(
@@ -187,7 +198,8 @@ function initialState(options: GameOptions): GameState {
         ? TUNING.roundMs
         : null,
     countdownMs: 0,
-    target: null,
+    targets: [],
+    lastStrike: null,
     result: null,
   };
 }
@@ -209,7 +221,11 @@ export class MoleGame {
   private flickHistory = new Map<string, FlickHistory>();
   private targetId = 0;
 
-  constructor(options: Partial<GameOptions> = {}, seed = 42) {
+  constructor(
+    options: Partial<GameOptions> = {},
+    seed = 42,
+    private readonly rulesVersion: GameReplay["version"] = 2,
+  ) {
     this.options = {
       ...DEFAULT_OPTIONS,
       ...options,
@@ -340,7 +356,7 @@ export class MoleGame {
       this.value.countdownMs = Math.max(0, this.value.countdownMs - delta);
       if (this.value.countdownMs === 0) {
         this.value.phase = "playing";
-        if (!this.value.target) this.spawn(contacts);
+        if (!this.value.targets.length) this.fillTargets(contacts);
       }
       // Countdown gives feedback but never scores, including its final sample.
       if (isNew) this.remember(contacts);
@@ -358,36 +374,82 @@ export class MoleGame {
         return this.state;
       }
     }
-    const target = this.value.target!;
-    target.remainingMs -= delta;
-    if (target.remainingMs <= 0) {
-      if (this.options.mode !== "practice") this.value.misses++;
-      this.value.combo = 0;
-      if (
-        this.options.mode === "survival" &&
-        this.value.misses >= TUNING.survivalMisses
-      ) {
-        this.end("out-of-lives");
-      } else this.spawn(contacts);
-      if (isNew) this.remember(contacts);
+    const expired = this.expireTargets(delta);
+    if (
+      this.options.mode === "survival" &&
+      this.value.misses >= TUNING.survivalMisses
+    ) {
+      this.end("out-of-lives");
       return this.state;
     }
+    let struck = false;
     if (isNew) {
-      if (this.hit(contacts, target, flicks)) {
-        this.value.hits++;
-        this.value.combo++;
-        this.value.bestCombo = Math.max(this.value.bestCombo, this.value.combo);
-        this.value.score += 100 + 10 * Math.min(this.value.combo - 1, 10);
-        if (
-          this.options.mode === "challenge" &&
-          this.value.hits >= TUNING.challengeHits
-        ) {
-          this.end("challenge-won");
-        } else this.spawn(contacts);
+      struck = this.applyStrikes(contacts, flicks);
+      if (
+        this.options.mode === "challenge" &&
+        this.value.hits >= TUNING.challengeHits
+      ) {
+        this.end("challenge-won");
+        return this.state;
       }
       this.remember(contacts);
     }
+    // Replacements start at full lifetime and cannot be hit by the current frame.
+    if (expired || struck) this.fillTargets(contacts);
     return this.state;
+  }
+
+  private expireTargets(delta: number): boolean {
+    const count = this.value.targets.length;
+    this.value.targets = this.value.targets.filter((target) => {
+      target.remainingMs -= delta;
+      if (target.remainingMs > 0) return true;
+      if (target.kind === "mole") {
+        if (
+          this.options.mode !== "practice" &&
+          (this.options.mode !== "survival" ||
+            this.value.misses < TUNING.survivalMisses)
+        )
+          this.value.misses++;
+        this.value.combo = 0;
+      }
+      return false;
+    });
+    return this.value.targets.length !== count;
+  }
+
+  private applyStrikes(
+    contacts: MotionContact[],
+    flicks: FlickPath[],
+  ): boolean {
+    const hitIds = this.strikeTargets(contacts, flicks);
+    if (!hitIds.size) return false;
+    let molePoints = 0;
+    let bombPenalty = 0;
+    this.value.targets = this.value.targets.filter((target) => {
+      if (!hitIds.has(target.id)) return true;
+      if (target.kind === "bomb") {
+        bombPenalty += TUNING.bombPenalty;
+      } else if (
+        this.options.mode !== "challenge" ||
+        this.value.hits < TUNING.challengeHits
+      ) {
+        this.value.hits++;
+        this.value.combo++;
+        this.value.bestCombo = Math.max(this.value.bestCombo, this.value.combo);
+        molePoints += 100 + 10 * Math.min(this.value.combo - 1, 10);
+      }
+      return false;
+    });
+    // Apply the bomb after any same-frame mole awards and break the streak.
+    if (bombPenalty) this.value.combo = 0;
+    this.value.score += molePoints - bombPenalty;
+    this.value.lastStrike = {
+      sequence: this.lastSequence,
+      molePoints,
+      bombPenalty,
+    };
+    return true;
   }
 
   private assertTime(nowMs: number): void {
@@ -487,33 +549,73 @@ export class MoleGame {
     return ((value ^ (value >>> 14)) >>> 0) / 4_294_967_296;
   }
 
-  private spawn(contacts: MotionContact[]): void {
-    const { radius, lifetimeMs } = TUNING[this.options.difficulty];
-    const area = this.options.reachArea;
-    const candidates =
-      this.options.difficulty === "hard" ? TUNING.hardCandidates : 1;
-    let best: MoleTarget | null = null;
+  private fillTargets(contacts: MotionContact[]): void {
+    const moles = this.value.targets.filter((target) => target.kind === "mole");
+    const legacy = this.rulesVersion === 1;
+    const moleCount = legacy ? 1 : TUNING.moleCount;
+    for (let index = moles.length; index < moleCount; index++)
+      if (!this.spawn("mole", contacts)) break;
+    if (!legacy && !this.value.targets.some((target) => target.kind === "bomb"))
+      this.spawn("bomb", contacts);
+  }
+
+  private spawn(kind: GameTarget["kind"], contacts: MotionContact[]): boolean {
+    const { difficulty, reachArea: area } = this.options;
+    const { radius, lifetimeMs } = TUNING[difficulty];
+    const legacy = this.rulesVersion === 1;
+    const preferFar = difficulty === "hard" && kind === "mole";
+    const candidates = preferFar || !legacy ? TUNING.hardCandidates : 1;
+    const fits = (point: { x: number; y: number }) =>
+      this.value.targets.every(
+        (target) =>
+          Math.hypot(target.x - point.x, target.y - point.y) >
+          target.radius + radius,
+      );
+    let best: { x: number; y: number } | undefined;
     let bestDistance = -Infinity;
     for (let index = 0; index < candidates; index++) {
-      const candidate: MoleTarget = {
-        id: this.targetId + 1,
+      const candidate = {
         x: area.x + radius + this.random() * (area.width - radius * 2),
         y: area.y + radius + this.random() * (area.height - radius * 2),
-        radius,
-        remainingMs: lifetimeMs,
       };
+      if (!fits(candidate)) continue;
+      if (!preferFar) {
+        best = candidate;
+        break;
+      }
       const distance = Math.min(
         ...contacts.map((contact) =>
           Math.hypot(contact.x - candidate.x, contact.y - candidate.y),
         ),
       );
-      if (best === null || distance > bestDistance) {
+      if (!best || distance > bestDistance) {
         best = candidate;
         bestDistance = distance;
       }
     }
-    this.targetId++;
-    this.value.target = best;
+    // Corners provide a bounded fallback when random candidates are crowded.
+    // In a small custom reach area, leave a slot vacant until a target clears.
+    if (!best) {
+      const left = area.x + radius;
+      const right = area.x + area.width - radius;
+      const top = area.y + radius;
+      const bottom = area.y + area.height - radius;
+      best = [
+        { x: left, y: top },
+        { x: right, y: bottom },
+        { x: right, y: top },
+        { x: left, y: bottom },
+      ].find(fits);
+    }
+    if (!best) return false;
+    this.value.targets.push({
+      ...best,
+      id: ++this.targetId,
+      kind,
+      radius,
+      remainingMs: legacy ? LEGACY_LIFETIME_MS[difficulty] : lifetimeMs,
+    });
+    return true;
   }
 
   private detectFlicks(contacts: MotionContact[], atMs: number): FlickPath[] {
@@ -574,7 +676,7 @@ export class MoleGame {
             Math.hypot(sample.x - from.x, sample.y - from.y) <=
             tuning.maximumTravel
           )
-            paths.push({ from, to: sample });
+            paths.push({ limb: key, from, to: sample });
         }
       }
       history.samples.push(sample);
@@ -583,33 +685,59 @@ export class MoleGame {
     return paths;
   }
 
-  private hit(
+  private strikeTargets(
     contacts: MotionContact[],
-    target: MoleTarget,
     flicks: FlickPath[],
-  ): boolean {
-    if (this.options.interaction === "flick")
-      return flicks.some((path) => flickOverlaps(path, target));
-    for (const contact of contacts) {
-      const previous = this.previous.get(contact.name);
-      const key = group(contact.name);
-      if (!previous || !overlaps(contact, target)) continue;
-      if (this.options.interaction === "touch") {
-        // Aliases of the same limb cannot manufacture another entry transition.
-        const wasInside = [...this.previous.values()].some(
-          (old) => group(old.name) === key && overlaps(old, target),
-        );
-        if (!wasInside) return true;
-      } else if (
-        this.pushArmed.has(key) &&
-        previous.towardScreenM! < TUNING.pushHitM &&
-        contact.towardScreenM! >= TUNING.pushHitM
-      ) {
-        this.pushArmed.delete(key);
-        return true;
+  ): Set<number> {
+    // A limb can consume one target per gesture, even when aliases or a swept
+    // path reach multiple targets. Distinct limbs can strike in the same frame.
+    const strikes = new Map<string, { id: number; distance: number }>();
+    const consider = (
+      limb: string,
+      point: { x: number; y: number },
+      intersects: (target: GameTarget) => boolean,
+    ) => {
+      for (const target of this.value.targets) {
+        if (!intersects(target)) continue;
+        const distance = Math.hypot(point.x - target.x, point.y - target.y);
+        const current = strikes.get(limb);
+        if (
+          !current ||
+          distance < current.distance ||
+          (distance === current.distance && target.id < current.id)
+        )
+          strikes.set(limb, { id: target.id, distance });
+      }
+    };
+    if (this.options.interaction === "flick") {
+      for (const path of flicks)
+        consider(path.limb, path.to, (target) => flickOverlaps(path, target));
+    } else {
+      const touch = this.options.interaction === "touch";
+      for (const contact of contacts) {
+        const previous = this.previous.get(contact.name);
+        const limb = group(contact.name);
+        if (!previous) continue;
+        if (touch) {
+          consider(
+            limb,
+            contact,
+            (target) =>
+              overlaps(contact, target) &&
+              ![...this.previous.values()].some(
+                (old) => group(old.name) === limb && overlaps(old, target),
+              ),
+          );
+        } else if (
+          this.pushArmed.has(limb) &&
+          previous.towardScreenM! < TUNING.pushHitM &&
+          contact.towardScreenM! >= TUNING.pushHitM
+        ) {
+          consider(limb, contact, (target) => overlaps(contact, target));
+        }
       }
     }
-    return false;
+    return new Set([...strikes.values()].map(({ id }) => id));
   }
 
   private remember(contacts: MotionContact[]): void {
@@ -654,7 +782,7 @@ export class MoleGame {
     this.value.phase = "results";
     this.value.reason = null;
     this.value.countdownMs = 0;
-    this.value.target = null;
+    this.value.targets = [];
     this.value.result = result;
     this.clearGestures();
   }
@@ -666,17 +794,29 @@ export type ReplayCommand =
   | { type: "pause"; reason?: string }
   | { type: "finish" };
 export interface GameReplay {
-  version: 1;
+  version: 1 | 2;
   options: Partial<GameOptions>;
   seed: number;
   commands: ReplayCommand[];
 }
 
+type LegacyGameState = Omit<GameState, "targets" | "lastStrike"> & {
+  target: Omit<GameTarget, "kind"> | null;
+};
+
 /** Replay has no camera/model dependency and uses the exact same simulation API. */
-export function replayGame(replay: GameReplay): GameState[] {
-  if (replay.version !== 1) throw new Error("Unsupported game replay version.");
-  const game = new MoleGame(replay.options, replay.seed);
-  return replay.commands.map((command) => {
+export function replayGame(
+  replay: GameReplay & { version: 1 },
+): LegacyGameState[];
+export function replayGame(replay: GameReplay & { version: 2 }): GameState[];
+export function replayGame(replay: GameReplay): (GameState | LegacyGameState)[];
+export function replayGame(
+  replay: GameReplay,
+): (GameState | LegacyGameState)[] {
+  if (replay.version !== 1 && replay.version !== 2)
+    throw new Error("Unsupported game replay version.");
+  const game = new MoleGame(replay.options, replay.seed, replay.version);
+  const states = replay.commands.map((command) => {
     switch (command.type) {
       case "start":
         return game.start(command.atMs);
@@ -691,5 +831,32 @@ export function replayGame(replay: GameReplay): GameState[] {
       case "finish":
         return game.finish();
     }
+  });
+  if (replay.version === 2) return states;
+  return states.map((state) => {
+    const mole = state.targets[0];
+    return {
+      phase: state.phase,
+      reason: state.reason,
+      options: state.options,
+      score: state.score,
+      hits: state.hits,
+      misses: state.misses,
+      combo: state.combo,
+      bestCombo: state.bestCombo,
+      elapsedMs: state.elapsedMs,
+      remainingMs: state.remainingMs,
+      countdownMs: state.countdownMs,
+      target: mole
+        ? {
+            id: mole.id,
+            x: mole.x,
+            y: mole.y,
+            radius: mole.radius,
+            remainingMs: mole.remainingMs,
+          }
+        : null,
+      result: state.result,
+    };
   });
 }

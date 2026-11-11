@@ -49,8 +49,10 @@ class FlickPlay {
       ms -= delta;
     }
   }
-  aim(name: ContactName = "left_wrist") {
-    const target = this.game.state.target!;
+  aim(name: ContactName = "left_wrist", kind: "mole" | "bomb" = "mole") {
+    const target = this.game.state.targets.find(
+      (target) => target.kind === kind,
+    )!;
     this.contacts = [{ name, x: target.x - target.radius - 0.03, y: target.y }];
     this.tick();
     this.hold();
@@ -62,13 +64,27 @@ class FlickPlay {
 }
 
 describe("wrist flick whacks", () => {
+  it("deducts points for a swept bomb strike without counting a mole hit", () => {
+    const play = new FlickPlay();
+    play.aim("left_wrist", "bomb");
+    expect(play.flap()).toMatchObject({
+      score: -50,
+      hits: 0,
+      misses: 0,
+      lastStrike: { molePoints: 0, bombPenalty: 50 },
+    });
+    expect(play.flap().score).toBe(-50);
+  });
+
   it.each(["left_wrist", "right_wrist", "left_hand", "right_hand"] as const)(
     "accepts a fast %s flap near a mole without touch or depth",
     (name) => {
       const play = new FlickPlay();
       play.aim(name);
       expect(play.game.state.hits).toBe(0);
-      const target = play.game.state.target!;
+      const target = play.game.state.targets.find(
+        (target) => target.kind === "mole",
+      )!;
       expect(
         Math.hypot(
           play.contacts[0].x + 0.025 - target.x,
@@ -90,7 +106,9 @@ describe("wrist flick whacks", () => {
 
   it("intersects a swept near-mole path even when both endpoints are outside", () => {
     const play = new FlickPlay();
-    const target = play.game.state.target!;
+    const target = play.game.state.targets.find(
+      (target) => target.kind === "mole",
+    )!;
     play.contacts = [
       { name: "left_wrist", x: target.x - 0.05, y: target.y + 0.08 },
     ];
@@ -128,7 +146,9 @@ describe("wrist flick whacks", () => {
 
   it("consumes a miss and requires a settled hand before the next flap", () => {
     const play = new FlickPlay();
-    const target = play.game.state.target!;
+    const target = play.game.state.targets.find(
+      (target) => target.kind === "mole",
+    )!;
     play.contacts = [{ name: "left_wrist", x: target.x - 0.16, y: target.y }];
     play.tick();
     play.hold();
@@ -164,7 +184,9 @@ describe("wrist flick whacks", () => {
   it("does not use foot or hip motion to trigger a flick", () => {
     const play = new FlickPlay();
     play.aim();
-    const target = play.game.state.target!;
+    const target = play.game.state.targets.find(
+      (target) => target.kind === "mole",
+    )!;
     play.contacts[0] = { name: "left_wrist", x: 0.01, y: 0.01 };
     play.contacts.push(
       { name: "left_foot", x: target.x - 0.02, y: target.y },
@@ -222,7 +244,7 @@ describe("wrist flick whacks", () => {
       phase: "paused",
       hits: 0,
       elapsedMs: before.elapsedMs,
-      target: before.target,
+      targets: before.targets,
     });
   });
 
@@ -238,12 +260,12 @@ describe("wrist flick whacks", () => {
     expect(play.game.state.hits).toBe(0);
   });
 
-  it("replays flick scoring deterministically using version 1 source frames", () => {
+  it("replays flick scoring deterministically using version 2 game rules", () => {
     const play = new FlickPlay();
     play.aim();
     play.flap();
     const replay = {
-      version: 1 as const,
+      version: 2 as const,
       options: { interaction: "flick" as const, mode: "practice" as const },
       seed: 42,
       commands: play.commands,
