@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Window as TestWindow } from "happy-dom";
 import { createRigWorkspace } from "../../apps/mirror/src/rig";
 import dataset from "../../apps/mirror/src/rig-rehearsal.json";
 
@@ -7,6 +8,7 @@ let workspace: ReturnType<typeof createRigWorkspace>;
 const fetchMock = vi.fn();
 const acquire = vi.fn();
 const websocket = vi.fn();
+const displayPreferenceKey = "motion-studio.rig.synthetic-displayed-camera.v1";
 const sampleCount = dataset.cases[0].frames.length;
 const frameLabel = (sample: number) => `${sample} / ${sampleCount}`;
 const cameraA = { id: "a".repeat(64), name: "Reference USB" };
@@ -53,6 +55,7 @@ beforeEach(() => {
   fetchMock.mockReset().mockResolvedValue(response([cameraA, cameraB]));
   acquire.mockReset();
   websocket.mockReset();
+  window.localStorage.removeItem(displayPreferenceKey);
   document.body.innerHTML = '<div id="rig-test-root"></div>';
   workspace = createRigWorkspace(get("rig-test-root"));
 });
@@ -61,11 +64,175 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   document.body.innerHTML = "";
 });
 
 describe("two-view operator workspace", () => {
+  it("sends the player camera to the real game controller without changing either operator view or XYZ", () => {
+    const primary = dataset.cases[0].frames[0].views[0].cameraId;
+    const secondary = dataset.cases[0].frames[0].views[1].cameraId;
+    expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(primary);
+    expect(get("rig-game-stage").dataset.cameraId).toBe(primary);
+    expect(
+      document.querySelector('label[for="rig-displayed-camera"]')?.textContent,
+    ).toBe("Player gameplay camera");
+    expect(document.getElementById("rig-selected-diagram")).toBeNull();
+    expect(document.getElementById("rig-selected-stage")).toBeNull();
+    const invariant = [
+      get("rig-space").innerHTML,
+      get("rig-x").textContent,
+      get("rig-reference-view").innerHTML,
+      get("rig-support-view").innerHTML,
+    ];
+    change("rig-displayed-camera", secondary);
+    expect(get("rig-game-stage").dataset.cameraId).toBe(secondary);
+    expect(
+      get("rig-game-scene")
+        .querySelector('[data-game-layer="source"]')
+        ?.getAttribute("data-camera-id"),
+    ).toBe(secondary);
+    expect(get("rig-selected-context").textContent).toContain(secondary);
+    expect(get("rig-selected-context").textContent).toContain(
+      "synthetic-exposure",
+    );
+    expect(get("rig-selected-context").textContent).toContain(
+      "uncertainty 500000 ns",
+    );
+    expect([
+      get("rig-space").innerHTML,
+      get("rig-x").textContent,
+      get("rig-reference-view").innerHTML,
+      get("rig-support-view").innerHTML,
+    ]).toEqual(invariant);
+    expect(window.localStorage.getItem(displayPreferenceKey)).toBe(secondary);
+    selectCase("missing-hip");
+    expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(
+      secondary,
+    );
+    expect(get("rig-gameplay-selection").dataset.sourceStatus).toBe("partial");
+    expect(get("rig-game-stage").dataset.cameraId).toBe(secondary);
+    physicalStaysUnavailable();
+  });
+  it("restores a stable gameplay preference and preserves an unavailable choice until explicit recovery", () => {
+    const secondary = dataset.cases[0].frames[0].views[1].cameraId;
+    change("rig-displayed-camera", secondary);
+    workspace.dispose();
+    workspace = createRigWorkspace(get("rig-test-root"));
+    expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(
+      secondary,
+    );
+    workspace.dispose();
+    window.localStorage.setItem(
+      displayPreferenceKey,
+      "saved-camera-not-in-recording",
+    );
+    workspace = createRigWorkspace(get("rig-test-root"));
+    expect(get<HTMLSelectElement>("rig-displayed-camera").value).toBe(
+      "saved-camera-not-in-recording",
+    );
+    expect(get("rig-selected-unavailable").hidden).toBe(false);
+    expect(get("rig-selected-context").textContent).toContain("not replaced");
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(true);
+    change("rig-displayed-camera", secondary);
+    expect(get("rig-game-stage").dataset.cameraId).toBe(secondary);
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(false);
+  });
+  it("keeps gameplay selection usable if browser preference storage is blocked", () => {
+    workspace.dispose();
+    vi.spyOn(window.localStorage, "getItem").mockImplementation(() => {
+      throw new Error("Storage blocked");
+    });
+    vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
+      throw new Error("Storage blocked");
+    });
+    workspace = createRigWorkspace(get("rig-test-root"));
+    const secondary = dataset.cases[0].frames[0].views[1].cameraId;
+    change("rig-displayed-camera", secondary);
+    expect(get("rig-gameplay-selection").dataset.cameraId).toBe(secondary);
+    expect(get("rig-game-stage").dataset.cameraId).toBe(secondary);
+    expect(get("rig-display-preference-note").textContent).toContain(
+      "this page only",
+    );
+  });
+  it("forwards stale source state to gameplay while retaining both operator observations", () => {
+    selectCase("stale-input");
+    expect(get("rig-gameplay-selection").dataset.sourceStatus).toBe(
+      "unavailable",
+    );
+    expect(get("rig-selected-unavailable").textContent).toContain("stale");
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(true);
+    expect(get("rig-reference-view").querySelector("svg")).not.toBeNull();
+    expect(get("rig-support-view").querySelector("svg")).not.toBeNull();
+    selectCase("nominal");
+    expect(get("rig-selected-unavailable").hidden).toBe(true);
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(false);
+  });
+  it("updates the same real game stage in its window when the player camera or recorded sample changes", () => {
+    const popup = new TestWindow({ url: location.href }) as unknown as Window;
+    vi.spyOn(window, "open").mockReturnValue(popup);
+    vi.spyOn(popup, "focus").mockImplementation(() => {});
+    vi.spyOn(popup, "close").mockImplementation(() => {});
+    const stage = get("rig-game-stage");
+    click("rig-game-open");
+    expect(popup.document.getElementById("rig-game-stage")).toBe(stage);
+    expect(document.getElementById("rig-game-stage")).toBeNull();
+    expect(get("rig-reference-view").querySelector("svg")).not.toBeNull();
+    const secondary = dataset.cases[0].frames[0].views[1].cameraId;
+    change("rig-displayed-camera", secondary);
+    const oldScene = popup.document.getElementById("rig-game-scene")?.innerHTML;
+    click("rig-next");
+    expect(stage.dataset.cameraId).toBe(secondary);
+    expect(popup.document.getElementById("rig-game-scene")?.innerHTML).not.toBe(
+      oldScene,
+    );
+    expect(get("rig-selected-context").textContent).toContain(
+      `source frame ${dataset.cases[0].frames[1].views[1].frameId}`,
+    );
+    popup.dispatchEvent(new Event("pagehide"));
+    expect(get("rig-game-stage")).toBe(stage);
+    expect(window.open).toHaveBeenCalledOnce();
+    physicalStaysUnavailable();
+  });
+  it("keeps inline gameplay when a popup is blocked and disables the one controller during planning", () => {
+    const popup = new TestWindow({ url: location.href }) as unknown as Window;
+    vi.spyOn(window, "open").mockReturnValueOnce(null).mockReturnValue(popup);
+    vi.spyOn(popup, "focus").mockImplementation(() => {});
+    vi.spyOn(popup, "close").mockImplementation(() => {});
+    const stage = get("rig-game-stage");
+    click("rig-game-open");
+    expect(get("rig-game-stage")).toBe(stage);
+    expect(get("rig-gameplay-host").textContent?.toLowerCase()).toMatch(
+      /blocked|allow.*pop/,
+    );
+    click("rig-game-open");
+    click("rig-tab-planning");
+    expect(popup.close).toHaveBeenCalledOnce();
+    expect(get("rig-game-stage")).toBe(stage);
+    expect(get("rig-rehearsal").hidden).toBe(true);
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(true);
+    expect(document.activeElement).toBe(get("rig-tab-planning"));
+    click("rig-tab-rehearsal");
+    expect(get("rig-rehearsal").hidden).toBe(false);
+    expect(get<HTMLButtonElement>("rig-game-start").disabled).toBe(false);
+    click("rig-game-open");
+    workspace.dispose();
+    expect(popup.close).toHaveBeenCalledTimes(2);
+    expect(get("rig-game-stage")).toBeNull();
+    expect(get("rig-gameplay-host").children).toHaveLength(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
   it("starts with bounded synthetic samples and no device or capture request", () => {
+    const operator = get("rig-view-pair");
+    expect(operator.parentElement?.firstElementChild).toBe(operator);
+    expect(
+      operator.nextElementSibling?.classList.contains("rig-space-panel"),
+    ).toBe(true);
+    expect(
+      get("rig-gameplay-host").closest("section")?.previousElementSibling?.id,
+    ).toBe("rig-joint-details");
+    expect(get<HTMLDetailsElement>("rig-game-inline").open).toBe(false);
+    expect(get("rig-gameplay-host").textContent).toContain("Slap a Mole");
     expect(fetchMock).not.toHaveBeenCalled();
     expect(get<HTMLSelectElement>("rig-scenario").options.length).toBe(
       dataset.cases.length,

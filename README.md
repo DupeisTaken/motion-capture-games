@@ -22,6 +22,8 @@ Console Stop releases only its acknowledged source. Failed capture release keeps
 
 Open **http://127.0.0.1:5173/rig.html** for the [two-camera operator workspace](docs/two-camera-workspace.md): paired synthetic views, estimated X/Y/Z, a rig-volume map and explicit rejection/evidence states. A physical planning mode assigns camera roles without starting capture. It prepares a possible maze input workflow; live two-camera XYZ and physical accuracy remain separate work.
 
+The operator keeps both camera diagnostics and XYZ. **Gameplay camera** chooses one recorded synthetic angle for an actual Slap a Mole Practice/Touch rehearsal and its player window. Pointer/keyboard input controls hits; recorded bodies and XYZ remain diagnostic data. The optional inline game preview is collapsed initially. Selection retains camera roles and reconstruction, and missing/stale input suspends the game explicitly. See [the gameplay-camera report](reports/displayed-camera.html).
+
 `pnpm benchmark:xyz` compares three calibrated two-view reconstruction methods using seeded synthetic joints, including timing, calibration and identity failures. It uses the existing Python environment and opens no cameras. `pnpm verify:vision` checks the diagnostic viewer through real local HTTP/WebSocket transport and saves desktop/mobile screenshots. See [the XYZ design](docs/player-xyz-experiment.md) and [the issues #3/#4 delivery report](reports/vision-issues.html). Live multi-camera input, calibrated pushes and physical certification remain open.
 
 ## Play Slap a Mole
