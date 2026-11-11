@@ -14,6 +14,8 @@ pnpm dev
 
 Open **http://127.0.0.1:5173**. Setup creates `.venv/`, downloads the Python interpreter/tools under ignored `.local/`, and downloads verified model files into ignored `models/artifacts/`. It needs network access once. The application makes no model/CDN/cloud request during gameplay preview. A later `pnpm models` repairs or redownloads missing artifacts.
 
+The header links to the two-camera workspace and each game on desktop and mobile.
+
 The server does not open a camera on startup. In the viewer, choose **Camera**, select the named device under **Choose camera**, select a pose model and association mode, then choose **Start camera**. Use **Refresh** after connecting or reconnecting a USB camera. **Manual camera index** is an explicit advanced fallback (0–9). OS camera permission may be needed for the host process. Use **Stop** to release capture. Hiding the browser tab stops the preview; returning requires an explicit restart. Closing the last viewer also releases its source. This is a single-operator diagnostic service; multiple tabs share one source.
 
 Choose **Synthetic scene** to inspect rendering and the contract without a camera. The three-body, empty, and entering/leaving scenes generate observations directly: they do not measure either pose model's detection quality. They are clearly labeled in the UI and canonical payload.
