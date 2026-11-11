@@ -1,4 +1,4 @@
-/* global document, innerWidth */
+/* global document, innerWidth, fetch */
 import assert from "node:assert/strict";
 import { spawn, execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -166,7 +166,11 @@ try {
     const page = await context.newPage();
     await page.setViewportSize({ width, height });
     assert.deepEqual(page.viewportSize(), { width, height });
-    result.viewports.push({name, width: await page.evaluate(()=>innerWidth), height});
+    result.viewports.push({
+      name,
+      width: await page.evaluate(() => innerWidth),
+      height,
+    });
     activePage = page;
     page.on("pageerror", (error) => result.errors.push(error.message));
     if (reportOnly) {
@@ -208,7 +212,10 @@ try {
       .filter({ hasText: "CENTER · STANDING" })
       .waitFor();
     await page.locator("#camera-preview:not([hidden])").waitFor();
-    assert.equal(await page.locator("#game-stage").getAttribute("data-phase"),"ready");
+    assert.equal(
+      await page.locator("#game-stage").getAttribute("data-phase"),
+      "ready",
+    );
     await capture(page, `after-${name}`);
     const expectAction = async (value) =>
       page.locator("#preview-action").filter({ hasText: value }).waitFor();
@@ -236,10 +243,14 @@ try {
     await page.waitForFunction(
       () => document.querySelector("#game-stage").dataset.phase === "playing",
     );
-    await control({missing:true});
-    await page.waitForFunction(()=>document.querySelector("#game-stage").dataset.phase==="paused");
-    await control({missing:false});
-    await page.waitForFunction(()=>document.querySelector("#game-stage").dataset.phase==="playing");
+    await control({ missing: true });
+    await page.waitForFunction(
+      () => document.querySelector("#game-stage").dataset.phase === "paused",
+    );
+    await control({ missing: false });
+    await page.waitForFunction(
+      () => document.querySelector("#game-stage").dataset.phase === "playing",
+    );
     await control({ stale: true });
     await page.waitForFunction(
       () => document.querySelector("#game-stage").dataset.phase === "paused",
@@ -249,9 +260,14 @@ try {
       .filter({ hasText: "STALE" })
       .waitFor();
     assert(await page.locator("#camera-preview").isHidden());
-    const frozen = await page.locator("#score-value, #distance-value").allTextContents();
+    const frozen = await page
+      .locator("#score-value, #distance-value")
+      .allTextContents();
     await capture(page, `stale-${name}`);
-    assert.deepEqual(await page.locator("#score-value, #distance-value").allTextContents(), frozen);
+    assert.deepEqual(
+      await page.locator("#score-value, #distance-value").allTextContents(),
+      frozen,
+    );
     await control({ stale: false });
     // Restart is explicit and creates a new source epoch and standing reference.
     await page.locator("#source-stop").click();
@@ -266,10 +282,14 @@ try {
       .then(async (locked) => {
         if (locked) await page.locator("#new-round").click();
       });
-    await control({spectator:false});
+    await control({ spectator: false });
     await page.locator("#source-connect").click();
     await page.locator("#calibrate-player:not([disabled])").waitFor();
-    assert((await page.locator("#practice-status").textContent()).includes("reference first"));
+    assert(
+      (await page.locator("#practice-status").textContent()).includes(
+        "reference first",
+      ),
+    );
     await page.locator("#calibrate-player").click();
     await expectAction("STANDING");
     await page.locator("#source-stop").click();
