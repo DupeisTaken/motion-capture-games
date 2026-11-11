@@ -108,6 +108,10 @@ describe("independent multiplayer game adapters", () => {
       match.runtimes.get("player-3")!.game.state.elapsedMs,
     ).toBeGreaterThan(p3Time);
     expect(first.state.score).toBeGreaterThan(0);
+    match.finish("player-1");
+    expect(first.state.phase).toBe("results");
+    expect(first.state.score).toBeGreaterThan(0);
+    expect(match.runtimes.get("player-3")!.game.state.phase).toBe("playing");
     match.leave("player-1");
     expect(match.runtimes.has("player-1")).toBe(false);
     expect(match.join("player-1", "spectator", at)).toBe(true);

@@ -117,6 +117,13 @@ export class MultiplayerGame {
     runtime.game.pause("Paused by player. Choose Resume when ready.");
   }
 
+  finish(slotId: PlayerSlotId) {
+    const runtime = this.runtimes.get(slotId);
+    if (!runtime) return;
+    runtime.requested = false;
+    runtime.game.finish();
+  }
+
   resume(slotId: PlayerSlotId) {
     const runtime = this.runtimes.get(slotId);
     if (runtime) runtime.manualPause = false;

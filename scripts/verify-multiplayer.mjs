@@ -60,6 +60,7 @@ const result = {
   screenshots: [],
   errors: [],
   starts: 0,
+  streams: 0,
   baselineRef,
 };
 function packet() {
@@ -132,6 +133,7 @@ function packet() {
 }
 const sockets = new WebSocketServer({ noServer: true, maxPayload: 4096 });
 sockets.on("connection", (socket) => {
+  result.streams++;
   let pending = false;
   socket.on("message", () => {
     if (pending) return;
@@ -418,6 +420,9 @@ try {
   result.checks.push(
     "A returned ID cannot unlock a terminal slot; explicit leave/re-enroll creates a fresh score.",
   );
+  const preservedScores = await page
+    .locator(".multiplayer-score")
+    .allTextContents();
   scene.revision = "synthetic-space-2";
   await page
     .locator('[data-slot="player-1"][data-status="rejoin-required"]')
@@ -425,6 +430,10 @@ try {
   await page
     .locator('[data-slot="player-2"][data-status="rejoin-required"]')
     .waitFor();
+  assert.deepEqual(
+    await page.locator(".multiplayer-score").allTextContents(),
+    preservedScores,
+  );
   result.checks.push(
     "Geometry revision invalidates all affected slots and preserves displayed scores.",
   );
@@ -481,6 +490,8 @@ try {
     "Camera stop freezes all input; restarted epoch requires explicit enrollment without score transfer.",
   );
   assert.equal(result.errors.length, 0, JSON.stringify(result.errors));
+  assert.equal(result.starts, 4);
+  assert.equal(result.streams, 4);
   result.checks.push(
     "English 1440px desktop and 390px mobile screenshots have no horizontal overflow or browser page errors.",
   );

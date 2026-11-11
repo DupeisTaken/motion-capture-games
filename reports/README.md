@@ -1,5 +1,7 @@
 # Change reports
 
+[Playtest multiplayer](playtest-multiplayer.html) records explicit 1–3 anonymous slots, real per-player Mole/Dodgeball engines, spectator isolation, bounded recovery integration, synthetic real-server desktop/mobile evidence and remaining physical gates.
+
 [Playtest tracking](playtest-tracking.html) records scoped spectator ambiguity, body-only MediaPipe bounds, opt-in bounded same-track session recovery, synthetic continuity/wrong-association/suspension metrics, the local held-out route and remaining physical evidence gaps.
 
 [Slap a Mole palm and foot contact](slap-a-mole-palm-contact.html) records the visible Touch rings, palm scoring, replay compatibility and synthetic browser verification.
