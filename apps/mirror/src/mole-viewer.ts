@@ -1,5 +1,5 @@
 import { createResumeControl } from "./resume-control";
-import { moleArt } from "./mole-art";
+import { bombArt, moleArt } from "./mole-art";
 import {
   CameraChoice,
   cameraChoiceMarkup,
@@ -37,7 +37,7 @@ const bombWarning = `Avoid bombs · −${TUNING.bombPenalty} points`;
 
 function targetMarkup(id: (typeof targetSlots)[number]): string {
   const bomb = id === "bomb-target";
-  return `<div id="${id}" class="mole-target${bomb ? " mole-bomb" : ""}" hidden>${bomb ? '<span class="bomb-art" aria-hidden="true"></span>' : moleArt}<progress class="mole-lifetime" max="1" value="1" aria-label="${bomb ? "Bomb" : "Mole"} time remaining"></progress></div>`;
+  return `<div id="${id}" class="mole-target${bomb ? " mole-bomb" : ""}" hidden>${bomb ? bombArt : moleArt}<progress class="mole-lifetime" max="1" value="1" aria-label="${bomb ? "Bomb" : "Mole"} time remaining"></progress></div>`;
 }
 
 const modeCopy: Record<string, string> = {
