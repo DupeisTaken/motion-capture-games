@@ -16,7 +16,7 @@
     section { margin: 32px 0; }
     a { color: #205e47; text-underline-offset: 3px; }
     .date, figcaption, th { color: #455f54; }
-    .layouts { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+    .layouts { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     figure { margin: 0; padding: 12px; background: #fffef9; border: 1px solid #d5dbd1; border-radius: 12px; }
     figure img { display: block; width: 100%; height: auto; border: 1px solid #e1e4db; box-sizing: border-box; border-radius: 7px; }
     figure.mobile img { max-width: 390px; margin: 0 auto; }
@@ -24,6 +24,7 @@
     table { width: 100%; max-width: 600px; border-collapse: collapse; background: #fffef9; }
     th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid #d5dbd1; }
     code { color: #264b3e; }
+    @media (max-width: 680px) { .layouts { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
