@@ -43,6 +43,12 @@ const confirmRound = () => click("confirm-start");
 beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ cameras: [] }) }),
+  );
   audio.enabled = false;
   audio.enable.mockImplementation(async () => {
     audio.enabled = true;
@@ -75,6 +81,44 @@ afterEach(() => {
 });
 
 describe("virtual maze operator workflow", () => {
+  it("exposes the shared navigation owner method contract", () => {
+    const owner: { navigationBlocker(): string | null } = workspace;
+    expect(typeof owner.navigationBlocker).toBe("function");
+    expect(owner.navigationBlocker()).toBeNull();
+  });
+  it("composes pending and failed-release calibration ownership into the shared navigation method", async () => {
+    for (let i = 0; i < 12; i++) await Promise.resolve();
+    const choice = get<HTMLSelectElement>("maze-cal-1-camera-choice");
+    choice.value = "manual";
+    choice.dispatchEvent(new Event("change"));
+    change("cal-optics", "Full frame; locked focus and no zoom");
+    let acknowledge!: (value: Response) => void;
+    vi.mocked(fetch)
+      .mockImplementationOnce(
+        () =>
+          new Promise((done) => {
+            acknowledge = done;
+          }),
+      )
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({ detail: "Driver release unconfirmed" }),
+      } as Response);
+    click("cal-start");
+    expect(workspace.navigationBlocker()).toContain("Stop calibration");
+    click("cal-stop");
+    acknowledge({
+      ok: true,
+      json: async () => ({ epoch: "pending-maze-owned" }),
+    } as Response);
+    for (let i = 0; i < 24; i++) await Promise.resolve();
+    expect(workspace.navigationBlocker()).toContain("Stop calibration");
+    expect(get<HTMLButtonElement>("cal-start").disabled).toBe(true);
+    click("cal-stop");
+    for (let i = 0; i < 24; i++) await Promise.resolve();
+    expect(workspace.navigationBlocker()).toBeNull();
+  });
   it("requires shared setup confirmation before the first round and restores focus on Close or Escape", () => {
     expect(dialog().open).toBe(true);
     expect(document.activeElement).toBe(get("close-settings"));
@@ -207,11 +251,14 @@ describe("virtual maze operator workflow", () => {
     expect(changes).toHaveLength(0);
     observer.disconnect();
   });
-  it("opens no cameras or network and requires explicit start and audio", () => {
+  it("only enumerates camera metadata and requires explicit capture and audio actions", () => {
     expect(dialog().open).toBe(true);
     expect(get("maze-facing").textContent).toBe("Torso");
     expect(audio.enable).not.toHaveBeenCalled();
     expect(audio.setLevel).not.toHaveBeenCalled();
+    expect(
+      vi.mocked(fetch).mock.calls.every(([url]) => url === "/api/cameras"),
+    ).toBe(true);
     confirmRound();
     expect(status()).toContain("running");
     expect(audio.setLevel).not.toHaveBeenCalled();

@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 
 /** Exercise the same shared setup/confirmation path an operator uses. */
 export async function verifyMazeFlow({ page, base, capture, results, sizes }) {
+  await page.route("**/api/cameras", (route) =>
+    route.fulfill({ json: { cameras: [] } }),
+  );
   const dialog = page.locator("#pre-game-settings");
   const change = async (id, value) =>
     page.locator(`#${id}`).evaluate((element, value) => {
@@ -366,8 +369,14 @@ export async function verifyMazeFlow({ page, base, capture, results, sizes }) {
   await page.locator("#maze-return").click();
   await page.locator("#maze-sound").click();
   assert.equal(await page.evaluate(() => window.__mazeAcquisitions), 0);
-  assert.deepEqual(results.requests, []);
+  assert(
+    results.requests.every(
+      (request) =>
+        request.method === "GET" &&
+        new URL(request.url).pathname === "/api/cameras",
+    ),
+  );
   results.checks.push(
-    "Local-only synthetic photo labels remain planning-only; enabled WebAudio has bounded gain, immediate silence during setup/pause, and explicit resume. Operator/participant and setup layouts verified at 1440/390/320 px with zero camera/API requests.",
+    "Local-only synthetic photo labels remain planning-only; enabled WebAudio has bounded gain, immediate silence during setup/pause, and explicit resume. Operator/participant and setup layouts verified at 1440/390/320 px with metadata enumeration only and zero camera acquisition.",
   );
 }

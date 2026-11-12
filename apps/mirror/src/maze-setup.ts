@@ -4,6 +4,7 @@ import { mazeCameraGuideMarkup } from "./maze-camera-guide";
 import { setMazeText } from "./maze-dom";
 import { mazePhotoCornersMarkup } from "./maze-photo-corners";
 import { preGameSettingsMarkup } from "./pre-game-settings";
+import { mazeCalibrationMarkup } from "./maze-calibration";
 import "./maze-setup.css";
 
 export interface MazeSetupDraft {
@@ -20,8 +21,8 @@ export function mazeSetupMarkup(): string {
     <label for="maze-orientation">Direction source</label><select id="maze-orientation" required><option value="torso">Torso</option><option value="head">Head</option></select><p class="maze-hint">Head direction is not eye gaze. Missing selected direction pauses the cue. Changes apply only after Start round.</p>
     <p id="maze-config-status" class="maze-hint" role="status">Confirm Start round to generate this maze and reset the player.</p></form>`;
   const videoOptions = `<label for="maze-source">Input source</label><select id="maze-source" required><option value="synthetic">Synthetic rehearsal · no cameras</option><option value="physical" disabled>Physical two-camera input · unavailable</option></select>
-    <p class="maze-hint">This version opens no cameras. Physical input needs validated metric XYZ, identity, source timing and the selected facing direction. Planning notes cannot enable it.</p>
-    ${mazeCameraGuideMarkup()}${mazePhotoCornersMarkup()}`;
+    <p class="maze-hint">Rounds use synthetic input. Live floor calibration below opens a camera only after Start camera. Physical play still needs validated body position, identity, timing and facing direction.</p>
+    ${mazeCalibrationMarkup()}${mazeCameraGuideMarkup()}${mazePhotoCornersMarkup()}`;
   return preGameSettingsMarkup("Virtual Maze", gameOptions, videoOptions);
 }
 
