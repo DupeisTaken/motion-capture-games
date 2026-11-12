@@ -31,7 +31,7 @@
   <header>
     <h1>Motion Runner body-width lanes and start</h1>
     <p>Camera lanes follow the player’s standing reference. One Start press waits for fresh standing input and begins the countdown.</p>
-    <p><a href="https://github.com/DupeisTaken/motion-capture-games/issues/73">Issue #73</a> · <a href="../docs/games/motion-runner.md">Runner design</a></p>
+    <p><a href="https://github.com/DupeisTaken/motion-capture-games/issues/73">Issue #73</a> · <a href="https://github.com/DupeisTaken/motion-capture-games/pull/74">PR #74</a> · <a href="../docs/games/motion-runner.md">Runner design</a></p>
   </header>
   <section aria-labelledby="behavior">
     <h2 id="behavior">Camera controls</h2>
@@ -63,6 +63,7 @@
       <li><code>pnpm check</code> passed on Windows, including 932 TypeScript tests and 314 Python tests. The initial restricted-shell attempt stalled in pytest. The complete rerun used a workspace-local pytest temporary directory.</li>
       <li><code>pnpm build</code> passed and validated all seven application entries. Vite reported the existing bundle-size warning.</li>
       <li>Chrome 157 loaded the previous and updated builds through Vite over local HTTP, with synthetic JPEG and pose packets delivered over a WebSocket. Both viewport sizes had no page errors or horizontal overflow. The updated build also started in keyboard rehearsal and paused when the synthetic camera was stopped.</li>
+      <li>The offline report loaded all eight embedded screenshots on desktop and mobile. The local launcher served the verified Runner build, and a browser rehearsal reached playing and recorded distance.</li>
     </ul>
     <p>Camera accuracy, comfortable step distance across participants, and physical action-to-display latency require hardware trials.</p>
   </section>
