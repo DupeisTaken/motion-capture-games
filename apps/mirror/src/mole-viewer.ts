@@ -1,3 +1,4 @@
+import { createMultiplayerView } from "./multiplayer-view";
 import { createResumeControl } from "./resume-control";
 import { bombArt, moleArt } from "./mole-art";
 import { renderMoleTargets } from "./mole-targets";
@@ -100,7 +101,7 @@ export function mountMoleGame(
     get("game-stage"),
     listeners.signal,
   );
-  const session = new SinglePlayerSession();
+  const session = new SinglePlayerSession({ recoveryWindowMs: 450 });
   const nextSeed = () => deps.seed ?? Math.floor(Math.random() * 4_294_967_296);
   let game = new MoleGame({}, nextSeed());
   let interaction: GameOptions["interaction"] = "touch";
@@ -132,6 +133,10 @@ export function mountMoleGame(
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
   const setup = createPreGameSettings(root, () => {
+    if (multiplayer.enabled()) {
+      multiplayer.start();
+      return;
+    }
     resetGame();
     requested = true;
     manualPaused = false;
@@ -162,6 +167,14 @@ export function mountMoleGame(
     difficulty: select("difficulty-select").value as GameOptions["difficulty"],
     interaction,
   });
+  const multiplayer = createMultiplayerView(
+    root,
+    "mole",
+    config,
+    now,
+    nextSeed(),
+    () => display.close(),
+  );
   function setMessage(message: string) {
     if (get("setup-input-status").textContent !== message)
       get("setup-input-status").textContent = message;
@@ -518,6 +531,8 @@ export function mountMoleGame(
   }
   function ingestCamera() {
     if (!observation) return;
+    multiplayer.ingest(observation, image, receivedAt);
+    if (multiplayer.enabled()) return;
     const revision = observationSpaceRevision(observation);
     const receiptGap = cameraLastReceipt ? receivedAt - cameraLastReceipt : 0;
     cameraLastReceipt = receivedAt;
@@ -530,13 +545,7 @@ export function mountMoleGame(
     );
     const override = select("player-track").value;
     // Explicit identity loss cannot prove who returned: restart rather than attach an old score.
-    if (
-      roundOwner &&
-      (receiptGap > MAX_RECOVERY_GAP_MS ||
-        tracks.filter((person) => person.trackId === roundOwner!.trackId)
-          .length !== 1)
-    )
-      needsNewOwner = true;
+    if (roundOwner && receiptGap > MAX_RECOVERY_GAP_MS) needsNewOwner = true;
     if (!roundOwner && !override && tracks.length !== 1) {
       session.release();
       readySince = null;
@@ -549,14 +558,13 @@ export function mountMoleGame(
       needsNewOwner = true;
     const previousBinding = session.binding;
     frame = previousBinding ? session.ingest(observation, receivedAt) : null;
+    if (session.recovered)
+      game.pause(
+        "Tracking recovered. Reset movement for the recovery countdown.",
+      );
     if (previousBinding && !session.binding) {
       readySince = null;
-      if (
-        !/missing or uncertain|Tracking was interrupted/.test(
-          session.reason || "",
-        )
-      )
-        needsNewOwner = !!roundOwner;
+      needsNewOwner = !!roundOwner;
     }
     if (!session.binding && !needsNewOwner) {
       // Automatic admission is only for a unique confident identity, never array order.
@@ -584,7 +592,17 @@ export function mountMoleGame(
   }
   function tick() {
     if (disposed) return;
+    if (multiplayer.enabled()) {
+      multiplayer.tick();
+      updateReleaseControls();
+      return;
+    }
     const t = now();
+    if (!isDemo() && session.expire(t)) {
+      frame = null;
+      readySince = null;
+      needsNewOwner = !!roundOwner;
+    }
     if (isDemo()) {
       demoJoined = true;
       frame = demoFrame(t);
@@ -609,10 +627,12 @@ export function mountMoleGame(
       game.resume(t);
     updateTrackChoices();
     render();
+    multiplayer.tick();
   }
   async function stopCamera(
     message = "Camera stopped. Start it again when ready.",
   ) {
+    multiplayer.interrupt(message, true);
     generation++;
     connecting = false;
     cameraMessage = message;
@@ -713,11 +733,13 @@ export function mountMoleGame(
                 status.message || "Camera stopped. Reconnect to continue.",
               );
             if (status.state === "stale") {
+              multiplayer.interrupt(
+                "Camera input is stale. Waiting for fresh input.",
+              );
               frame = null;
               observation = null;
               image?.close();
               image = null;
-              session.release();
               readySince = null;
               game.pause(
                 "Camera input is stale. Waiting for the same participant.",
@@ -940,6 +962,7 @@ export function mountMoleGame(
     tick,
     dispose() {
       disposed = true;
+      multiplayer.dispose();
       setup.dispose();
       cameraChoice.dispose();
       listeners.abort();

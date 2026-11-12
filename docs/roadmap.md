@@ -101,6 +101,8 @@ Wrist-flap extension: [issue #29](https://github.com/DupeisTaken/motion-capture-
 - Verify camera loss, recovery, capacity rejection and calibration changes.
 - Include real-server UI screenshots, applicable tests and the HTML report.
 
+**Experimental multiplayer software:** [Issue #59](https://github.com/DupeisTaken/motion-capture-games/issues/59) adds explicit 1–3 anonymous slots and independent Mole/Dodgeball runtimes, targets/obstacles, scores and active clocks using one camera stream. Spectators stay unenrolled; quality failures suspend affected attribution. [The multiplayer policy](multiplayer.md) and [delivery report](../reports/playtest-multiplayer.html) distinguish software evidence from still-open three-person physical trials, hardware capacity, crossing/occlusion accuracy and latency. Runner/Maze remain single-player.
+
 ## M3: Fruit slicing
 
 **Problem:** Recognize fast swept movement between sparse observations without phantom interactions.

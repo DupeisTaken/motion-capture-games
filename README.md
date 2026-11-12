@@ -2,7 +2,7 @@
 
 A collection of local games played through body movement, with immediate on-screen feedback in a mirrored camera view or a rendered game world.
 
-**Status: diagnostic viewer, experimental Slap a Mole, Dodgeball and Motion Runner games, and Virtual Maze rehearsal.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Slap a Mole](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both offer a combined pre-game setup menu, raw mirrored camera pictures and an optional separate game window. [Virtual Maze](docs/games/virtual-maze.md) adds camera-free metric maze generation and directional sound. Production model selection, calibrated push input, physical collision tuning, multiplayer games, live multi-view reconstruction and hardware certification remain open.
+**Status: diagnostic viewer, experimental Slap a Mole, Dodgeball and Motion Runner games, and Virtual Maze rehearsal.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Slap a Mole](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both offer a combined pre-game setup menu, raw mirrored camera pictures and an optional separate game window. [Virtual Maze](docs/games/virtual-maze.md) adds camera-free metric maze generation and directional sound. Production model selection, calibrated push input, physical collision tuning, multiplayer hardware certification, live multi-view reconstruction and hardware certification remain open.
 
 ## Open the game directory
 
@@ -61,6 +61,8 @@ Both games default to **Camera** and list connected devices on load. Choose a de
 Open [Slap a Mole](http://127.0.0.1:5173/mole.html) or [Dodgeball](http://127.0.0.1:5173/dodgeball.html) after starting the local server. Both offer camera-free rehearsal and a combined video/game setup menu before every new round. Its Start confirmation waits for usable input. Dodgeball previews each virtual ball with a warning ring: move your body clear before impact. Spectators can enter the frame during a round while the joined player remains reliably tracked. Missing feet, joints or uncertain tracking pause the round. See [the dodgeball design](docs/games/dodgeball.md) and [delivery report](reports/dodgeball.html).
 
 These are early experimental game slices. Physical framing/collision accuracy, participant height and movement tuning, hardware capacity and latency still require M1/M4 evidence.
+
+Mole and Dodgeball also offer **Multiplayer · experimental 1–3 players** under Camera setup. Select a visible track and **Enroll** for each anonymous slot, close setup, then **Start enrolled players**. Each labeled panel has an independent game and score; other detections remain spectators. Tracking problems pause affected attribution. Leaving clears that slot’s score; new identities never inherit it. Multiplayer uses the same camera stream and stays inline. See [multiplayer policy](docs/multiplayer.md) and [software evidence](reports/playtest-multiplayer.html); three-player physical capacity and continuity remain unmeasured.
 
 ## Play Motion Runner
 

@@ -57,6 +57,8 @@ The session runtime controls joining, practice, countdown, playing, pause, resul
 
 The experimental single-player UI combines participation intent with Start and waits for stable input. Session membership still uses the canonical track/epoch boundary; explicit identity loss cannot resume an old score on a guessed participant. An optional separate game window reparents the existing stage, HUD and interaction listeners. It shares the operator's one runtime, packet decoder and acquisition; the ticker moves to the game window to avoid background operator throttling. Closing returns the stage and focus. Tracking graphics are operator-only and camera pixels are not tinted. This browser arrangement supports Windows, macOS and Linux without selecting a native desktop packaging stack.
 
+The optional [Mole/Dodgeball multiplayer board](multiplayer.md#experimental-mole-and-dodgeball-multiplayer) composes up to three independent game engines from the same observation/image owner. Anonymous outer slot IDs remain separate from each engine's legacy local player-1 input. Personal targets, balls, scores and active clocks never share collision outcomes. Source/clock/geometry faults invalidate affected memberships; compatible short same-ID recovery pauses engines and clears action history before countdown. This is an experimental software capacity declaration, not hardware certification. Single-player and runner/maze admission remain separate policies.
+
 ## Provisional technologies
 
 | Area | First candidate | Required evidence |
