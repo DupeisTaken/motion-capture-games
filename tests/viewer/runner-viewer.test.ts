@@ -364,6 +364,71 @@ describe("runner application", () => {
     choose("source-select", "demo");
     expect(element("body-preview").hidden).toBe(true);
   });
+  it("starts on one press despite a noisy hip and shows the calibrated lane guides", async () => {
+    const socket = await startCamera();
+    let sequence = 0;
+    const send = (x = 0, hipNoise = 0) => {
+      now += 50;
+      const value = observation(++sequence);
+      for (const joint of Object.values(value.people[0].joints))
+        if (joint?.x != null) joint.x += x;
+      value.people[0].joints.left_hip!.y! += hipNoise;
+      socket.onmessage?.({ data: packet(value) });
+    };
+    send(0.05);
+    expect(element("lane-guides").hasAttribute("hidden")).toBe(true);
+    click("calibrate-player");
+    expect(element("lane-guides").hasAttribute("hidden")).toBe(false);
+    expect(Number(element("lane-guide-left").getAttribute("x"))).toBeCloseTo(
+      27,
+    );
+    expect(Number(element("lane-guide-center").getAttribute("x"))).toBeCloseTo(
+      45,
+    );
+    expect(Number(element("lane-guide-right").getAttribute("x"))).toBeCloseTo(
+      63,
+    );
+    click("overlay-start");
+    expect(state().phase).toBe("ready");
+    expect(element("overlay-copy").textContent).toMatch(/stand comfortably/i);
+    expect(element("overlay-start").textContent).toBe("Cancel start");
+    send(0.05, 0.022);
+    send(0.05, -0.022);
+    expect(state().phase).toBe("ready");
+    expect(element("player-badge").textContent).toBe("STAND TO START");
+    send(0.05, 0.022);
+    expect(state().phase).toBe("countdown");
+    for (let index = 0; index < 65; index++) send(0.05, 0.022);
+    expect(state().phase).toBe("playing");
+    for (let index = 0; index < 6; index++) send(0.17);
+    expect(state().avatarX).toBe(-1);
+    for (let index = 0; index < 6; index++) send(0.05);
+    expect(state().avatarX).toBe(0);
+    for (let index = 0; index < 6; index++) send(-0.07);
+    expect(state().avatarX).toBe(1);
+  });
+  it("shows the missing camera step in the stage and lets either Start control cancel", async () => {
+    choose("source-select", "camera");
+    await flush();
+    click("overlay-start");
+    expect(element("overlay-copy").textContent).toMatch(/start the camera/i);
+    expect(fetchMock.mock.calls.some(([url]) => url === "/api/start")).toBe(
+      false,
+    );
+    click("start-round");
+    const socket = await startCamera();
+    now += 50;
+    socket.onmessage?.({ data: packet(observation(1)) });
+    click("calibrate-player");
+    for (let sequence = 2; sequence <= 6; sequence++) {
+      now += 50;
+      socket.onmessage?.({ data: packet(observation(sequence)) });
+    }
+    expect(state().phase).toBe("ready");
+    expect(element("overlay-start").textContent).toMatch(
+      /start body-controlled/i,
+    );
+  });
   it("recovers only the same track after brief loss, freezes scoring, and expires without packets", async () => {
     const socket = await startCamera();
     let sequence = 0;
