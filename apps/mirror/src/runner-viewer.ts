@@ -16,6 +16,7 @@ import { SinglePlayerSession } from "../../../packages/session/src/index";
 import { CameraChoice, cameraChoiceMarkup } from "./camera-choice";
 import { CameraReleases } from "./camera-release";
 import { createRunnerRenderer } from "./runner-renderer";
+import { RunnerPreview } from "./runner-preview";
 
 type Skin = "nova" | "moss" | "ember";
 const titles = { rail: "Neon Rails", gold: "Gold Rush" };
@@ -43,14 +44,15 @@ export function mountRunnerGame(
     </div>
     <div class="runner-toolbar"><p id="game-status" role="status" aria-live="polite">Choose your input, then start your run.</p><div><button id="start-round" class="runner-primary">Start run →</button><button id="pause-round" hidden>Pause</button><button id="new-round" hidden>New run</button><button id="end-round" hidden>End run</button></div></div>
     <div class="runner-controls" id="demo-controls"><span>REHEARSAL CONTROLS</span><div class="lane-buttons" role="group" aria-label="Choose lane"><button id="lane-left" aria-label="Select left lane">← <span>Left</span></button><button id="lane-center" aria-label="Select center lane">● <span>Center</span></button><button id="lane-right" aria-label="Select right lane"><span>Right</span> →</button></div><div class="action-buttons"><button id="jump-action">↑ <span>Jump</span></button><button id="duck-action" aria-pressed="false">↓ <span>Roll</span></button></div><p>Keyboard: ← / C / → lanes · Space jump · hold ↓ to roll.<br>Touch: tap a lane or Jump; hold Roll.</p></div>
-    <div class="runner-principles"><p><strong>Move to a lane</strong><span>Left, center or right. Holding a position keeps your lane.</span></p><p><strong>Jump & roll</strong><span>Jump low hurdles. Duck under the overhead gates.</span></p><p><strong>Your run stays yours</strong><span>Spectators can enter the frame. The game pauses if it loses your tracking.</span></p></div>
+    <section id="body-preview" class="body-preview" aria-label="Live body control preview" hidden><div class="preview-heading"><div><p class="eyebrow">LEARN YOUR CONTROLS</p><h2>Your movement, live.</h2></div><label class="runner-check"><input id="show-preview" type="checkbox" checked> Show camera</label></div><p>Move your mirrored image into a third to choose a lane. Set standing, then lift your head and torso to jump; lower both to roll.</p><div class="preview-picture"><canvas id="camera-preview" width="640" height="480" aria-label="Mirrored camera from the existing body tracking source"></canvas><svg id="preview-guides" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Lane thirds and calibrated head height guides"><path d="M33.333 0V100 M66.667 0V100" class="third-lines"/><g class="third-labels"><text x="16.67" y="9">LEFT</text><text x="50" y="9">CENTER</text><text x="83.33" y="9">RIGHT</text></g><g id="head-guides" hidden><line id="jump-guide" x1="0" x2="100"/><line id="standing-guide" x1="0" x2="100"/><line id="duck-guide" x1="0" x2="100"/><circle id="head-marker" r="1.8"/></g></svg><p id="preview-empty">Start camera to see your controls.</p></div><div class="preview-readout"><strong id="preview-action">WAITING FOR PLAYER</strong><span id="preview-freshness" role="status">Camera off</span><span id="preview-age"></span></div><p id="preview-thresholds">Head guides appear after Set standing reference. Green: jump · white: standing · amber: roll.</p></section>
+    <div class="runner-principles"><p><strong>Move to a lane</strong><span>Left, center or right image third. Holding a position keeps your lane.</span></p><p><strong>Jump & roll</strong><span>Jump low hurdles. Duck under the overhead gates.</span></p><p><strong>Your run stays yours</strong><span>Spectators can enter the frame. The game pauses if it loses your tracking.</span></p></div>
   </section><aside class="runner-settings" aria-label="Run setup"><div class="runner-section-label"><span>MAKE IT YOURS</span><span>01</span></div><h2>Choose your escape.</h2>
     <label for="world-select">World</label><select id="world-select"><option value="rail">Neon Rails · the mint skyline</option><option value="gold">Gold Rush · a sunlit getaway</option></select><p class="field-note" id="world-description">A mint skyline, railway runs and colorful city streets.</p>
     <label for="skin-select">Runner skin</label><select id="skin-select"><option value="nova">Nova · cobalt & mint</option><option value="moss">Moss · forest explorer</option><option value="ember">Ember · sunset sprint</option></select><div class="skin-swatches" aria-hidden="true"><i class="nova"></i><i class="moss"></i><i class="ember"></i><span>All skins included. Same abilities.</span></div>
     <div class="runner-pace"><label class="runner-check pace-option"><input id="fast-start" type="checkbox" role="switch" aria-label="Fast start" aria-describedby="pace-description"><span><strong>Fast start</strong><small>A quicker opening pace.</small></span></label><p class="field-note" id="pace-description">Off: 10 m/s · On: 14 m/s. Both build up to 18 m/s.</p></div>
     <label class="runner-check"><input id="practice-mode" type="checkbox"> Practice · no penalties</label>
     <div class="runner-section-label input-section"><span>YOUR CONTROLLER</span><span>02</span></div><label for="source-select">Input</label><select id="source-select"><option value="demo">Rehearsal · keyboard & touch</option><option value="camera">Camera · body tracking</option></select>
-    <div id="camera-controls">${cameraChoiceMarkup}<div class="camera-actions"><button id="source-connect">Start camera</button><button id="source-stop" disabled>Stop camera</button></div><p class="field-note" id="camera-status" role="status">Camera stays off until you choose Start camera. Gameplay never displays camera images.</p><div id="camera-release" hidden><p id="camera-release-message" role="status"></p><button id="retry-camera-stop">Retry camera stop</button></div><button id="calibrate-player" disabled>Set standing center</button><p class="field-note">Stand comfortably at center, whole body and both feet in view. Then rehearse each move below.</p><div id="practice-checklist" aria-label="Camera movement practice">${practiceLabels.map((label, index) => `<span id="practice-${index}">${label}</span>`).join("")}</div><p class="field-note" id="practice-status" role="status">Practice all moves before starting your first run.</p></div>
+    <div id="camera-controls">${cameraChoiceMarkup}<div class="camera-actions"><button id="source-connect">Start camera</button><button id="source-stop" disabled>Stop camera</button></div><p class="field-note" id="camera-status" role="status">Camera stays off until you choose Start camera. The learning preview shares body tracking; the game stays rendered.</p><div id="camera-release" hidden><p id="camera-release-message" role="status"></p><button id="retry-camera-stop">Retry camera stop</button></div><button id="calibrate-player" disabled>Set standing reference</button><p class="field-note">Stand comfortably with your head, shoulders and hips in view. Set this height again if the camera moves. Try the moves below if you like; they do not block Start.</p><div id="practice-checklist" aria-label="Optional camera movement practice">${practiceLabels.map((label, index) => `<span id="practice-${index}">${label}</span>`).join("")}</div><p class="field-note" id="practice-status" role="status">Set standing, try a move, then Start run when ready.</p></div>
     <div id="rehearsal-note" hidden><p class="rehearsal-note">Camera-free simulation. Choose Start run, then use the keyboard or touch controls.</p><details><summary>Tracking rehearsal</summary><label class="runner-check"><input id="demo-extra" type="checkbox"> Simulate a spectator</label><label class="runner-check"><input id="demo-missing" type="checkbox"> Simulate lost tracking</label></details></div>
     <div class="runner-safety"><strong>A little room to move.</strong><p>One player only. Clear space for small side steps, jumping and ducking. Tracking accuracy and physical timing are experimental.</p></div>
   </aside></div><footer class="runner-footer">Original worlds & characters · Local play · English <span>No recording. No camera image on the game screen.</span></footer></main>`;
@@ -90,8 +92,9 @@ export function mountRunnerGame(
       return { render() {}, dispose() {} };
     }
   })();
-  const session = new SinglePlayerSession();
+  const session = new SinglePlayerSession({ recoveryWindowMs: 450 });
   const pose = new RunnerPoseControls();
+  const preview = new RunnerPreview(get<HTMLCanvasElement>("camera-preview"));
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
   let disposed = false;
@@ -100,9 +103,11 @@ export function mountRunnerGame(
   let cameraInput: RunnerInput | null = null;
   let observation: Observation | null = null;
   let receivedAt = -Infinity;
+  let trackingStale = false;
   let cameraEpoch = "";
   let generation = 0;
   let connecting = false;
+  const pendingStarts = new Set<number>();
   let startupUncertain = false;
   let socket: WebSocket | null = null;
   let demoEpoch = 1;
@@ -128,6 +133,7 @@ export function mountRunnerGame(
     const release = releases.state;
     cameraChoice.setLocked(
       connecting ||
+        pendingStarts.size > 0 ||
         !!cameraEpoch ||
         release.pendingCount > 0 ||
         startupUncertain,
@@ -137,6 +143,7 @@ export function mountRunnerGame(
     get<HTMLButtonElement>("retry-camera-stop").disabled = release.releasing;
     get<HTMLButtonElement>("source-connect").disabled =
       connecting ||
+      pendingStarts.size > 0 ||
       !!cameraEpoch ||
       release.pendingCount > 0 ||
       startupUncertain;
@@ -164,6 +171,7 @@ export function mountRunnerGame(
     pose.reset();
     calibratedBase = null;
     cameraInput = null;
+    preview.clear();
     practiced.clear();
     lastHits = 0;
     lastCoins = 0;
@@ -206,67 +214,74 @@ export function mountRunnerGame(
     if (!observation || ownershipChanged) return;
     const value = observation;
     const binding = session.binding;
-    const participant = owner
+    const selected = owner ?? binding;
+    const participant = selected
       ? value.people.find(
           (person) =>
-            person.trackId === owner!.trackId &&
+            person.trackId === selected.trackId &&
             person.identity === "confident",
         )
       : value.people.length === 1 && value.people[0].identity === "confident"
         ? value.people[0]
         : null;
-    if (owner && (!participant || value.epoch !== owner.epoch)) {
-      ownershipChanged = true;
-      cameraInput = null;
-      game.pause("Player identity changed. Start a new run.");
-      cameraMessage(
-        "Player identity changed. Choose New run; a different person cannot inherit this score.",
-      );
-      return;
-    }
-    if (!participant?.trackId) {
+    if (!binding && !participant?.trackId) {
       cameraInput = null;
       cameraMessage(
         value.people.length > 1
           ? "Stand alone in view to set up body controls."
-          : "Keep one clearly tracked player and both feet in view.",
+          : "Keep the intended player clearly tracked with shoulders and hips in view.",
       );
       return;
     }
     const base = binding
       ? session.ingest(value, receivedAt)
-      : session.join(value, participant.trackId, receivedAt);
+      : !owner && participant?.trackId
+        ? session.join(value, participant.trackId, receivedAt)
+        : null;
     if (!base) {
+      pose.suspend();
+      calibratedBase = null;
       cameraInput = null;
       if (owner && !session.binding) ownershipChanged = true;
+      if (active())
+        game.pause(
+          session.reason ?? "Waiting for the same player. Scoring is paused.",
+        );
       cameraMessage(session.reason ?? "Waiting for fresh tracking.");
       return;
+    }
+    if (session.recovered) {
+      pose.suspend();
+      if (active())
+        game.pause(
+          "Tracking recovered. Stand comfortably for the recovery countdown.",
+        );
     }
     calibratedBase = base;
     if (!pose.calibrated) {
       cameraInput = null;
       cameraMessage(
-        "Player found. Stand at center, then choose Set standing center.",
+        "Player found. Stand comfortably, then choose Set standing reference.",
       );
       return;
     }
-    cameraInput = pose.ingest(value, base, participant.trackId);
+    cameraInput = pose.ingest(value, base, session.binding!.trackId);
     recordPractice(cameraInput);
     cameraMessage(
       cameraInput.valid
-        ? "Body controls ready. Your image stays off the game screen."
+        ? "Body controls ready. Try the live preview, then Start run when ready."
         : (cameraInput.reason ?? "Keep your whole body in view."),
     );
   }
   function currentInput(t: number) {
-    return isDemo() ? demoInput(t) : cameraInput;
+    return isDemo()
+      ? demoInput(t)
+      : trackingStale || t - receivedAt > 350
+        ? null
+        : cameraInput;
   }
   function canStart(t: number, input: RunnerInput | null) {
-    if (
-      !isDemo() &&
-      (!pose.calibrated || practiced.size < practiceLabels.length)
-    )
-      return false;
+    if (!isDemo() && !pose.calibrated) return false;
     return (
       !renderingUnavailable &&
       !ownershipChanged &&
@@ -287,10 +302,10 @@ export function mountRunnerGame(
         "game-status",
         isDemo()
           ? "Release Jump or Roll and make sure tracking is ready before starting."
-          : !pose.calibrated || practiced.size < practiceLabels.length
-            ? "Start the camera, set your standing center and rehearse all six movement checks first."
+          : !pose.calibrated
+            ? "Start the camera and set a comfortable standing reference in the live preview."
             : !input?.standing
-              ? "Stand comfortably with both feet grounded before starting."
+              ? "Return to your comfortable standing reference before starting."
               : "Waiting for fresh control input from the same player.",
       );
       get(
@@ -308,10 +323,72 @@ export function mountRunnerGame(
     tick();
     get("game-stage").focus();
   }
+  function renderPreview(t: number, input: RunnerInput | null) {
+    get("body-preview").hidden = isDemo();
+    const stale = trackingStale || t - receivedAt > 350;
+    if (stale && preview.atMs !== -Infinity) preview.clear();
+    const pixels = checked("show-preview") && !stale && t - preview.atMs <= 350;
+    get("camera-preview").hidden = !pixels;
+    get("preview-empty").hidden = pixels;
+    setText(
+      "preview-empty",
+      !cameraEpoch
+        ? "Start camera to see your controls."
+        : stale
+          ? "Tracking stale · scoring paused"
+          : !checked("show-preview")
+            ? "Camera hidden · controls still live"
+            : "Waiting for camera picture…",
+    );
+    const feedback = !stale && input?.valid ? pose.feedback : null;
+    get("head-guides").toggleAttribute("hidden", !feedback);
+    if (feedback) {
+      for (const [id, value] of [
+        ["jump-guide", feedback.jumpY],
+        ["standing-guide", feedback.standingY],
+        ["duck-guide", feedback.duckY],
+      ] as const) {
+        get(id).setAttribute("y1", String(value * 100));
+        get(id).setAttribute("y2", String(value * 100));
+      }
+      get("head-marker").setAttribute("cx", String(feedback.displayX * 100));
+      get("head-marker").setAttribute("cy", String(feedback.headY * 100));
+      setText(
+        "preview-thresholds",
+        `Head y ${(feedback.headY * 100).toFixed(1)}% · Jump above ${(feedback.jumpY * 100).toFixed(1)}% · Roll below ${(feedback.duckY * 100).toFixed(1)}% · ${feedback.evidence}. Green: jump · white: standing · amber: roll.`,
+      );
+    }
+    setText(
+      "preview-action",
+      feedback && input
+        ? `${["LEFT", "CENTER", "RIGHT"][input.lane + 1]} · ${input.jump || feedback.airborne ? "JUMP" : input.duck ? "ROLL" : input.standing ? "STANDING" : "SETTLING"}`
+        : "WAITING FOR USABLE BODY",
+    );
+    setText(
+      "preview-freshness",
+      !cameraEpoch
+        ? "Camera off"
+        : stale
+          ? "STALE · scoring paused"
+          : input?.valid
+            ? "Fresh body"
+            : pose.calibrated
+              ? (cameraInput?.reason ??
+                "Occluded or uncertain · scoring paused")
+              : "Live · set standing reference",
+    );
+    setText(
+      "preview-age",
+      !stale && input?.valid
+        ? `Body ${Math.max(0, Math.round((t - input.atMs) / 50) * 50)} ms mapped age · ${pixels ? `picture ${Math.max(0, Math.round((t - preview.atMs) / 50) * 50)} ms receipt age` : "picture hidden or waiting"}`
+        : "",
+    );
+  }
   function render(t: number, input: RunnerInput | null) {
     const state = game.state;
     get("game-stage").dataset.phase = state.phase;
     root.dataset.runnerPhase = state.phase;
+    renderPreview(t, input);
     if (!renderingUnavailable)
       renderer.render(
         state,
@@ -338,7 +415,7 @@ export function mountRunnerGame(
     setText("world-title", titles[options().variant]);
     setText(
       "source-label",
-      isDemo() ? "CAMERA-FREE REHEARSAL" : "BODY TRACKING · NO VIDEO",
+      isDemo() ? "CAMERA-FREE REHEARSAL" : "BODY TRACKING",
     );
     setText("score-value", String(state.score).padStart(5, "0"));
     setText("coins-value", String(state.coins));
@@ -373,7 +450,7 @@ export function mountRunnerGame(
         "overlay-copy",
         isDemo()
           ? "Choose a lane. Jump the hurdles. Roll under the gates. Keyboard and touch controls are ready."
-          : "One player. Three lanes. Set your standing center and practice each move, then make your escape.",
+          : "Set a comfortable standing reference. Try the live lane and head guides, then Start run when ready.",
       );
     } else if (state.phase === "countdown") {
       setText("overlay-kicker", "FIND YOUR FLOW");
@@ -435,7 +512,8 @@ export function mountRunnerGame(
       locked ||
       !calibratedBase ||
       !observation ||
-      observation.people.length !== 1 ||
+      trackingStale ||
+      t - (calibratedBase?.atMs ?? -Infinity) > 350 ||
       t - receivedAt > 350;
     for (let index = 0; index < practiceLabels.length; index++) {
       get(`practice-${index}`).classList.toggle(
@@ -450,8 +528,8 @@ export function mountRunnerGame(
     setText(
       "practice-status",
       practiced.size === practiceLabels.length
-        ? "All movements rehearsed. Stand tall, then Start run."
-        : `${practiced.size} / ${practiceLabels.length} moves rehearsed. ${pose.calibrated ? "Step left, center and right; jump, duck and stand." : "Set your standing center first."}`,
+        ? "All movements rehearsed. Stand comfortably, then Start run."
+        : `${practiced.size} / ${practiceLabels.length} optional moves tried. ${pose.calibrated ? "Stand comfortably, then Start run whenever ready." : "Set your standing reference first."}`,
     );
     for (const [id, lane] of [
       ["lane-left", -1],
@@ -495,6 +573,19 @@ export function mountRunnerGame(
   }
   function tick() {
     if (disposed) return;
+    if (!isDemo() && session.expire(now())) {
+      pose.reset();
+      calibratedBase = null;
+      cameraInput = null;
+      if (owner) ownershipChanged = true;
+      if (active())
+        game.pause(
+          "Tracking recovery expired. Choose New run; score ownership stays protected.",
+        );
+      cameraMessage(session.reason ?? "Tracking expired. Set standing again.");
+    }
+    if (!isDemo() && (trackingStale || now() - receivedAt > 350))
+      pose.suspend();
     const t = now(),
       input = currentInput(t);
     game.step(t, ownershipChanged || renderingUnavailable ? null : input);
@@ -527,6 +618,9 @@ export function mountRunnerGame(
     calibratedBase = null;
     cameraInput = null;
     observation = null;
+    trackingStale = false;
+    receivedAt = -Infinity;
+    preview.clear();
     if (active()) {
       ownershipChanged = true;
       game.pause(message);
@@ -541,6 +635,7 @@ export function mountRunnerGame(
   async function startCamera() {
     if (
       connecting ||
+      pendingStarts.size > 0 ||
       cameraEpoch ||
       releases.state.pendingCount ||
       startupUncertain ||
@@ -555,6 +650,7 @@ export function mountRunnerGame(
       return;
     }
     const own = ++generation;
+    pendingStarts.add(own);
     connecting = true;
     cameraMessage("Starting local body tracking…");
     updateReleaseControls();
@@ -607,11 +703,12 @@ export function mountRunnerGame(
               throw new Error(status.message || "Camera stopped.");
             if (status.state === "stale") {
               cameraInput = null;
+              trackingStale = true;
+              pose.suspend();
+              preview.clear();
               game.pause("Tracking is stale. The world is paused.");
             }
           } else {
-            // JPEG is deliberately neither decoded nor drawn: the same native
-            // capture supplies observations without exposing camera imagery.
             const packet = decodeFramePacket(event.data);
             if (
               packet.observation.source !== "camera" ||
@@ -624,8 +721,11 @@ export function mountRunnerGame(
             sequence = packet.observation.sequence;
             observation = packet.observation;
             receivedAt = now();
+            trackingStale = false;
             connecting = false;
             ingestCamera();
+            if (checked("show-preview"))
+              preview.push(packet.jpeg, receivedAt, now);
           }
           tick();
         } catch (error) {
@@ -658,6 +758,7 @@ export function mountRunnerGame(
           error instanceof Error ? error.message : String(error),
         );
     } finally {
+      pendingStarts.delete(own);
       if (own === generation) connecting = false;
       if (!disposed) tick();
     }
@@ -721,18 +822,30 @@ export function mountRunnerGame(
   listen(get("source-connect"), "click", () => void startCamera());
   listen(get("source-stop"), "click", () => void stopCamera());
   listen(get("retry-camera-stop"), "click", () => void releases.retry());
+  listen(get("show-preview"), "change", () => {
+    preview.clear();
+    tick();
+  });
   listen(get("calibrate-player"), "click", () => {
     const binding = session.binding;
-    if (!observation || !calibratedBase || !binding || active()) return;
+    if (
+      !observation ||
+      !calibratedBase ||
+      !binding ||
+      active() ||
+      trackingStale ||
+      now() - receivedAt > 350
+    )
+      return;
     if (pose.calibrate(observation, calibratedBase, binding.trackId)) {
       practiced.clear();
       practiced.add(1);
       cameraMessage(
-        "Standing center set. Rehearse left, right, jump, duck and stand.",
+        "Standing reference set. Try a move in the preview, or stand comfortably and Start run.",
       );
     } else
       cameraMessage(
-        "Calibration needs one confidently tracked standing player, with shoulders, hips, knees and both ankles visible.",
+        "Stand comfortably with both shoulders or both hips visible, plus a shoulder and hip for height. Clear occlusion, then try Set standing reference again.",
       );
     tick();
   });
@@ -870,6 +983,7 @@ export function mountRunnerGame(
       resize.disconnect();
       cameraChoice.dispose();
       renderer.dispose();
+      preview.dispose();
       void stopCamera();
     },
   };
