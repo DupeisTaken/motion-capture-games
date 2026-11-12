@@ -881,7 +881,7 @@ describe("placement, configuration and replay", () => {
       expect(replayGame(serialized)).toEqual(first);
       expect(first.at(-1)?.result).toBe("challenge-won");
       expect(() =>
-        replayGame({ ...replay, version: 4 } as unknown as GameReplay),
+        replayGame({ ...replay, version: 5 } as unknown as GameReplay),
       ).toThrow("version");
     },
   );

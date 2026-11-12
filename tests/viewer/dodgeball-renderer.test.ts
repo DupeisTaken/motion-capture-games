@@ -70,9 +70,43 @@ describe("Dodgeball camera composition", () => {
     });
     expect(methods.arc).toHaveBeenCalled();
     expect(methods.stroke).toHaveBeenCalled();
-    expect(methods.fillText).not.toHaveBeenCalled();
-    expect(methods.fillRect).toHaveBeenCalledTimes(1);
+    expect(methods.fillText).toHaveBeenCalledWith(
+      "MOVE CLEAR",
+      expect.any(Number),
+      expect.any(Number),
+    );
+    expect(methods.fillRect).toHaveBeenCalledTimes(2);
   });
+  it.each([
+    ["danger", false, "DANGER"],
+    ["clearing", true, "CONTACT"],
+    ["clearing", false, "CLEAR"],
+  ] as const)(
+    "labels %s outcome without changing the game footprint",
+    (phase, hit, label) => {
+      const { canvas, methods, observation, image } = scene();
+      drawDodgeScene(canvas, observation, image, [], {
+        id: 1,
+        x: 0.25,
+        y: 0.5,
+        radius: 0.08,
+        phase,
+        hit,
+        remainingMs: 100,
+        durationMs: 300,
+        eligibleForDodge: true,
+        dangerAtMs: 1700,
+        resolved: phase === "clearing",
+      });
+      expect(methods.arc).toHaveBeenCalledWith(0.25, 0.5, 0.08, 0, Math.PI * 2);
+      expect(methods.fillText).toHaveBeenCalledWith(
+        label,
+        720,
+        expect.any(Number),
+      );
+      expect(methods.drawImage).toHaveBeenCalledOnce();
+    },
+  );
   it("draws labels, collision shapes and framing guides only when requested", () => {
     const { canvas, methods, observation, image } = scene();
     drawDodgeScene(

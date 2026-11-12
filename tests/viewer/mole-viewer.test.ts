@@ -168,7 +168,7 @@ function startDemo(): void {
   app.tick();
   element<HTMLButtonElement>("start-round").click();
   element<HTMLButtonElement>("confirm-start").click();
-  advance(3500);
+  advance(3500 + TUNING.targetWarningMs);
 }
 
 function movePointer(x: number, y: number): void {
@@ -198,8 +198,8 @@ it("shows two independently timed moles, a bomb, and the bomb penalty in both sc
   const moleIds = targets.slice(0, 2).map((target) => target.dataset.targetId);
   const bombId = targets[2].dataset.targetId;
 
-  movePointer(0, 0);
   const bomb = targetPosition("bomb-target");
+  movePointer(bomb.x + 120, bomb.y);
   movePointer(bomb.x, bomb.y);
   expect(element("score-value").textContent).toBe("-50");
   expect(element("display-score").textContent).toBe("-50");
@@ -210,6 +210,10 @@ it("shows two independently timed moles, a bomb, and the bomb penalty in both sc
   expect(targets.slice(0, 2).map((target) => target.dataset.targetId)).toEqual(
     moleIds,
   );
+  expect(targets[2].dataset.phase).toBe("warning");
+  expect(targets[2].querySelector("progress")!.value).toBe(0);
+  advance(TUNING.targetWarningMs);
+  expect(targets[2].dataset.phase).toBe("active");
   expect(targets[0].querySelector("progress")!.value).toBeLessThan(
     targets[2].querySelector("progress")!.value,
   );
@@ -269,6 +273,7 @@ beforeEach(() => {
   app = mountMoleGame(element("mole-test-root"), {
     now: () => now,
     autoTick: false,
+    seed: 42,
   });
   vi.spyOn(element("game-canvas"), "getBoundingClientRect").mockReturnValue({
     x: 0,
@@ -476,7 +481,7 @@ describe("Slap a Mole operator integration", () => {
     startDemo();
     const target = targetPosition();
     const radius = Number.parseFloat(element("mole-target").style.width) / 2;
-    // Aim from a distant corner so an unseeded nearby target cannot count the setup move.
+    // Aim from a distant corner so an nearby target cannot count the setup move.
     movePointer(959, 599);
     movePointer(target.x + radius + 24, target.y);
     advance(250);
@@ -612,8 +617,8 @@ describe("Slap a Mole operator integration", () => {
     (contact) => {
       choose("demo-contact", contact);
       startDemo();
-      movePointer(0, 0);
       const target = targetPosition();
+      movePointer(target.x + 120, target.y);
       movePointer(target.x, target.y);
       expect(Number(element("score-value").textContent)).toBe(100);
       expect(element("hits-value").textContent).toBe("1");
@@ -911,22 +916,36 @@ describe("Slap a Mole operator integration", () => {
     const initialScore = element("score-value").textContent;
     const x = 1 - target.x / 960;
     const y = target.y / 600;
-    function withSpectator(hit: boolean): Observation {
+    function withSpectator(hit: boolean | "near"): Observation {
       const value = observation(++sequence);
       const joined = value.people[0];
       const spectator = structuredClone(joined);
       spectator.trackId = "spectator";
       leftPalm(spectator, x, y);
-      leftPalm(joined, hit ? x : 0.04, hit ? y : 0.04);
+      leftPalm(
+        joined,
+        hit === "near" ? x - 0.12 : hit ? x : 0.04,
+        hit ? y : 0.04,
+      );
       value.people.splice(sequence % 2, 0, spectator);
       value.detectedCount = 2;
       return value;
     }
-    for (let frame = 0; frame < 25; frame++) await send(withSpectator(false));
+    for (let frame = 0; frame < 25; frame++) {
+      const value = withSpectator(false);
+      if (frame === 24) {
+        const owner = value.people.find(
+          (person) => person.trackId === "camera-track-1",
+        )!;
+        delete owner.joints.left_index_finger;
+      }
+      await send(value);
+    }
     expect(element("time-value").textContent).not.toBe(initialTime);
     expect(element("score-value").textContent).toBe(initialScore);
     expect(element("mole-target").hidden).toBe(false);
     expect(element("player-binding").textContent).toContain("camera-track-1");
+    await send(withSpectator("near"));
     await send(withSpectator(true));
     expect(Number(element("score-value").textContent)).toBe(
       Number(initialScore) + 100,
@@ -1010,21 +1029,23 @@ describe("Slap a Mole operator integration", () => {
       const socket = await startCamera();
       element<HTMLButtonElement>("start-round").click();
       element<HTMLButtonElement>("confirm-start").click();
-      for (let sequence = 1; sequence <= 80; sequence++) {
+      for (let sequence = 1; sequence <= 90; sequence++) {
         now += 50;
-        await socket.receive(packet(observation(sequence)));
+        const value = observation(sequence);
+        if (sequence === 90) delete value.people[0].joints.left_index_finger;
+        await socket.receive(packet(value));
       }
-      const outside = observation(81);
-      leftPalm(outside.people[0], 0.04, 0.04);
+      const target = targetPosition();
+      const outside = observation(91);
+      leftPalm(outside.people[0], 1 - target.x / 960 - 0.12, target.y / 600);
       now += 50;
       await socket.receive(packet(outside));
-      const target = targetPosition();
-      const hit = observation(82);
+      const hit = observation(92);
       leftPalm(hit.people[0], 1 - target.x / 960, target.y / 600);
       now += 50;
       await socket.receive(packet(hit));
       expect(element("score-value").textContent).toBe("100");
-      for (let sequence = 83; sequence <= 110; sequence++) {
+      for (let sequence = 93; sequence <= 120; sequence++) {
         const value = observation(sequence);
         if (change === "track") value.people[0].trackId = "camera-track-2";
         else value.calibrationId = "changed-calibration";

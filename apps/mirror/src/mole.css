@@ -947,3 +947,118 @@ button:disabled {
     font-size: 11px;
   }
 }
+/* Local backplates separate game objects from busy camera pixels without a video tint. */
+.mole-target {
+  background: #14372ff2;
+  border: 3px solid #e0f2b8;
+  box-shadow:
+    0 0 0 3px #10251fe6,
+    0 5px 18px #071c18a6;
+}
+.mole-target svg {
+  padding: 0;
+  transform: scale(1.1);
+}
+.mole-bomb {
+  background: #342337f5;
+  border-color: #ffc58f;
+  box-shadow:
+    0 0 0 3px #231724e6,
+    0 5px 18px #071c18a6;
+}
+.target-cue {
+  position: absolute;
+  top: -17px;
+  left: 50%;
+  transform: translateX(-50%);
+  font:
+    800 clamp(8px, 1vw, 11px)/1.4 "Segoe UI",
+    sans-serif;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: #142e25;
+  background: #e0f2b8;
+  white-space: nowrap;
+}
+.mole-bomb .target-cue {
+  color: #342337;
+  background: #ffc58f;
+}
+.mole-target[data-phase="warning"] {
+  border-style: dashed;
+  background: #14372fe6;
+}
+.mole-target[data-phase="warning"] svg {
+  opacity: 0.28;
+}
+.mole-target[data-phase="warning"] .target-cue {
+  color: #fff6e0;
+  background: #4b4535;
+}
+.mole-lifetime {
+  left: 15%;
+  width: 70%;
+  bottom: 4%;
+  height: 5px;
+}
+#target-effects {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.target-outcome {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 3px solid #e0f2b8;
+  background: #173d32eb;
+  color: #f3ffd8;
+  font:
+    850 clamp(10px, 1.5vw, 19px)/1 "Segoe UI",
+    sans-serif;
+  text-shadow: 0 1px 3px #10251f;
+}
+.target-outcome.bomb.hit {
+  background: #532d30f2;
+  color: #ffdfbe;
+  border-style: double;
+  border-width: 6px;
+  border-color: #ffb895;
+}
+.target-outcome.expired {
+  background: #2b3637eb;
+  border-style: dashed;
+  border-color: #e2d7c1;
+  font-size: clamp(8px, 1vw, 12px);
+  color: #fff2dc;
+}
+.target-outcome.bomb.expired {
+  color: #d8f2db;
+  border-color: #b9dabf;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .target-outcome.hit {
+    animation: mole-impact 220ms ease-out;
+  }
+  @keyframes mole-impact {
+    from {
+      transform: translate(-50%, -50%) scale(0.84);
+    }
+    to {
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+}
+/* Replacement warnings and active faces must stay above a lingering outcome. */
+.mole-target {
+  z-index: 2;
+}
+#target-effects {
+  z-index: 1;
+}
+#hit-feedback {
+  z-index: 3;
+}
