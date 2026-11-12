@@ -61,7 +61,7 @@ class Pose {
   }
 }
 
-describe("runner image thirds and standing head controls", () => {
+describe("runner calibrated lanes and standing head controls", () => {
   function settle(pose: Pose) {
     pose.sample();
     pose.sample();
@@ -83,48 +83,51 @@ describe("runner image thirds and standing head controls", () => {
     pose.value.people[0].joints.right_hip!.inFrame = false;
     expect(pose.sample()).toMatchObject({ valid: false, standing: false });
   });
-  it("maps absolute mirrored thirds independently of reference center and body size", () => {
+  it("centers mirrored lanes on the standing position and scales them with shoulder width", () => {
     for (const scale of [0.55, 1, 1.15]) {
       const pose = new Pose();
+      pose.translate(0.12);
       for (const joint of Object.values(pose.value.people[0].joints))
         if (joint?.x != null && joint.y != null) {
-          joint.x = 0.5 + (joint.x - 0.5) * scale;
+          joint.x = 0.62 + (joint.x - 0.62) * scale;
           joint.y = 0.5 + (joint.y - 0.5) * scale;
         }
       pose.calibrate();
-      for (const [x, lane] of [
-        [0.25, 1],
-        [0.5, 0],
-        [0.75, -1],
-        [0.25, 1],
+      const width = 0.18 * scale;
+      expect(pose.controls.laneBands!.centerX).toBeCloseTo(0.38);
+      expect(pose.controls.laneBands!.width).toBeCloseTo(width);
+      for (const [offset, lane] of [
+        [0, 0],
+        [-0.65, 1],
+        [0, 0],
+        [0.65, -1],
+        [-0.65, 1],
       ] as const) {
         const reference = pose.controls.calibration!;
         for (const [name, point] of Object.entries(reference.anchors))
           pose.value.people[0].joints[name as JointName]!.x =
-            point!.x + x - reference.centerX;
+            point!.x + offset * width;
         expect(pose.sample()).toMatchObject({ valid: true, lane });
       }
     }
-    const offCenter = new Pose();
-    offCenter.translate(0.22);
-    offCenter.calibrate();
-    expect(offCenter.sample().lane).toBe(-1);
   });
   it("holds both boundary deadbands and returns to center with bounded hysteresis", () => {
     const pose = new Pose();
+    delete pose.value.people[0].joints.left_shoulder;
     pose.calibrate();
-    for (const [displayX, lane] of [
-      [0.32, 0],
-      [0.3, -1],
-      [0.33, -1],
-      [0.345, -1],
-      [0.36, 0],
-      [0.68, 0],
-      [0.7, 1],
-      [0.665, 1],
-      [0.64, 0],
+    const width = pose.controls.laneBands!.width;
+    const hips = pose.value.people[0].joints;
+    expect(width).toBeCloseTo(Math.abs(hips.left_hip!.x! - hips.right_hip!.x!));
+    for (const [displayOffset, lane] of [
+      [-0.55, 0],
+      [-0.65, -1],
+      [-0.45, -1],
+      [0.55, 0],
+      [0.65, 1],
+      [0.45, 1],
+      [0.35, 0],
     ] as const) {
-      pose.translate(0.5 - displayX);
+      pose.translate(-displayOffset * width);
       expect(pose.sample().lane).toBe(lane);
     }
   });
@@ -216,7 +219,7 @@ describe("runner image thirds and standing head controls", () => {
       expect(pose.sample()).toMatchObject({ valid: true, lane: 0 });
     }
   });
-  it("does not turn yaw with one hidden hip into lateral movement near a third boundary", () => {
+  it("does not turn yaw with one hidden hip into lateral movement", () => {
     for (const center of [0.36, 0.64]) {
       const pose = new Pose();
       pose.translate(center - 0.5);

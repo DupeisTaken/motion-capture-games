@@ -22,10 +22,10 @@ export interface RunnerInput {
   valid: boolean;
   reason?: string;
 }
-/** Version 2: proposed image-space thresholds, pending supervised physical trials. */
+/** Proposed image-space thresholds, pending supervised physical trials. */
 export const RUNNER_POSE_TUNING = Object.freeze({
-  version: 2,
-  laneBoundaryMargin: 0.018,
+  version: 3,
+  laneBoundaryMarginWidths: 0.1,
   jumpHeadLiftBodyHeights: 0.075,
   jumpTorsoLiftBodyHeights: 0.035,
   jumpConfirmMs: 45,
@@ -46,11 +46,16 @@ interface Point {
   y: number;
 }
 type Anchors = Partial<Record<JointName, Point>>;
+interface RunnerLaneBands {
+  centerX: number;
+  width: number;
+}
 export interface RunnerCalibration {
   epoch: string;
   spaceRevision: string;
   trackId: string;
   centerX: number;
+  lanes: RunnerLaneBands;
   headY: number;
   bodyHeight: number;
   observationRevision: string;
@@ -155,6 +160,9 @@ export class RunnerPoseControls {
   get feedback(): RunnerPoseFeedback | null {
     return this.latestFeedback ? { ...this.latestFeedback } : null;
   }
+  get laneBands(): RunnerLaneBands | null {
+    return this.baseline ? { ...this.baseline.lanes } : null;
+  }
   /** Break gesture continuity while retaining the explicit standing reference. */
   suspend(): void {
     this.clearActions();
@@ -226,11 +234,15 @@ export class RunnerPoseControls {
           ? average(shoulderX)
           : null;
     if (centerX === null) return false;
+    const [left, right] = shoulderX.length === 2 ? shoulderX : hipX;
+    const laneWidth = Math.abs(left - right);
+    if (laneWidth === 0) return false;
     this.baseline = {
       epoch: frame.epoch,
       spaceRevision: frame.spaceRevision,
       trackId,
       centerX,
+      lanes: { centerX: runnerDisplayX(centerX), width: laneWidth },
       headY: head.length ? median(head) : average(shoulderY) - height * 0.17,
       bodyHeight: height,
       observationRevision: observationSpaceRevision(observation),
@@ -335,15 +347,17 @@ export class RunnerPoseControls {
     const headDrop =
       median(headDelta.length ? headDelta : shoulderDelta) /
       baseline.bodyHeight;
-    const torsoDrop =
-      Math.min(median(shoulderDelta), median(hipDelta)) / baseline.bodyHeight;
+    const shoulderDrop = median(shoulderDelta) / baseline.bodyHeight;
+    const hipDrop = median(hipDelta) / baseline.bodyHeight;
+    const torsoDrop = Math.min(shoulderDrop, hipDrop);
     const displayX = runnerDisplayX(centerX);
-    const margin = RUNNER_POSE_TUNING.laneBoundaryMargin;
-    if (displayX < 1 / 3 - margin) this.lane = -1;
-    else if (displayX > 2 / 3 + margin) this.lane = 1;
+    const lateral = (displayX - baseline.lanes.centerX) / baseline.lanes.width;
+    const margin = RUNNER_POSE_TUNING.laneBoundaryMarginWidths;
+    if (lateral < -0.5 - margin) this.lane = -1;
+    else if (lateral > 0.5 + margin) this.lane = 1;
     else if (
-      (this.lane === -1 && displayX > 1 / 3 + margin) ||
-      (this.lane === 1 && displayX < 2 / 3 - margin)
+      (this.lane === -1 && lateral >= -0.5 + margin) ||
+      (this.lane === 1 && lateral <= 0.5 - margin)
     )
       this.lane = 0;
     if (
@@ -356,19 +370,15 @@ export class RunnerPoseControls {
     } else if (headDrop < RUNNER_POSE_TUNING.duckReleaseBodyHeights)
       this.duck = false;
     const feetDelta = deltas(points, baseline.anchors, ankles, "y");
+    // Judge each torso segment as a group so one noisy landmark does not
+    // keep resetting the standing timer while the player is still.
     const standingPose =
       !this.duck &&
       Math.abs(headDrop) <= RUNNER_POSE_TUNING.standingToleranceBodyHeights &&
-      shoulderDelta.every(
-        (delta) =>
-          Math.abs(delta) / baseline.bodyHeight <=
-          RUNNER_POSE_TUNING.standingTorsoToleranceBodyHeights,
-      ) &&
-      hipDelta.every(
-        (delta) =>
-          Math.abs(delta) / baseline.bodyHeight <=
-          RUNNER_POSE_TUNING.standingTorsoToleranceBodyHeights,
-      ) &&
+      Math.abs(shoulderDrop) <=
+        RUNNER_POSE_TUNING.standingTorsoToleranceBodyHeights &&
+      Math.abs(hipDrop) <=
+        RUNNER_POSE_TUNING.standingTorsoToleranceBodyHeights &&
       feetDelta.every(
         (delta) =>
           Math.abs(delta) / baseline.bodyHeight <=
@@ -390,10 +400,8 @@ export class RunnerPoseControls {
     const takingOff =
       !this.duck &&
       -headDrop >= RUNNER_POSE_TUNING.jumpHeadLiftBodyHeights &&
-      -median(shoulderDelta) / baseline.bodyHeight >=
-        RUNNER_POSE_TUNING.jumpTorsoLiftBodyHeights &&
-      -median(hipDelta) / baseline.bodyHeight >=
-        RUNNER_POSE_TUNING.jumpTorsoLiftBodyHeights;
+      -shoulderDrop >= RUNNER_POSE_TUNING.jumpTorsoLiftBodyHeights &&
+      -hipDrop >= RUNNER_POSE_TUNING.jumpTorsoLiftBodyHeights;
     let jump = false;
     if (!this.airborne && this.jumpArmed && takingOff) {
       this.takeoffAt ??= frame.atMs;

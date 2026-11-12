@@ -1,5 +1,7 @@
 # Change reports
 
+[Motion Runner body-width lanes and start](runner-body-width.html) records the calibrated guides, the queued Start flow, and desktop/mobile evidence using synthetic camera packets.
+
 [Playtest multiplayer](playtest-multiplayer.html) records explicit 1–3 anonymous slots, real per-player Mole/Dodgeball engines, spectator isolation, bounded recovery integration, synthetic real-server desktop/mobile evidence and remaining physical gates.
 
 [Playtest tracking](playtest-tracking.html) records scoped spectator ambiguity, body-only MediaPipe bounds, opt-in bounded same-track session recovery, synthetic continuity/wrong-association/suspension metrics, the local held-out route and remaining physical evidence gaps.

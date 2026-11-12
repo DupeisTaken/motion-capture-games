@@ -842,12 +842,12 @@
 #preview-empty[hidden] {
   display: none;
 }
-.third-lines {
+.lane-lines {
   stroke: #fff;
   stroke-width: 0.4;
   stroke-dasharray: 2 1;
 }
-.third-labels {
+.lane-labels {
   font-size: 3.2px;
   font-weight: 800;
   text-anchor: middle;

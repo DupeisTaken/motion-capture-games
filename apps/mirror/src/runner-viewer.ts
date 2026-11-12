@@ -21,6 +21,7 @@ import { RunnerPreview } from "./runner-preview";
 type Skin = "nova" | "moss" | "ember";
 const titles = { rail: "Neon Rails", gold: "Gold Rush" };
 const practiceLabels = ["Left", "Center", "Right", "Jump", "Roll", "Stand"];
+const startPrompt = "Choose your input, then start your run.";
 
 /** The app owns camera/session composition; the game only receives canonical input. */
 export function mountRunnerGame(
@@ -44,15 +45,15 @@ export function mountRunnerGame(
     </div>
     <div class="runner-toolbar"><p id="game-status" role="status" aria-live="polite">Choose your input, then start your run.</p><div><button id="start-round" class="runner-primary">Start run →</button><button id="pause-round" hidden>Pause</button><button id="new-round" hidden>New run</button><button id="end-round" hidden>End run</button></div></div>
     <div class="runner-controls" id="demo-controls"><span>REHEARSAL CONTROLS</span><div class="lane-buttons" role="group" aria-label="Choose lane"><button id="lane-left" aria-label="Select left lane">← <span>Left</span></button><button id="lane-center" aria-label="Select center lane">● <span>Center</span></button><button id="lane-right" aria-label="Select right lane"><span>Right</span> →</button></div><div class="action-buttons"><button id="jump-action">↑ <span>Jump</span></button><button id="duck-action" aria-pressed="false">↓ <span>Roll</span></button></div><p>Keyboard: ← / C / → lanes · Space jump · hold ↓ to roll.<br>Touch: tap a lane or Jump; hold Roll.</p></div>
-    <section id="body-preview" class="body-preview" aria-label="Live body control preview" hidden><div class="preview-heading"><div><p class="eyebrow">LEARN YOUR CONTROLS</p><h2>Your movement, live.</h2></div><label class="runner-check"><input id="show-preview" type="checkbox" checked> Show camera</label></div><p>Move your mirrored image into a third to choose a lane. Set standing, then lift your head and torso to jump; lower both to roll.</p><div class="preview-picture"><canvas id="camera-preview" width="640" height="480" aria-label="Mirrored camera from the existing body tracking source"></canvas><svg id="preview-guides" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Lane thirds and calibrated head height guides"><path d="M33.333 0V100 M66.667 0V100" class="third-lines"/><g class="third-labels"><text x="16.67" y="9">LEFT</text><text x="50" y="9">CENTER</text><text x="83.33" y="9">RIGHT</text></g><g id="head-guides" hidden><line id="jump-guide" x1="0" x2="100"/><line id="standing-guide" x1="0" x2="100"/><line id="duck-guide" x1="0" x2="100"/><circle id="head-marker" r="1.8"/></g></svg><p id="preview-empty">Start camera to see your controls.</p></div><div class="preview-readout"><strong id="preview-action">WAITING FOR PLAYER</strong><span id="preview-freshness" role="status">Camera off</span><span id="preview-age"></span></div><p id="preview-thresholds">Head guides appear after Set standing reference. Green: jump · white: standing · amber: roll.</p></section>
-    <div class="runner-principles"><p><strong>Move to a lane</strong><span>Left, center or right image third. Holding a position keeps your lane.</span></p><p><strong>Jump & roll</strong><span>Jump low hurdles. Duck under the overhead gates.</span></p><p><strong>Your run stays yours</strong><span>Spectators can enter the frame. The game pauses if it loses your tracking.</span></p></div>
+    <section id="body-preview" class="body-preview" aria-label="Live body control preview" hidden><div class="preview-heading"><div><p class="eyebrow">LEARN YOUR CONTROLS</p><h2>Your movement, live.</h2></div><label class="runner-check"><input id="show-preview" type="checkbox" checked> Show camera</label></div><p>Set standing to place the center lane. Take a small step left or right to switch lanes. Lift your head and torso to jump, or lower both to roll.</p><div class="preview-picture"><canvas id="camera-preview" width="640" height="480" aria-label="Mirrored camera from the existing body tracking source"></canvas><svg id="preview-guides" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Calibrated lane and head height guides"><g id="lane-guides" hidden><path id="lane-boundaries" class="lane-lines"/><g class="lane-labels"><text id="lane-guide-left" y="9">LEFT</text><text id="lane-guide-center" y="9">CENTER</text><text id="lane-guide-right" y="9">RIGHT</text></g></g><g id="head-guides" hidden><line id="jump-guide" x1="0" x2="100"/><line id="standing-guide" x1="0" x2="100"/><line id="duck-guide" x1="0" x2="100"/><circle id="head-marker" r="1.8"/></g></svg><p id="preview-empty">Start camera to see your controls.</p></div><div class="preview-readout"><strong id="preview-action">WAITING FOR PLAYER</strong><span id="preview-freshness" role="status">Camera off</span><span id="preview-age"></span></div><p id="preview-thresholds">Head guides appear after Set standing reference. Green: jump · white: standing · amber: roll.</p></section>
+    <div class="runner-principles"><p><strong>Move to a lane</strong><span>Each lane is about one body width. Holding a position keeps your lane.</span></p><p><strong>Jump & roll</strong><span>Jump low hurdles. Duck under the overhead gates.</span></p><p><strong>Your run stays yours</strong><span>Spectators can enter the frame. The game pauses if it loses your tracking.</span></p></div>
   </section><aside class="runner-settings" aria-label="Run setup"><div class="runner-section-label"><span>MAKE IT YOURS</span><span>01</span></div><h2>Choose your escape.</h2>
     <label for="world-select">World</label><select id="world-select"><option value="rail">Neon Rails · the mint skyline</option><option value="gold">Gold Rush · a sunlit getaway</option></select><p class="field-note" id="world-description">A mint skyline, railway runs and colorful city streets.</p>
     <label for="skin-select">Runner skin</label><select id="skin-select"><option value="nova">Nova · cobalt & mint</option><option value="moss">Moss · forest explorer</option><option value="ember">Ember · sunset sprint</option></select><div class="skin-swatches" aria-hidden="true"><i class="nova"></i><i class="moss"></i><i class="ember"></i><span>All skins included. Same abilities.</span></div>
     <div class="runner-pace"><label class="runner-check pace-option"><input id="fast-start" type="checkbox" role="switch" aria-label="Fast start" aria-describedby="pace-description"><span><strong>Fast start</strong><small>A quicker opening pace.</small></span></label><p class="field-note" id="pace-description">Off: 10 m/s · On: 14 m/s. Both build up to 18 m/s.</p></div>
     <label class="runner-check"><input id="practice-mode" type="checkbox"> Practice · no penalties</label>
     <div class="runner-section-label input-section"><span>YOUR CONTROLLER</span><span>02</span></div><label for="source-select">Input</label><select id="source-select"><option value="demo">Rehearsal · keyboard & touch</option><option value="camera">Camera · body tracking</option></select>
-    <div id="camera-controls">${cameraChoiceMarkup}<div class="camera-actions"><button id="source-connect">Start camera</button><button id="source-stop" disabled>Stop camera</button></div><p class="field-note" id="camera-status" role="status">Camera stays off until you choose Start camera. The learning preview shares body tracking; the game stays rendered.</p><div id="camera-release" hidden><p id="camera-release-message" role="status"></p><button id="retry-camera-stop">Retry camera stop</button></div><button id="calibrate-player" disabled>Set standing reference</button><p class="field-note">Stand comfortably with your head, shoulders and hips in view. Set this height again if the camera moves. Try the moves below if you like; they do not block Start.</p><div id="practice-checklist" aria-label="Optional camera movement practice">${practiceLabels.map((label, index) => `<span id="practice-${index}">${label}</span>`).join("")}</div><p class="field-note" id="practice-status" role="status">Set standing, try a move, then Start run when ready.</p></div>
+    <div id="camera-controls">${cameraChoiceMarkup}<div class="camera-actions"><button id="source-connect">Start camera</button><button id="source-stop" disabled>Stop camera</button></div><p class="field-note" id="camera-status" role="status">Camera stays off until you choose Start camera. The learning preview shares body tracking; the game stays rendered.</p><div id="camera-release" hidden><p id="camera-release-message" role="status"></p><button id="retry-camera-stop">Retry camera stop</button></div><button id="calibrate-player" disabled>Set standing reference</button><p class="field-note">Face the camera and stand where you want the center lane, with your head, shoulders and hips in view. Set standing again if the camera moves. Try the moves below if you like; they do not block Start.</p><div id="practice-checklist" aria-label="Optional camera movement practice">${practiceLabels.map((label, index) => `<span id="practice-${index}">${label}</span>`).join("")}</div><p class="field-note" id="practice-status" role="status">Set standing, try a move, then Start run when ready.</p></div>
     <div id="rehearsal-note" hidden><p class="rehearsal-note">Camera-free simulation. Choose Start run, then use the keyboard or touch controls.</p><details><summary>Tracking rehearsal</summary><label class="runner-check"><input id="demo-extra" type="checkbox"> Simulate a spectator</label><label class="runner-check"><input id="demo-missing" type="checkbox"> Simulate lost tracking</label></details></div>
     <div class="runner-safety"><strong>A little room to move.</strong><p>One player only. Clear space for small side steps, jumping and ducking. Tracking accuracy and physical timing are experimental.</p></div>
   </aside></div><footer class="runner-footer">Original worlds & characters · Local play · English <span>No recording. No camera image on the game screen.</span></footer></main>`;
@@ -98,6 +99,7 @@ export function mountRunnerGame(
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
   let disposed = false;
+  let startRequested = false;
   let manualPause = false;
   let ownershipChanged = false;
   let cameraInput: RunnerInput | null = null;
@@ -155,9 +157,8 @@ export function mountRunnerGame(
   }
   function resetRun() {
     game = new RunnerGame(options(), seed());
-    // Reset status here so a new ready run cannot retain a pause/result cue.
-    // Ordinary ready renders preserve actionable failed-start guidance.
-    setText("game-status", "Choose your input, then start your run.");
+    startRequested = false;
+    setText("game-status", startPrompt);
     manualPause = false;
     ownershipChanged = false;
     demoEpoch++;
@@ -280,48 +281,33 @@ export function mountRunnerGame(
         ? null
         : cameraInput;
   }
-  function canStart(t: number, input: RunnerInput | null) {
-    if (!isDemo() && !pose.calibrated) return false;
+  function startWaitReason(t: number, input: RunnerInput | null) {
+    if (isDemo())
+      return (
+        game.readiness(t, input).reason ?? "Release Jump or Roll to begin."
+      );
+    if (startupUncertain)
+      return "Restart the local vision service and reload before starting the camera.";
+    if (!cameraEpoch)
+      return connecting
+        ? "Waiting for the camera to start."
+        : "Start the camera in Run setup to continue.";
+    if (trackingStale || t - receivedAt > 350)
+      return "Waiting for fresh camera tracking. Stay in view.";
+    if (!pose.calibrated)
+      return calibratedBase
+        ? "Choose Set standing reference in Run setup."
+        : "Keep one player in view with head, shoulders and hips visible.";
     return (
-      !renderingUnavailable &&
-      !ownershipChanged &&
-      !document.hidden &&
-      !!input &&
-      input.standing &&
-      !input.jump &&
-      !input.duck &&
-      game.readiness(t, input).ready
+      (input && game.readiness(t, input).reason) ||
+      "Stand comfortably at your standing reference to start the countdown."
     );
   }
-  function startRun() {
-    if (game.state.phase !== "ready") return;
-    const t = now(),
-      input = currentInput(t);
-    if (!canStart(t, input) || !input) {
-      setText(
-        "game-status",
-        isDemo()
-          ? "Release Jump or Roll and make sure tracking is ready before starting."
-          : !pose.calibrated
-            ? "Start the camera and set a comfortable standing reference in the live preview."
-            : !input?.standing
-              ? "Return to your comfortable standing reference before starting."
-              : "Waiting for fresh control input from the same player.",
-      );
-      get(
-        !isDemo() && !pose.calibrated ? "calibrate-player" : "game-stage",
-      ).focus();
-      return;
-    }
-    if (!isDemo() && session.binding)
-      owner = {
-        trackId: session.binding.trackId,
-        epoch: session.binding.epoch,
-      };
-    manualPause = false;
-    game.start(t, input);
+  function toggleStartRequest() {
+    if (game.state.phase !== "ready" || renderingUnavailable) return;
+    startRequested = !startRequested;
+    if (!startRequested) setText("game-status", startPrompt);
     tick();
-    get("game-stage").focus();
   }
   function renderPreview(t: number, input: RunnerInput | null) {
     get("body-preview").hidden = isDemo();
@@ -340,6 +326,22 @@ export function mountRunnerGame(
             ? "Camera hidden · controls still live"
             : "Waiting for camera picture…",
     );
+    const lanes = stale ? null : pose.laneBands;
+    get("lane-guides").toggleAttribute("hidden", !lanes);
+    if (lanes) {
+      const center = lanes.centerX * 100;
+      const width = lanes.width * 100;
+      const boundaries = [-1.5, -0.5, 0.5, 1.5]
+        .map((offset) => `M${center + offset * width} 0V100`)
+        .join(" ");
+      const path = get("lane-boundaries");
+      if (path.getAttribute("d") !== boundaries) {
+        path.setAttribute("d", boundaries);
+        get("lane-guide-left").setAttribute("x", String(center - width));
+        get("lane-guide-center").setAttribute("x", String(center));
+        get("lane-guide-right").setAttribute("x", String(center + width));
+      }
+    }
     const feedback = !stale && input?.valid ? pose.feedback : null;
     get("head-guides").toggleAttribute("hidden", !feedback);
     if (feedback) {
@@ -430,15 +432,34 @@ export function mountRunnerGame(
       `${["LEFT", "CENTER", "RIGHT"][(input?.lane ?? 0) + 1]} · ${state.jumpHeight > 0 ? "JUMPING" : state.duck ? "ROLLING" : "STANDING"}`,
     );
     const ready = game.readiness(t, input).ready && !ownershipChanged;
-    setText("player-badge", ready ? "1 PLAYER · READY" : "WAITING FOR PLAYER");
+    setText(
+      "player-badge",
+      !ready
+        ? "WAITING FOR PLAYER"
+        : state.phase === "ready" && !input?.standing
+          ? "STAND TO START"
+          : "1 PLAYER · READY",
+    );
     get("game-overlay").hidden = state.phase === "playing";
     get("overlay-start").hidden = state.phase !== "ready";
     get<HTMLButtonElement>("overlay-start").disabled = renderingUnavailable;
     get<HTMLButtonElement>("start-round").disabled = renderingUnavailable;
-    get("overlay-start").textContent = isDemo()
-      ? "Start run →"
-      : "Start body-controlled run →";
-    if (state.phase === "ready") {
+    setText(
+      "overlay-start",
+      startRequested
+        ? "Cancel start"
+        : isDemo()
+          ? "Start run →"
+          : "Start body-controlled run →",
+    );
+    setText("start-round", startRequested ? "Cancel start" : "Start run →");
+    if (state.phase === "ready" && startRequested) {
+      const reason = startWaitReason(t, input);
+      setText("overlay-kicker", "WAITING FOR INPUT");
+      setText("overlay-title", "Getting ready.");
+      setText("overlay-copy", reason);
+      setText("game-status", reason);
+    } else if (state.phase === "ready") {
       setText("overlay-kicker", "YOUR BODY. YOUR CONTROLLER.");
       setText(
         "overlay-title",
@@ -588,6 +609,21 @@ export function mountRunnerGame(
       pose.suspend();
     const t = now(),
       input = currentInput(t);
+    // An early Start press survives standing calibration, but the game still
+    // admits only fresh, standing input and owns the countdown.
+    if (
+      startRequested &&
+      !renderingUnavailable &&
+      !ownershipChanged &&
+      !document.hidden &&
+      input &&
+      game.start(t, input)
+    ) {
+      startRequested = false;
+      if (!isDemo() && session.binding) owner = session.binding;
+      manualPause = false;
+      get("game-stage").focus({ preventScroll: true });
+    }
     game.step(t, ownershipChanged || renderingUnavailable ? null : input);
     // Tracking pauses recover only with fresh, standing input from the same
     // owner. The game adds its countdown and clears the near hazard window.
@@ -607,6 +643,10 @@ export function mountRunnerGame(
   async function stopCamera(
     message = "Camera stopped. Start it when you are ready.",
   ) {
+    if (startRequested) {
+      startRequested = false;
+      setText("game-status", message);
+    }
     generation++;
     connecting = false;
     const ownEpoch = cameraEpoch;
@@ -764,7 +804,7 @@ export function mountRunnerGame(
     }
   }
   for (const id of ["start-round", "overlay-start"])
-    listen(get(id), "click", startRun);
+    listen(get(id), "click", toggleStartRequest);
   listen(get("new-round"), "click", () => {
     resetRun();
     tick();
@@ -838,6 +878,7 @@ export function mountRunnerGame(
     )
       return;
     if (pose.calibrate(observation, calibratedBase, binding.trackId)) {
+      cameraInput = null;
       practiced.clear();
       practiced.add(1);
       cameraMessage(
@@ -845,7 +886,7 @@ export function mountRunnerGame(
       );
     } else
       cameraMessage(
-        "Stand comfortably with both shoulders or both hips visible, plus a shoulder and hip for height. Clear occlusion, then try Set standing reference again.",
+        "Face the camera and stand comfortably with both shoulders or both hips visible, plus a shoulder and hip for height. Clear occlusion, then try Set standing reference again.",
       );
     tick();
   });

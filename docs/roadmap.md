@@ -152,6 +152,8 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 
 **Current status:** Experimental software controls, seeded obstacles, rendered worlds and source-timed pause/recovery are implemented. The gait/pace follow-up adds an articulated runner and an opt-in faster opening; [its report](../reports/runner-motion-pace.html) owns actual evidence. Physical recognition accuracy, camera hardware capability and end-to-end latency remain unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
 
+[Issue #73](https://github.com/DupeisTaken/motion-capture-games/issues/73) adds body-width camera lanes and a single Start request that waits for fresh standing input. The [delivery report](../reports/runner-body-width.html) records the lane checks and start flow on desktop and mobile.
+
 **Scaffold delivery:** [Issue #5](https://github.com/DupeisTaken/motion-capture-games/issues/5) and [PR #6](https://github.com/DupeisTaken/motion-capture-games/pull/6) track this documentation update; [the runner report](../reports/motion-runner.html) records its actual checks. M6 implementation needs its own issue when work begins; completing the scaffold does not close the game milestone.
 
 ## M7: Single-player virtual maze
