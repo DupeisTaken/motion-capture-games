@@ -154,6 +154,10 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 
 ## M7: Single-player virtual maze
 
+**Live floor setup follow-up:** [Issue #60](https://github.com/DupeisTaken/motion-capture-games/issues/60) adds explicitly started sequential camera previews, four named floor correspondences, moved independently measured references, revision/invalidation and an operator floor-contact probe. [The calibration design](games/virtual-maze.md#guided-live-floor-calibration) and [report](../reports/playtest-maze-calibration.html) distinguish these software checks from physical M1/M7 acceptance. Body/root input, synchronization, identity and selected facing remain open; two floor mappings alone cannot enable physical maze play.
+
+**Physical gameplay blocker:** [Issue #65](https://github.com/DupeisTaken/motion-capture-games/issues/65) owns the unimplemented trusted live root/facing/time/identity adapter and actual rig/participant validation. It remains open after #60. Until its acceptance evidence exists, physical maze input is disabled; the setup/probe is not an automated body-control implementation.
+
 **Problem:** Let one participant navigate a virtual maze using directional buzzer feedback while an operator sees the maze and current position. A position estimate alone cannot determine which wall is ahead; facing requires independent Head/Torso evidence.
 
 **Owns:** The [Virtual Maze design](games/virtual-maze.md), a source-only `games/virtual-maze/` module, explicit position/facing readiness, manual metric corner registration, seeded generation, directional wall/collision/goal rules, operator map and map-free participant intensity/audio. M7 preserves existing milestone IDs and starts a camera-free rehearsal at the user's request. Physical gameplay depends on relevant M1 geometry, timing, identity and accuracy evidence; the existing two-camera planning screen cannot enable it.
