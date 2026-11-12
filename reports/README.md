@@ -1,5 +1,7 @@
 # Change reports
 
+[Playtest tracking](playtest-tracking.html) records scoped spectator ambiguity, body-only MediaPipe bounds, opt-in bounded same-track session recovery, synthetic continuity/wrong-association/suspension metrics, the local held-out route and remaining physical evidence gaps.
+
 [Slap a Mole palm and foot contact](slap-a-mole-palm-contact.html) records the visible Touch rings, palm scoring, replay compatibility and synthetic browser verification.
 
 [Root game directory](game-directory.html) records the four-game landing page, explicit diagnostics route, navigation/build checks and embedded English desktop/mobile before/after screenshots.

@@ -5,6 +5,13 @@ import {
   type GameMotionFrame,
   type Observation,
 } from "../../motion/src/index";
+import { EphemeralIdentityMemory } from "./identity-memory";
+export { EphemeralIdentityMemory } from "./identity-memory";
+
+export interface SinglePlayerSessionOptions {
+  /** Opt-in short same-track recovery; 0 keeps the legacy explicit-rejoin policy. */
+  recoveryWindowMs?: number;
+}
 
 export interface PlayerBinding {
   slotId: "player-1";
@@ -44,6 +51,35 @@ export class SinglePlayerSession {
   private lastSequence = -1;
   private lastReceivedMs = 0;
   private lastPublishedAtMs = -Infinity;
+  private readonly memory: EphemeralIdentityMemory;
+  private inputSuspended = false;
+  private inputRecovered = false;
+
+  constructor(options: SinglePlayerSessionOptions = {}) {
+    this.memory = new EphemeralIdentityMemory(options.recoveryWindowMs ?? 0);
+  }
+
+  get suspended(): boolean {
+    return this.inputSuspended;
+  }
+
+  /** True only for the most recent ingest: consumers must break gesture trails. */
+  get recovered(): boolean {
+    return this.inputRecovered;
+  }
+
+  /** Call from the consumer's monotonic frame loop, including while no packets arrive. */
+  expire(nowMs: number): boolean {
+    if (
+      this.current &&
+      this.memory.windowMs > 0 &&
+      this.memory.expired(nowMs)
+    ) {
+      this.invalidate("Tracking recovery expired. Explicitly rejoin Player 1.");
+      return true;
+    }
+    return false;
+  }
 
   get binding(): PlayerBinding | null {
     return this.current ? { ...this.current } : null;
@@ -59,6 +95,9 @@ export class SinglePlayerSession {
     this.failure = null;
     this.lastSequence = -1;
     this.lastPublishedAtMs = -Infinity;
+    this.memory.clear();
+    this.inputSuspended = false;
+    this.inputRecovered = false;
   }
 
   private invalidate(reason: string): null {
@@ -121,6 +160,11 @@ export class SinglePlayerSession {
     this.lastReceivedMs = receivedAtMs;
     this.lastPublishedAtMs = this.anchorBrowserMs;
     this.failure = null;
+    this.memory.remember(
+      this.current.spaceRevision,
+      timing.captured,
+      receivedAtMs,
+    );
     return {
       ...observationToGameFrame(observation, matching[0], this.anchorBrowserMs),
       spaceRevision: this.current.spaceRevision,
@@ -131,6 +175,7 @@ export class SinglePlayerSession {
     observation: Observation,
     receivedAtMs: number,
   ): GameMotionFrame | null {
+    this.inputRecovered = false;
     const binding = this.current;
     if (!binding) {
       this.failure ??= "Join a participant before playing.";
@@ -152,6 +197,7 @@ export class SinglePlayerSession {
     ) {
       return this.invalidate("The source timing changed. Rejoin Player 1.");
     }
+    if (this.expire(receivedAtMs)) return null;
     if (observation.sequence <= this.lastSequence) {
       this.failure = "An outdated observation was rejected.";
       return null;
@@ -167,16 +213,28 @@ export class SinglePlayerSession {
     const matching = observation.people.filter(
       (person) => person.trackId === binding.trackId,
     );
-    if (matching.length !== 1 || matching[0].identity !== "confident") {
+    const recoverable = this.memory.windowMs > 0;
+    if (
+      recoverable &&
+      !this.memory.allows(binding.spaceRevision, timing.captured, receivedAtMs)
+    ) {
+      return this.invalidate(
+        "Tracking recovery expired. Explicitly rejoin Player 1.",
+      );
+    }
+    if (
+      !recoverable &&
+      (matching.length !== 1 || matching[0].identity !== "confident")
+    ) {
       return this.invalidate(
         "Player 1 is missing or uncertain. Separate from others and rejoin.",
       );
     }
-    if (
+    const interrupted =
       receivedAtMs - this.lastReceivedMs > GAME_INPUT_QUALITY.maximumAgeMs ||
       Number(timing.captured - this.lastSourceNs) / 1e6 >
-        GAME_INPUT_QUALITY.maximumAgeMs
-    ) {
+        GAME_INPUT_QUALITY.maximumAgeMs;
+    if (!recoverable && interrupted) {
       return this.invalidate(
         "Tracking was interrupted. Explicitly rejoin Player 1.",
       );
@@ -205,15 +263,40 @@ export class SinglePlayerSession {
     this.lastSequence = observation.sequence;
     this.lastReceivedMs = receivedAtMs;
     if (
+      recoverable &&
+      (matching.length > 1 || matching[0]?.identity === "ambiguous")
+    ) {
+      // Ownership contradiction is terminal even when pose coordinates are stale.
+      // Missing/stale input may suspend; duplicate or explicit ambiguous IDs cannot.
+      return this.invalidate(
+        "Player 1 identity is ambiguous. Separate and explicitly rejoin.",
+      );
+    }
+    if (
       timing.processingAgeMs > GAME_INPUT_QUALITY.maximumAgeMs ||
       receivedAtMs - atMs > GAME_INPUT_QUALITY.maximumAgeMs
     ) {
       this.failure =
         "The source observation is stale. Waiting for fresh input.";
+      this.inputSuspended = recoverable;
+      return null;
+    }
+    if (
+      recoverable &&
+      (matching.length !== 1 || matching[0].identity !== "confident")
+    ) {
+      // Keep only the explicit binding token. Missing/tentative evidence cannot
+      // refresh its fixed deadline, and no other ID can inherit this slot.
+      this.inputSuspended = true;
+      this.failure =
+        "Player 1 is missing or uncertain. Waiting briefly for the same track.";
       return null;
     }
     this.anchorBrowserMs -= correctionMs;
     this.lastPublishedAtMs = atMs;
+    this.inputRecovered = this.inputSuspended || interrupted;
+    this.inputSuspended = false;
+    this.memory.remember(binding.spaceRevision, timing.captured, receivedAtMs);
     this.failure = null;
     return {
       ...observationToGameFrame(observation, matching[0], atMs),

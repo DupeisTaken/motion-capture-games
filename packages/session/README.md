@@ -7,3 +7,17 @@ Keep per-player input quality separate from global session state. Check game/pro
 Game capacity is independent of visible-person count and hardware capacity. The [motion runner](../../docs/games/motion-runner.md#presentation-and-player-admission) permits exactly one joined slot; additional detections do not join or take over control. Its uncertainty policy pauses world progression and scoring until explicit recovery.
 
 The game currently owns its active round/countdown clock and pause/results lifecycle; this shared session layer owns membership and source validity. Initial transport delay is unmeasured, and the source clock mapping is not exposure synchronization. Hardware association remains experimental; three-player sessions and automatic identity recovery are unimplemented. See [multiplayer](../../docs/multiplayer.md) and [architecture](../../docs/architecture.md).
+
+## Bounded same-track recovery
+
+`new SinglePlayerSession({ recoveryWindowMs: 450 })` opts into short same-ID recovery. The default is `0`, preserving the existing explicit-rejoin behavior for consumers until they integrate suspension. Values outside finite 0–450 ms are rejected. This API is additive; wire observations and `GameMotionFrame` remain unchanged.
+
+After admission, missing/tentative input or stale pose coordinates return `null`, set `suspended`, and retain the original binding only within a fixed source **and** receipt-time window since the last fresh confident observation. Neither spectators, stale packets nor tentative frames refresh it. A fresh confident observation of the exact same track can recover; no array position, new ID, box similarity or cached joint can take ownership. Recovery returns only current observed joints. Explicit duplicate incumbent IDs or a same-ID `ambiguous` assertion invalidate ownership even when pose coordinates are stale. A tracker-produced ambiguous observation with `trackId: null` cannot be linked to the incumbent; it suspends input, and a retired/new ID cannot resume the old slot.
+
+Consumers must:
+
+1. Call `expire(performance.now())` in their frame loop, including while packets stop; expiry clears binding/memory and returns `true` once. Stop/release sources and call `release()` on round/session changes. Provenance (source/model/tracker, epoch, geometry, calibration) and clock discontinuities invalidate immediately.
+2. Treat `ingest() === null` while `binding` remains as input suspension, preserve the score in its existing slot, and pause affected scoring. A null binding requires explicit rejoin/new round. Never enroll a spectator as recovery.
+3. Break collision/gesture trails on suspension and when `recovered` is true. That flag describes only the most recent ingest and also signals an accepted 350–450 ms source/receipt gap. Run the game's existing recovery countdown; do not sweep old-to-new contacts across the gap.
+
+The exported `EphemeralIdentityMemory` stores one caller-scoped anonymous association token and two clock references. It has constant storage, no media/body/appearance features, and explicit `clear()`. `SinglePlayerSession` owns its lifetime and invalidation. This is not personal re-identification or a mechanism for attaching new IDs to an existing score. [Tracking evaluation](../../docs/tracking-algorithms.md#playtest-continuity-evaluation-and-bounded-session-memory) measures the tracker separately from session software tests. Consumer UI integration is separate campaign work; this PR changes no viewer/game code.

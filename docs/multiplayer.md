@@ -40,6 +40,8 @@ The second camera provides evidence only when its view and timing are useful. It
 
 Full occlusion can make identity unobservable. Preserve uncertainty rather than claiming guaranteed continuity. Recovery can require a clear separation or explicit rejoin. Set the evidence threshold and recovery interval from measured scenarios, not guessed confidence values.
 
+The experimental single-player session offers [opt-in bounded same-track suspension](../packages/session/README.md#bounded-same-track-recovery). One ephemeral non-biometric association token survives at most 450 ms without fresh confident input; it never enrolls a new ID or republishes old joints. Consumers keep the score pinned to the original slot and suspend its scoring while missing/tentative. Duplicate/explicit ambiguous incumbent identity and changed provenance invalidate immediately, while recovery breaks old trails. This provisional software bound is not multiplayer registration, cross-view re-identification or measured field continuity. Unrelated spectator ambiguity only retires spatially implicated camera tracks; genuinely ambiguous overlap remains conservative.
+
 ## Required diagnostic scenarios
 
 - Two players exchange left/right positions, including similar clothing.

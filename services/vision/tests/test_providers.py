@@ -46,6 +46,28 @@ def test_nonfinite_or_missing_joints_are_not_valid_coordinates():
     assert joint(0.2, 0.3, 0.3)["status"] == "estimated"
 
 
+def test_mediapipe_face_disappearance_does_not_change_body_box():
+    landmarks = [SimpleNamespace(x=0.5, y=0.5, visibility=0.95, presence=0.95) for _ in range(33)]
+    landmarks[11].x, landmarks[12].x = 0.4, 0.6
+    landmarks[11].y, landmarks[23].y = 0.3, 0.7
+    for index in MP_INDICES[:5]:
+        landmarks[index].x, landmarks[index].y = 0.9, 0.1
+    front = landmark_person(landmarks)
+    for index in MP_INDICES[:5]:
+        landmarks[index].visibility = 0
+    back = landmark_person(landmarks)
+    assert front is not None and back is not None
+    assert front["box"] == back["box"]
+    assert back["joints"]["nose"]["status"] == "missing"
+
+
+def test_mediapipe_face_only_observation_cannot_admit_a_body():
+    landmarks = [SimpleNamespace(x=0.5, y=0.5, visibility=0, presence=0) for _ in range(33)]
+    for index in MP_INDICES[:5]:
+        landmarks[index].visibility = landmarks[index].presence = 0.95
+    assert landmark_person(landmarks) is None
+
+
 @pytest.mark.parametrize(
     "field,value",
     [("presence", None), ("visibility", None), ("presence", float("nan")), ("x", None)],
