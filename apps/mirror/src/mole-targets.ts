@@ -69,6 +69,20 @@ export function renderMoleTargets(
           : event.kind === "bomb"
             ? `−${TUNING.bombPenalty}`
             : `+${event.points}`;
+      // Burst particles on hit (removed automatically after animation ends).
+      if (event.outcome === "hit") {
+        const particleColor =
+          event.kind === "bomb" ? "#ffca92" : "var(--lime, #c8f03a)";
+        const count = event.kind === "bomb" ? 10 : 8;
+        for (let i = 0; i < count; i++) {
+          const p = effects.ownerDocument.createElement("span");
+          p.className = "mole-particle";
+          p.style.setProperty("--angle", `${(i * 360) / count}deg`);
+          p.style.background = particleColor;
+          p.addEventListener("animationend", () => p.remove(), { once: true });
+          element.append(p);
+        }
+      }
       effects.append(element);
     }
     const point = mapJoint(event, rect);

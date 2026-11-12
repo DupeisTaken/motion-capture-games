@@ -499,6 +499,12 @@ export function mountDodgeballGame(
           : "CLEAN DODGE!";
       get("dodge-feedback").dataset.kind =
         state.hits > lastHits ? "hit" : "dodge";
+      // Flash the stage on hit.
+      if (state.hits > lastHits) {
+        const stage = get("game-stage");
+        stage.dataset.flash = "hit";
+        setTimeout(() => delete stage.dataset.flash, 420);
+      }
     }
     lastHits = state.hits;
     lastDodges = state.dodges;
