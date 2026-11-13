@@ -33,14 +33,14 @@ const icon = (name: "body" | "play" | "stop" | "expand" | "camera") => {
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <a class="skip-link" href="#workspace">Skip to viewer</a>
   <header class="app-header">
-    <a class="brand" href="/" aria-label="Motion Studio home"><span class="brand-symbol">${icon("body")}</span>Motion<span class="brand-light">Studio</span><span class="subtle-badge">LAB</span></a>
+    <a class="brand" href="./" aria-label="Motion Studio home"><span class="brand-symbol">${icon("body")}</span>Motion<span class="brand-light">Studio</span><span class="subtle-badge">LAB</span></a>
     <nav class="app-navigation" aria-label="Games and workspaces">
-      <a href="/">All games</a>
-      <a href="/rig.html">Two-camera workspace</a>
-      <a href="/mole.html">Slap a Mole</a>
-      <a href="/dodgeball.html">Dodgeball</a>
-      <a href="/runner.html">Motion Runner</a>
-      <a href="/maze.html">Virtual Maze</a>
+      <a href="./">All games</a>
+      <a href="./rig.html">Two-camera workspace</a>
+      <a href="./mole.html">Slap a Mole</a>
+      <a href="./dodgeball.html">Dodgeball</a>
+      <a href="./runner.html">Motion Runner</a>
+      <a href="./maze.html">Virtual Maze</a>
     </nav>
     <span class="local-indicator"><span></span> Local processing · no recording</span>
   </header>

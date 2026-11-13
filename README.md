@@ -19,6 +19,10 @@ Open **http://127.0.0.1:5173/** to choose any implemented game or operator tool.
 
 The directory needs only the frontend: after installing dependencies, run `pnpm exec vite`. It makes no vision-service or camera requests. Camera play needs the full setup below and explicit **Start camera** in a game or console. Virtual Maze supports synthetic rehearsal; physical input remains pending. See [application entry points](apps/mirror/README.md#entry-points) and [the directory report](reports/game-directory.html).
 
+### Play in GitHub Pages
+
+The [browser arcade](https://dupeistaken.github.io/motion-capture-games/) provides camera-free rehearsal for all four games after Pages is enabled and the deployment succeeds. Use the local setup below for body tracking and operator tools. Motion Runner requires WebGL 2.
+
 ## Run the diagnostic viewer
 
 Use Node 24.21.0, pnpm 11.25.0, and an existing Python 3.9+ interpreter for the local bootstrap:

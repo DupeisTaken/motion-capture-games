@@ -400,3 +400,7 @@ h1 em {
     transform: none;
   }
 }
+
+[data-build="pages"] .local-only {
+  display: none;
+}

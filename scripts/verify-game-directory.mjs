@@ -138,7 +138,7 @@ try {
       await page.keyboard.press("Tab");
       assert.equal(
         await page.evaluate(() => document.activeElement.getAttribute("href")),
-        "/mole.html",
+        "./mole.html",
       );
       result.viewports.push({
         name,
@@ -165,7 +165,7 @@ try {
       });
       page.on("pageerror", (error) => result.errors.push(error.message));
       await page.goto(url);
-      await page.locator(`a[href="/${path}"]`).click();
+      await page.locator(`a[href="./${path}"]`).click();
       assert.equal(new URL(page.url()).pathname, `/${path}`);
       await page.locator("main").waitFor();
       if (await page.locator("dialog[open]").count())

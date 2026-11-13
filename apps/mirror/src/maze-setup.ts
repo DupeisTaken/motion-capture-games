@@ -1,3 +1,4 @@
+import { hostedRehearsal } from "./build-mode";
 import type { MazeConfig } from "../../../games/virtual-maze/src/index";
 import type { MazeOrientationSource } from "../../../packages/motion/src/maze-input";
 import { mazeCameraGuideMarkup } from "./maze-camera-guide";
@@ -20,7 +21,10 @@ export function mazeSetupMarkup(): string {
     <label for="maze-seed">Layout seed</label><input id="maze-seed" type="text" value="quiet-path-01" maxlength="80" required><button type="button" id="maze-shuffle" class="maze-button maze-wide">New random seed</button>
     <label for="maze-orientation">Direction source</label><select id="maze-orientation" required><option value="torso">Torso</option><option value="head">Head</option></select><p class="maze-hint">Head direction is not eye gaze. Missing selected direction pauses the cue. Changes apply only after Start round.</p>
     <p id="maze-config-status" class="maze-hint" role="status">Confirm Start round to generate this maze and reset the player.</p></form>`;
-  const videoOptions = `<label for="maze-source">Input source</label><select id="maze-source" required><option value="synthetic">Synthetic rehearsal · no cameras</option><option value="physical" disabled>Physical two-camera input · unavailable</option></select>
+  const videoOptions = hostedRehearsal
+    ? `<label for="maze-source">Input source</label><select id="maze-source" required><option value="synthetic">Synthetic rehearsal · no cameras</option></select>
+    ${mazePhotoCornersMarkup()}`
+    : `<label for="maze-source">Input source</label><select id="maze-source" required><option value="synthetic">Synthetic rehearsal · no cameras</option><option value="physical" disabled>Physical two-camera input · unavailable</option></select>
     <p class="maze-hint">Rounds use synthetic input. Live floor calibration below opens a camera only after Start camera. Physical play still needs validated body position, identity, timing and facing direction.</p>
     ${mazeCalibrationMarkup()}${mazeCameraGuideMarkup()}${mazePhotoCornersMarkup()}`;
   return preGameSettingsMarkup("Virtual Maze", gameOptions, videoOptions);
