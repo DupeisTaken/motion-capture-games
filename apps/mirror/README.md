@@ -10,6 +10,12 @@ Run `pnpm exec vite` for frontend-only browsing after installing dependencies, o
 
 When adding a playable HTML entry, register it in `vite.config.ts`, add a directory card with accurate input requirements, update this entry-point list and the [CI component/build table](../../docs/continuous-integration.md#component-and-package-builds). The directory test compares game links with actual app HTML entries to catch omissions.
 
+## GitHub Pages rehearsal
+
+`pnpm build:pages` builds the directory and four game pages into `dist/pages`. The build uses relative assets and page links so it works under the repository path. Games start with rehearsal input, and camera controls and operator tools are available in the local build. `pnpm verify:pages` serves the built files under a project path without a vision proxy and checks game startup on desktop and mobile.
+
+A repository admin or maintainer selects **GitHub Actions** in **Settings → Pages → Source**. The **Arcade on GitHub Pages** workflow publishes from `main` on push or manual dispatch. The [delivery report](../../reports/github-pages.html) records the checks and deployment status.
+
 ## Runtime composition
 
 `rig.html` provides the [two-camera operator rehearsal and physical planning workspace](../../docs/two-camera-workspace.md). Both camera diagnostics remain prominent, with XYZ separate from the player display. **Gameplay camera** selects the synthetic background for one real Slap a Mole Practice/Touch runtime and its optional player window. A fresh synthetic pointer/keyboard controller drives hits; recorded bodies/XYZ do not. The inline gameplay preview starts collapsed, and only its game stage/HUD moves to the player window. Identity, source-quality, clock and lifecycle boundaries are documented in the owning guide. No capture, inference or simultaneous live cameras are added. [The gameplay-camera report](../../reports/displayed-camera.html) records actual verification.

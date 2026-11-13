@@ -26,7 +26,7 @@ describe("root game directory", () => {
     ]);
     const gameEntries = readdirSync(appRoot)
       .filter((name) => name.endsWith(".html") && !operatorEntries.has(name))
-      .map((name) => `/${name}`)
+      .map((name) => `./${name}`)
       .sort();
     const links = [...page.querySelectorAll<HTMLAnchorElement>(".game-card")];
     expect(links.map((link) => link.getAttribute("href")).sort()).toEqual(
@@ -47,25 +47,23 @@ describe("root game directory", () => {
       if (href.startsWith("#")) expect(page.querySelector(href)).not.toBeNull();
       else
         expect(
-          existsSync(
-            resolve(appRoot, href === "/" ? "index.html" : href.slice(1)),
-          ),
+          existsSync(resolve(appRoot, href === "./" ? "index.html" : href)),
         ).toBe(true);
     }
     expect(
-      page.querySelector('.tool-link[href="/diagnostics.html"]'),
+      page.querySelector('.tool-link[href="./diagnostics.html"]'),
     ).not.toBeNull();
-    expect(page.querySelector('.tool-link[href="/rig.html"]')).not.toBeNull();
+    expect(page.querySelector('.tool-link[href="./rig.html"]')).not.toBeNull();
     expect(page.querySelector("main #games[tabindex='-1']")).not.toBeNull();
     expect(page.querySelector("button")).toBeNull();
   });
 
   it("labels the maze's physical input as pending", () => {
     expect(
-      page.querySelector('a[href="/maze.html"] .game-input')?.textContent,
+      page.querySelector('a[href="./maze.html"] .game-input')?.textContent,
     ).toContain("Synthetic rehearsal");
     expect(
-      page.querySelector('a[href="/maze.html"] .game-input')?.textContent,
+      page.querySelector('a[href="./maze.html"] .game-input')?.textContent,
     ).toContain("physical input pending");
   });
 
