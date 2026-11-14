@@ -38,7 +38,7 @@ export function mazeCameraGuideMarkup(): string {
       <p>Check both cameras at the intended participant heights, including overhead reach and head-only/torso-only turns. A good hip position does not prove facing direction; test front/back ambiguity and occlusion separately. Head direction is not eye gaze.</p>
       <p>Use known-size board correspondences in both views for intrinsics, distortion and metric extrinsics. Hold out independent reference points. A floor homography maps floor contacts, not elevated hips or heads. Moving a camera or changing focus/image geometry requires revalidation.</p>
       <p>Before live gameplay: measure source exposure skew/uncertainty, confirmed same-person association, XYZ and angular errors, accepted coverage, useful update rate and external motion-to-buzzer latency. Record rejections as well as accepted errors. Planning notes and corner labels cannot pass these gates.</p>
-      <p><a href="/rig.html" target="_blank" rel="noopener noreferrer">Open two-camera planning ↗</a> — assigns roles without starting capture.</p>
+      <p><a href="./rig.html" target="_blank" rel="noopener noreferrer">Open two-camera planning ↗</a> — assigns roles without starting capture.</p>
       <p class="maze-camera-sources">Geometry references: <a href="https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html" target="_blank" rel="noopener noreferrer">OpenCV calibration ↗</a> · <a href="https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html" target="_blank" rel="noopener noreferrer">Stereo calibration & triangulation ↗</a>. Placement is a starting hypothesis to verify on this rig.</p>
     </details>
   </details>`;

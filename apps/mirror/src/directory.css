@@ -408,3 +408,7 @@ h1 em {
   .game-card:hover .game-art svg, .game-card:hover .game-action,
   .directory-brand:hover .directory-mark { transform: none; }
 }
+
+[data-build="pages"] .local-only {
+  display: none;
+}

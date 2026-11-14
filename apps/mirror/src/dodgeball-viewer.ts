@@ -1,3 +1,4 @@
+import { hostedRehearsal } from "./build-mode";
 import { createMultiplayerView } from "./multiplayer-view";
 import { createResumeControl } from "./resume-control";
 import {
@@ -48,7 +49,7 @@ export function mountDodgeballGame(
     `<label for="mode-select">Play mode</label><select id="mode-select" aria-describedby="mode-description"><option value="timed">Timed · 60 seconds</option><option value="survival">Survival · 3 shields</option><option value="practice">Practice · no pressure</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p>
  <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · time to react</option><option value="normal" selected>Normal · find your flow</option><option value="hard">Hard · think on your feet</option></select><p class="field-note">A ring marks the exact ball footprint. Move your whole body clear before it fills.</p>
  `,
-    `<label for="source-select">Input source</label><select id="source-select"><option value="camera">Camera · body tracking</option><option value="demo">Rehearsal · no camera</option></select>
+    `<label for="source-select">Input source</label><select id="source-select">${hostedRehearsal ? "" : '<option value="camera">Camera · body tracking</option>'}<option value="demo">Rehearsal · no camera</option></select>
 
  <div id="setup-camera-release" hidden><p id="setup-release-message" class="field-note" role="status"></p><button id="setup-retry-camera-stop" class="mm-secondary">Retry camera stop</button></div><p id="setup-input-status" class="field-note" role="status"></p><div id="demo-controls"><p class="field-note">Move the body with your pointer, touch or arrow keys. This is a synthetic rehearsal.</p><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
  <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Start with one player in view and keep your whole body visible. Spectators can enter during play while the joined player stays tracked.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="setup-stop-camera" class="mm-text" disabled>Stop camera</button></div>
@@ -58,10 +59,10 @@ export function mountDodgeballGame(
   );
   root.innerHTML = `
  <a class="skip" href="#game-stage">Skip to game</a>
- <header class="mm-header"><a class="mm-brand" href="/">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/" aria-label="All games">All games</a><a href="/diagnostics.html">Tracking console</a><a href="/mole.html">Slap a Mole</a><a class="current" href="/dodgeball.html" aria-current="page">Dodgeball</a><a href="/runner.html">Runner</a></nav><span class="local-pill"><i></i> Local & private</span></header>
+ <header class="mm-header"><a class="mm-brand" href="./">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="./" aria-label="All games">All games</a>${hostedRehearsal ? "" : '<a href="./diagnostics.html">Tracking console</a>'}<a href="./mole.html">Slap a Mole</a><a class="current" href="./dodgeball.html" aria-current="page">Dodgeball</a><a href="./runner.html">Runner</a></nav>${hostedRehearsal ? "" : '<span class="local-pill"><i></i> Local & private</span>'}</header>
  <main class="mm-main"><div class="mm-heading"><div><p class="eyebrow">THE MOTION ARCADE <span>/</span> GAME 02</p><h1>Dodgeball<span class="heading-dot">.</span></h1><p class="intro">Read the ring. Find your space. Make your move.</p></div><span class="experiment">Single player <span>Experimental</span></span></div>
  <div class="mm-layout play-layout">
- <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="field-note" role="status">Press Start. We will find one ready player.</p><button id="source-stop" class="mm-text" disabled>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
+ <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="field-note" role="status">Press Start. We will find one ready player.</p><button id="source-stop" class="mm-text" disabled ${hostedRehearsal ? "hidden" : ""}>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
   <section class="mm-game" aria-label="Dodgeball game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>DODGES</span><strong id="dodges-value">0</strong></div><div class="score-item"><span id="shields-label">HITS</span><strong id="hits-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
  <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Dodgeball play area. Rehearsal: move your pointer, touch or use arrow keys to move the whole body."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera view and virtual ball warning"></canvas><div class="stage-label"><i></i><span>READ THE RING · DODGE THE BALL</span></div><div class="display-hud" aria-label="Live game score"><span>SCORE <strong id="display-score">000</strong></span><span id="display-clock-label">TIME <strong id="display-time">1:00</strong></span><span>DODGES <strong id="display-dodges">0</strong></span></div><div class="player-label">P1 <span id="stage-player">WAITING</span></div><div id="dodge-feedback" class="hit-feedback" aria-hidden="true" hidden></div><div class="mm-overlay" id="game-overlay"><div class="overlay-ball">${ballArt}</div><p id="overlay-kicker">READY, SET, SIDESTEP</p><h2 id="overlay-title">A little space.<br>A great escape.</h2><p id="overlay-copy">Press Start, then move clear of each warning ring. Keep your whole body in view.</p><button id="resume-round" class="mm-primary" hidden>Resume</button></div><div class="stage-bottom"><span id="stage-help">Rehearsal · pointer, touch or arrow keys to move</span><span>MIRRORED VIEW</span></div></div>
  <div class="target-track" id="warning-track"><span id="warning-life">Waiting for your first ball</span><progress id="warning-progress" max="1" value="0" aria-label="Ball phase time remaining"></progress><span id="streak-value">Best streak 0</span></div>
@@ -868,7 +869,7 @@ export function mountDodgeballGame(
   const stopTicker =
     deps.autoTick === false ? () => {} : display.startTicker(tick);
   updateSettings();
-  void cameraChoice.refresh();
+  if (!isDemo()) void cameraChoice.refresh();
   tick();
   setup.open();
   return {
