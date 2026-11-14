@@ -14,27 +14,30 @@
 }
 .camera-choice-row button {
   flex: 0 0 auto;
-  border: 1px solid #b8c9d8;
-  border-radius: 5px;
-  background: #f4f8fc;
-  color: #254c70;
+  border: 1.5px solid #c0cfc0;
+  border-radius: 8px;
+  background: #f0f5ef;
+  color: #254c37;
   font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 8px 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 12px;
   min-height: 44px;
   cursor: pointer;
+  transition: background 150ms;
 }
 .camera-choice-row button:hover:not(:disabled) {
-  background: #e7f0fa;
+  background: #e1eede;
+  border-color: #96b896;
 }
 .camera-choice-row button:focus-visible {
-  outline: 3px solid #487dbf;
+  outline: 3px solid #3a8a60;
   outline-offset: 2px;
+  border-radius: 8px;
 }
 .camera-choice-row button:disabled {
   cursor: default;
-  opacity: 0.55;
+  opacity: 0.5;
 }
 .camera-choice-manual {
   margin-top: 12px;
@@ -48,6 +51,6 @@
 .camera-advanced summary {
   cursor: pointer;
   font-size: 12px;
-  color: #385477;
+  color: #3a5a44;
   padding: 6px 0;
 }

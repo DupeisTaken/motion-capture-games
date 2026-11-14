@@ -47,6 +47,8 @@ Camera release uses the shared epoch-scoped `CameraReleases` controller introduc
 
 ## Verification and remaining gates
 
+The arcade theme adds a brief red stage cue for an existing hit outcome, with its animation disabled by reduced motion. Score, collision and tracking rules stay game-owned. [The polish and CI report](../../reports/ci-pr-readiness.html) records theme, browser and software validation.
+
 Behavior tests cover collision regions, all modes, seeded replay, warning/danger phases, one-shot outcomes, invalid body input, framing/tracking/clock interruptions, identity/revision boundaries and restart. Viewer tests cover actual controls and source lifecycle. [The self-contained HTML report](../../reports/dodgeball.html) records the exact checks and real-server English desktop/mobile screenshots actually obtained.
 
 Single player remains the default. Optional camera multiplayer admits up to three explicit slots, each with its own engine, ball, active timeline and score. [Multiplayer policy](../multiplayer.md) owns the experimental capacity and fairness contract; its board stays inline. Physical avoidance/framing accuracy, height/clothing/occlusion variation, movement comfort, camera/video alignment, external motion-to-visible latency, hardware capacity, macOS operation and physical multiplayer performance remain unmeasured. Synthetic tests and review ratings do not close those gates.

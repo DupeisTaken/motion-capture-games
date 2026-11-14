@@ -410,6 +410,10 @@ export function mountRunnerGame(
       get("runner-feedback").dataset.kind =
         state.hits > lastHits ? "hit" : "coin";
       feedbackUntil = state.elapsedMs + 850;
+      // Flash the stage for a moment.
+      const stage = get("game-stage");
+      stage.dataset.flash = state.hits > lastHits ? "hit" : "coin";
+      setTimeout(() => delete stage.dataset.flash, 400);
     }
     lastHits = state.hits;
     lastCoins = state.coins;
