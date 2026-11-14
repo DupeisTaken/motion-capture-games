@@ -1,16 +1,6 @@
 @import "./mole.css";
 
 /* Both games share the arcade shell. This file owns Dodgeball's identity. */
-.mm-primary {
-  background: #be523b;
-  border-color: #be523b;
-}
-.mm-primary:hover:not(:disabled) {
-  background: #9e412e;
-}
-.score-item.primary-score strong {
-  color: #bd5036;
-}
 /* Shared arcade layout; Dodgeball uses coral for action and amber for warnings. */
 .heading-dot {
   color: #bd5036;
@@ -82,9 +72,6 @@
 .field-note {
   font-size: 11px;
   color: #657260;
-}
-.score-item > span {
-  color: #68765f;
 }
 .source-disclosure {
   color: #69765f;

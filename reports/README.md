@@ -1,5 +1,7 @@
 # Change reports
 
+[CI recovery and arcade polish](ci-pr-readiness.html) records the Pages configuration repair, PR #75 validation, theme contrast corrections and English desktop/mobile before/after evidence. PR #67 remains blocked by integration conflicts.
+
 [GitHub Pages arcade](github-pages.html) records the static rehearsal build, desktop and mobile game starts, and the publishing prerequisite.
 
 [Motion Runner body-width lanes and start](runner-body-width.html) records the calibrated guides, the queued Start flow, and desktop/mobile evidence using synthetic camera packets.

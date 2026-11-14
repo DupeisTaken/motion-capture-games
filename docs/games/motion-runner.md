@@ -87,6 +87,8 @@ Run `pnpm benchmark:runner` for the declared 48 camera-free oracle cases (two wo
 
 ## Reference benchmark and remaining gates
 
+The arcade theme presents coin and hit outcomes with a feedback-pill animation and a short stage cue. Reduced motion disables these optional animations; gameplay continues to use the existing game clock and outcomes. [The polish and CI report](../../reports/ci-pr-readiness.html) records the desktop/mobile verification.
+
 Official gameplay footage was inspected for chase-camera framing, three-lane depth, coin trails, readable blocker types and character silhouette. The self-contained report compares accepted reference frames with real local-server gameplay and seeded simulation results. This is a bounded experimental implementation, without commercial-game content breadth, powerups, missions, chase AI, rooftop routes or production animation/audio. It does not establish commercial parity or a perfect physical-control score.
 
 Physical gates remain: repeat comfortable calibration across heights/movement ranges, measure false jump/duck activations and missed controls, validate spectator occlusion with actual cameras, establish framing/lane reach and safe jump clearance, and measure externally observed action-to-display latency. Synthetic software tests cannot close those gates.

@@ -82,6 +82,16 @@ describe("Mole phase and outcome presentation", () => {
     expect(effects.children).toHaveLength(2);
     expect(effects.firstElementChild).toBe(bomb);
     expect(bomb?.textContent).toBe("−50");
+    // Repeated render ticks must not accumulate decorative particles.
+    const particles = bomb!.querySelectorAll(".mole-particle");
+    expect(particles).toHaveLength(10);
+    expect(
+      effects.lastElementChild!.querySelectorAll(".mole-particle"),
+    ).toHaveLength(0);
+    for (const particle of particles)
+      particle.dispatchEvent(new Event("animationend"));
+    renderMoleTargets([], effects, state, rect);
+    expect(bomb!.querySelectorAll(".mole-particle")).toHaveLength(0);
     expect(effects.lastElementChild?.textContent).toBe("ESCAPED");
     state.targetFeedback.shift();
     renderMoleTargets([], effects, state, rect);

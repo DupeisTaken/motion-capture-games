@@ -742,22 +742,39 @@
     animation: runner-pop 220ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
   }
   @keyframes runner-pop {
-    from { transform: translateX(-50%) scale(0.4) translateY(8px); opacity: 0; }
-    to   { transform: translateX(-50%) scale(1)   translateY(0);   opacity: 1; }
+    from {
+      transform: translateX(-50%) scale(0.4) translateY(8px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(-50%) scale(1) translateY(0);
+      opacity: 1;
+    }
   }
   .runner-feedback[data-kind="hit"]:not([hidden]) {
     animation: runner-shake 360ms ease-out;
   }
   @keyframes runner-shake {
-    0%, 100% { transform: translateX(-50%); }
-    15%      { transform: translateX(calc(-50% + 7px)); }
-    35%      { transform: translateX(calc(-50% - 7px)); }
-    55%      { transform: translateX(calc(-50% + 4px)); }
-    75%      { transform: translateX(calc(-50% - 3px)); }
+    0%,
+    100% {
+      transform: translateX(-50%);
+    }
+    15% {
+      transform: translateX(calc(-50% + 7px));
+    }
+    35% {
+      transform: translateX(calc(-50% - 7px));
+    }
+    55% {
+      transform: translateX(calc(-50% + 4px));
+    }
+    75% {
+      transform: translateX(calc(-50% - 3px));
+    }
   }
   /* Stage flash for runner (uses .runner-stage class = #game-stage id) */
   .runner-stage[data-flash="hit"]::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
     background: rgba(220, 55, 35, 0.22);
@@ -767,7 +784,7 @@
     border-radius: inherit;
   }
   .runner-stage[data-flash="coin"]::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
     background: rgba(200, 240, 58, 0.18);
@@ -777,8 +794,12 @@
     border-radius: inherit;
   }
   @keyframes stage-flash-r {
-    0%   { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 }
 .runner-main .stage-pause {
