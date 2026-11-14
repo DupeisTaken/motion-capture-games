@@ -68,10 +68,17 @@ const server = await createServer({
               "\\",
               "/",
             );
-            if (themeFiles.has(file))
-              return execFileSync("git", ["show", `${baseline}:${file}`], {
-                encoding: "utf8",
-              });
+            if (themeFiles.has(file)) {
+              const snapshot = (path) =>
+                execFileSync("git", ["show", `${baseline}:${path}`], {
+                  encoding: "utf8",
+                });
+              // CSS @import reads disk outside Vite's module load hook. Inline
+              // the pinned shared shell so Dodgeball/Runner cannot mix themes.
+              return snapshot(file).replace(/@import "\.\/mole\.css";/g, () =>
+                snapshot("apps/mirror/src/mole.css"),
+              );
+            }
           },
         },
       ]
@@ -114,6 +121,13 @@ try {
         .first()
         .waitFor();
       assert.equal(await page.locator("html").getAttribute("lang"), "en");
+      if (before && ["mole", "dodgeball", "runner"].includes(game))
+        assert.equal(
+          await page.evaluate(
+            () => getComputedStyle(document.body).backgroundColor,
+          ),
+          "rgb(246, 245, 239)",
+        );
       const noOverflow = await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
       );
