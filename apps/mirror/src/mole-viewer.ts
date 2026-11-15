@@ -1,3 +1,8 @@
+import {
+  NavigationStartup,
+  sourceNavigationBlocker,
+  type NavigationOwner,
+} from "./app-navigation";
 import { hostedRehearsal } from "./build-mode";
 import { createMultiplayerView } from "./multiplayer-view";
 import { createResumeControl } from "./resume-control";
@@ -52,7 +57,7 @@ const modeCopy: Record<string, string> = {
 export function mountMoleGame(
   root: HTMLElement,
   deps: { now?: () => number; autoTick?: boolean; seed?: number } = {},
-): { tick(): void; dispose(): void } {
+): NavigationOwner & { tick(): void; dispose(): void } {
   const now = deps.now || (() => performance.now());
   const setupMarkup = preGameSettingsMarkup(
     "Slap a Mole",
@@ -131,6 +136,8 @@ export function mountMoleGame(
   let lastStrikeSequence: number | null = null,
     hitUntil = 0,
     demoTime = -Infinity;
+  let configurationLocked = false;
+  const navigationStartup = new NavigationStartup();
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
   const setup = createPreGameSettings(root, () => {
@@ -189,14 +196,18 @@ export function mountMoleGame(
   function updateReleaseControls() {
     if (disposed) return;
     const release = releases.state;
-    cameraChoice.setLocked(connecting || !!epoch || release.pendingCount > 0);
+    const startupBlocker = navigationStartup.blocker;
+    // Local Stop does not resolve a pending Start or prove camera release.
+    const sourceLocked =
+      connecting || !!epoch || release.pendingCount > 0 || !!startupBlocker;
+    cameraChoice.setLocked(sourceLocked);
+    select("source-select").disabled = configurationLocked || sourceLocked;
     get("camera-release").hidden = release.pendingCount === 0;
     const message = get("camera-release-message");
     if (message.textContent !== release.message)
       message.textContent = release.message;
     get<HTMLButtonElement>("retry-camera-stop").disabled = release.releasing;
-    get<HTMLButtonElement>("source-connect").disabled =
-      connecting || !!epoch || release.pendingCount > 0;
+    get<HTMLButtonElement>("source-connect").disabled = sourceLocked;
     get<HTMLButtonElement>("source-stop").disabled = !epoch && !connecting;
     get<HTMLButtonElement>("setup-stop-camera").disabled =
       !epoch && !connecting;
@@ -204,7 +215,8 @@ export function mountMoleGame(
     get("setup-release-message").textContent = release.message;
     get<HTMLButtonElement>("setup-retry-camera-stop").disabled =
       release.releasing;
-    if (!isDemo() && !epoch) setMessage(release.message || cameraMessage);
+    if (startupBlocker) setMessage(release.message || startupBlocker);
+    else if (!isDemo() && !epoch) setMessage(release.message || cameraMessage);
   }
   function updateTrackChoices() {
     const control = select("player-track");
@@ -404,7 +416,7 @@ export function mountMoleGame(
     const needsNewRound =
       state.phase === "paused" && (readiness.requiresNewRound || needsNewOwner);
     const locked = active();
-    const configurationLocked = locked && !needsNewRound;
+    configurationLocked = locked && !needsNewRound;
     for (const id of [
       "mode-select",
       "difficulty-select",
@@ -433,7 +445,6 @@ export function mountMoleGame(
     get("restart-round").textContent = needsNewRound
       ? "Start new round ↗"
       : "Play again ↗";
-    updateReleaseControls();
     const overlay = get("game-overlay");
     overlay.hidden =
       state.phase === "playing" ||
@@ -529,6 +540,8 @@ export function mountMoleGame(
       t > hitUntil ||
       (state.phase !== "playing" && state.phase !== "results");
     resumeControl.update();
+    // Ownership/release recovery takes precedence over ordinary round status.
+    updateReleaseControls();
   }
   function ingestCamera() {
     if (!observation) return;
@@ -662,7 +675,14 @@ export function mountMoleGame(
     return released;
   }
   async function startCamera() {
-    if (connecting || epoch || releases.state.pendingCount > 0) return;
+    if (
+      disposed ||
+      connecting ||
+      epoch ||
+      releases.state.pendingCount > 0 ||
+      navigationStartup.blocker
+    )
+      return;
     let camera: CameraSelection;
     try {
       camera = cameraChoice.selection();
@@ -686,6 +706,8 @@ export function mountMoleGame(
     get<HTMLButtonElement>("source-connect").disabled = true;
     get<HTMLButtonElement>("source-stop").disabled = false;
     let decoding = false;
+    const navigationAttempt = navigationStartup.begin();
+    updateReleaseControls();
     try {
       const response = await fetch("/api/start", {
         method: "POST",
@@ -701,18 +723,23 @@ export function mountMoleGame(
         }),
       });
       const result = await response.json();
-      if (!response.ok || result.state === "error")
-        throw new Error(
-          result.detail || result.message || "Camera could not start.",
-        );
+      navigationAttempt.acknowledge(response.ok, result);
+      const returnedEpoch =
+        typeof result?.epoch === "string" && result.epoch.trim()
+          ? result.epoch
+          : "";
       if (own !== generation || disposed) {
-        if (typeof result.epoch === "string")
-          await releases.release(result.epoch);
+        if (returnedEpoch) await releases.release(returnedEpoch);
         return;
       }
-      if (typeof result.epoch !== "string" || !result.epoch)
-        throw new Error("Camera did not acknowledge a source epoch.");
-      epoch = result.epoch;
+      // A fast worker failure can acknowledge an owned epoch with state:error.
+      // Retain that owner before handling the error so Stop remains scoped/retryable.
+      epoch = returnedEpoch;
+      if (!response.ok || result?.state === "error")
+        throw new Error(
+          result?.detail || result?.message || "Camera could not start.",
+        );
+      if (!epoch) throw new Error("Camera did not acknowledge a source epoch.");
       const ws = new WebSocket(
         `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/stream`,
       );
@@ -808,8 +835,11 @@ export function mountMoleGame(
         await stopCamera(
           `Camera unavailable: ${error instanceof Error ? error.message : String(error)} Run pnpm dev to start the local vision service.`,
         );
+    } finally {
+      navigationAttempt.finish();
+      // Cancelled/disposed starts return from try; their cleanup must refresh here.
+      if (!disposed) render();
     }
-    if (!disposed) render();
   }
   listen(get("source-connect"), "click", () => void startCamera());
   listen(get("source-stop"), "click", () => void stopCamera());
@@ -960,6 +990,17 @@ export function mountMoleGame(
   tick();
   setup.open();
   return {
+    navigationBlocker() {
+      if (display.isOpen)
+        return "Return the participant game window to controls (or close it) before switching pages.";
+      return (
+        navigationStartup.blocker ??
+        sourceNavigationBlocker(
+          !!epoch || connecting,
+          releases.state.pendingCount,
+        )
+      );
+    },
     tick,
     dispose() {
       disposed = true;

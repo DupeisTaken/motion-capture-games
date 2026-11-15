@@ -101,8 +101,11 @@ describe("explicit camera setup", () => {
       video: { deviceId: { exact: "opaque-a" } },
     });
     expect(element("camera-check").hidden).toBe(false);
+    expect(setup.busy).toBe(false);
+    expect(setup.active).toBe(true);
     expect(identified.tracks[0]!.stop).not.toHaveBeenCalled();
     setup.setLocked(true);
+    expect(setup.active).toBe(false);
     expect(
       element<HTMLVideoElement>("camera-check-video").srcObject,
     ).toBeNull();

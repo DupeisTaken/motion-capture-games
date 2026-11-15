@@ -1,3 +1,4 @@
+import type { NavigationOwner } from "./app-navigation";
 import { hostedRehearsal } from "./build-mode";
 import { createResumeControl } from "./resume-control";
 import {
@@ -27,7 +28,9 @@ import {
 import { mountMazePhotoCorners } from "./maze-photo-corners";
 import { mountMazeCalibration } from "./maze-calibration";
 
-export function mountMaze(root: HTMLElement) {
+export function mountMaze(
+  root: HTMLElement,
+): NavigationOwner & { dispose(): void } {
   root.innerHTML = `
   <a class="skip-link" href="#maze-map">Skip to maze</a>
   <header class="maze-header"><a class="brand" href="./">Motion<span class="brand-light">Studio</span></a><a href="./">All games ↗</a>${hostedRehearsal ? "" : '<a href="./rig.html">Two-camera workspace ↗</a>'}<a href="./mole.html">Slap a Mole ↗</a><span class="maze-badge">Synthetic rehearsal</span></header>

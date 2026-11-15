@@ -1,5 +1,7 @@
 # Change reports
 
+[PR #67 integration](pr67-integration.html) records conflict resolution against the arcade/Pages mainline, combined camera ownership barriers, actual Maze calibration departure checks, current English before/after screenshots and software validation.
+
 [CI recovery and arcade polish](ci-pr-readiness.html) records the Pages configuration repair, PR #75 validation, theme contrast corrections and English desktop/mobile before/after evidence. PR #67 remains blocked by integration conflicts.
 
 [GitHub Pages arcade](github-pages.html) records the static rehearsal build, desktop and mobile game starts, and the publishing prerequisite.

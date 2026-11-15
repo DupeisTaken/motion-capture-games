@@ -1,6 +1,10 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountMaze } from "../../apps/mirror/src/maze-viewer";
+import {
+  mountAppNavigation,
+  type NavigationOwner,
+} from "../../apps/mirror/src/app-navigation";
 import { generateMaze } from "../../games/virtual-maze/src/index";
 
 const audio = vi.hoisted(() => ({
@@ -30,6 +34,7 @@ vi.mock("../../apps/mirror/src/maze-audio", () => ({
   },
 }));
 let workspace: ReturnType<typeof mountMaze>;
+let navigation: ReturnType<typeof mountAppNavigation> | undefined;
 const get = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 const click = (id: string) => get<HTMLButtonElement>(id).click();
@@ -73,6 +78,8 @@ beforeEach(() => {
   }
 });
 afterEach(() => {
+  navigation?.dispose();
+  navigation = undefined;
   workspace.dispose();
   vi.useRealTimers();
   vi.unstubAllGlobals();
@@ -81,12 +88,18 @@ afterEach(() => {
 });
 
 describe("virtual maze operator workflow", () => {
-  it("exposes the shared navigation owner method contract", () => {
-    const owner: { navigationBlocker(): string | null } = workspace;
+  it("exposes the shared departure contract as a callable method", () => {
+    const owner: NavigationOwner = workspace;
     expect(typeof owner.navigationBlocker).toBe("function");
     expect(owner.navigationBlocker()).toBeNull();
   });
   it("composes pending and failed-release calibration ownership into the shared navigation method", async () => {
+    navigation = mountAppNavigation({ owner: workspace, path: "/maze.html" });
+    const link = document.querySelector('.studio-navigation a[href="./"]')!;
+    const depart = () =>
+      link.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      );
     for (let i = 0; i < 12; i++) await Promise.resolve();
     const choice = get<HTMLSelectElement>("maze-cal-1-camera-choice");
     choice.value = "manual";
@@ -107,6 +120,7 @@ describe("virtual maze operator workflow", () => {
       } as Response);
     click("cal-start");
     expect(workspace.navigationBlocker()).toContain("Stop calibration");
+    expect(depart()).toBe(false);
     click("cal-stop");
     acknowledge({
       ok: true,
@@ -114,10 +128,12 @@ describe("virtual maze operator workflow", () => {
     } as Response);
     for (let i = 0; i < 24; i++) await Promise.resolve();
     expect(workspace.navigationBlocker()).toContain("Stop calibration");
+    expect(depart()).toBe(false);
     expect(get<HTMLButtonElement>("cal-start").disabled).toBe(true);
     click("cal-stop");
     for (let i = 0; i < 24; i++) await Promise.resolve();
     expect(workspace.navigationBlocker()).toBeNull();
+    expect(depart()).toBe(true);
   });
   it("requires shared setup confirmation before the first round and restores focus on Close or Escape", () => {
     expect(dialog().open).toBe(true);

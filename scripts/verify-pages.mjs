@@ -78,7 +78,44 @@ try {
       await page.screenshot({
         path: resolve(output, `${game}-${viewport.width}.png`),
       });
-      await page.getByRole("link", { name: /All games/ }).click();
+      const nav = page.getByRole("navigation", {
+        name: "Motion Studio navigation",
+      });
+      await nav.getByRole("button", { name: "Switch view" }).click();
+      assert.equal(await nav.getByRole("link").count(), 5);
+      assert.equal(await nav.locator('[aria-current="page"]').count(), 1);
+      assert.equal(
+        await nav.getByRole("heading", { name: "Operator tools" }).count(),
+        0,
+      );
+      assert.deepEqual(
+        await nav
+          .locator("a")
+          .evaluateAll((links) =>
+            links.map((link) => new URL(link.href).pathname),
+          ),
+        [
+          base,
+          ...["mole", "dodgeball", "runner", "maze"].map(
+            (name) => `${base}${name}.html`,
+          ),
+        ],
+      );
+      await page.screenshot({
+        path: resolve(output, `navigation-${game}-${viewport.width}.png`),
+      });
+      // Exercise the shared chooser as well as the static directory cards.
+      const nextGame = game === "mole" ? "Dodgeball" : "Slap a Mole";
+      await nav.getByRole("link", { name: nextGame, exact: true }).click();
+      assert.equal(
+        new URL(page.url()).pathname,
+        `${base}${nextGame === "Dodgeball" ? "dodgeball" : "mole"}.html`,
+      );
+      await page.locator("#close-settings").click();
+      await page
+        .getByRole("navigation", { name: "Motion Studio navigation" })
+        .getByRole("link", { name: "All games", exact: true })
+        .click();
       assert.equal(new URL(page.url()).pathname, base);
     }
     assert.deepEqual(errors, []);
@@ -95,7 +132,7 @@ try {
     );
     await page.close();
     console.log(
-      `${viewport.width}×${viewport.height}: four rounds started, return navigation passed, no API or asset errors.`,
+      `${viewport.width}×${viewport.height}: four rounds started; five project-path destinations, cross-game chooser and directory return passed; no API or asset errors.`,
     );
   }
 } finally {

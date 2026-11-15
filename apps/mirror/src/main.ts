@@ -1,3 +1,4 @@
+import { mountAppNavigation, sourceNavigationBlocker } from "./app-navigation";
 import {
   CameraChoice,
   cameraChoiceMarkup,
@@ -907,3 +908,17 @@ void fetch("/api/status")
   });
 
 void cameraChoice.refresh();
+
+const navigation = mountAppNavigation({
+  owner: {
+    navigationBlocker() {
+      if (unknownOwnership) return unknownOwnership;
+      if (pendingStart)
+        return "Source startup is still pending. Stay here until its acknowledgement and any camera release complete.";
+      if (cameraSetup.active)
+        return "Release the browser camera identification preview before switching pages.";
+      return sourceNavigationBlocker(!!capture, releases.state.pendingCount);
+    },
+  },
+});
+if (import.meta.hot) import.meta.hot.dispose(() => navigation.dispose());

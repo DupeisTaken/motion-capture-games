@@ -78,3 +78,7 @@ The [palm and foot contact report](../../reports/slap-a-mole-palm-contact.html) 
 [Issue #62](https://github.com/DupeisTaken/motion-capture-games/issues/62) and [the playtest feel report](../../reports/playtest-mole-feel.html) record software and synthetic browser evidence. The rig workspace intentionally remains on its explicit version-2 pointer rules. Dodgeball receives only stronger local outlines and phase labels; its collision and timing policy are unchanged.
 
 Optional camera multiplayer now runs up to three explicitly enrolled personal games. [Multiplayer policy](../multiplayer.md) owns admission, spectators, parallel target fairness, per-slot suspension and experimental capacity; the separate game window remains single-player.
+
+### Pending or unknown camera startup
+
+Camera Start, named/manual camera selection and input-source selection remain locked while a cancelled Start still awaits acknowledgement or scoped cleanup. Repeated Stop does not clear that ownership barrier. Failed late release keeps Retry camera stop available; confirmed release permits another explicit Start. A lost or malformed successful response cannot prove ownership, so restart the local vision service and reload before starting another source; this affects all tabs sharing the service. A fast worker error with an acknowledged epoch still requires scoped cleanup. See [operator navigation and acquisition](../operator-navigation.md) and [the integration report](../../reports/pr67-integration.html).

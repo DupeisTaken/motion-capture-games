@@ -1,3 +1,8 @@
+import {
+  NavigationStartup,
+  sourceNavigationBlocker,
+  type NavigationOwner,
+} from "./app-navigation";
 import { hostedRehearsal } from "./build-mode";
 import { createResumeControl } from "./resume-control";
 import {
@@ -28,7 +33,7 @@ const startPrompt = "Choose your input, then start your run.";
 export function mountRunnerGame(
   root: HTMLElement,
   deps: { now?: () => number; autoTick?: boolean; seed?: number } = {},
-): { tick(): void; dispose(): void } {
+): NavigationOwner & { tick(): void; dispose(): void } {
   const now = deps.now ?? (() => performance.now());
   root.innerHTML = `
   <a class="skip" href="#game-stage">Skip to game</a>
@@ -96,6 +101,7 @@ export function mountRunnerGame(
   })();
   const session = new SinglePlayerSession({ recoveryWindowMs: 450 });
   const pose = new RunnerPoseControls();
+  const navigationStartup = new NavigationStartup();
   const preview = new RunnerPreview(get<HTMLCanvasElement>("camera-preview"));
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
@@ -134,24 +140,24 @@ export function mountRunnerGame(
   function updateReleaseControls() {
     if (disposed) return;
     const release = releases.state;
-    cameraChoice.setLocked(
-      connecting ||
-        pendingStarts.size > 0 ||
-        !!cameraEpoch ||
-        release.pendingCount > 0 ||
-        startupUncertain,
-    );
-    get("camera-release").hidden = release.pendingCount === 0;
-    setText("camera-release-message", release.message ?? "");
-    get<HTMLButtonElement>("retry-camera-stop").disabled = release.releasing;
-    get<HTMLButtonElement>("source-connect").disabled =
+    const startupBlocker = navigationStartup.blocker;
+    // Shared ownership acknowledgement supplements Runner's independent guards.
+    const sourceLocked =
       connecting ||
       pendingStarts.size > 0 ||
       !!cameraEpoch ||
       release.pendingCount > 0 ||
-      startupUncertain;
+      startupUncertain ||
+      !!startupBlocker;
+    cameraChoice.setLocked(sourceLocked);
+    get<HTMLSelectElement>("source-select").disabled = active() || sourceLocked;
+    get("camera-release").hidden = release.pendingCount === 0;
+    setText("camera-release-message", release.message ?? "");
+    get<HTMLButtonElement>("retry-camera-stop").disabled = release.releasing;
+    get<HTMLButtonElement>("source-connect").disabled = sourceLocked;
     get<HTMLButtonElement>("source-stop").disabled =
       !cameraEpoch && !connecting;
+    if (startupBlocker) cameraMessage(release.message ?? startupBlocker);
   }
   function cameraMessage(value: string) {
     setText("camera-status", value);
@@ -684,6 +690,7 @@ export function mountRunnerGame(
       cameraEpoch ||
       releases.state.pendingCount ||
       startupUncertain ||
+      navigationStartup.blocker ||
       disposed
     )
       return;
@@ -700,6 +707,8 @@ export function mountRunnerGame(
     cameraMessage("Starting local body tracking…");
     updateReleaseControls();
     let acknowledged = false;
+    const navigationAttempt = navigationStartup.begin();
+    updateReleaseControls();
     try {
       const response = await fetch("/api/start", {
         method: "POST",
@@ -714,7 +723,8 @@ export function mountRunnerGame(
         }),
       });
       const result = await response.json();
-      if (typeof result.epoch === "string" && result.epoch) {
+      navigationAttempt.acknowledge(response.ok, result);
+      if (typeof result.epoch === "string" && result.epoch.trim()) {
         acknowledged = true;
         if (own !== generation || disposed || isDemo()) {
           await releases.release(result.epoch);
@@ -803,6 +813,7 @@ export function mountRunnerGame(
           error instanceof Error ? error.message : String(error),
         );
     } finally {
+      navigationAttempt.finish();
       pendingStarts.delete(own);
       if (own === generation) connecting = false;
       if (!disposed) tick();
@@ -1021,6 +1032,15 @@ export function mountRunnerGame(
   if (!isDemo()) void cameraChoice.refresh();
   tick();
   return {
+    navigationBlocker() {
+      return (
+        navigationStartup.blocker ??
+        sourceNavigationBlocker(
+          !!cameraEpoch || connecting || startupUncertain,
+          releases.state.pendingCount,
+        )
+      );
+    },
     tick,
     dispose() {
       disposed = true;
