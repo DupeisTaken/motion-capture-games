@@ -21,7 +21,7 @@ const executablePath =
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   ].find(existsSync);
 assert(executablePath, "Use an existing browser; set CHROME_PATH if needed.");
-const ref = "2cea8d7033a8be02f4f9d7079ecc0e6ca676a6fa";
+const ref = "6974c688423f5624bb7c520e7671657bc79d6ca9";
 const originals = new Map();
 if (baseline) {
   for (const path of execFileSync(
@@ -52,7 +52,10 @@ const server = await createServer({
         vite.middlewares.use("/navigation-report.html", async (_req, res) => {
           res.setHeader("Content-Type", "text/html; charset=utf-8");
           res.end(
-            await readFile("reports/playtest-operator-navigation.html", "utf8"),
+            await readFile(
+              process.env.NAV_REPORT_FILE || "reports/pr67-integration.html",
+              "utf8",
+            ),
           );
         });
       },
@@ -79,6 +82,12 @@ try {
     viewport: { width: 1440, height: 1000 },
   });
   let stopFails = false;
+  let calibrationMode = "pending";
+  let calibrationStart;
+  let calibrationReady;
+  const calibrationRequested = new Promise((resolve) => {
+    calibrationReady = resolve;
+  });
   const requests = [];
   await context.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -93,6 +102,14 @@ try {
       return route.fulfill({
         json: { state: "running", epoch: "synthetic-navigation-owner" },
       });
+    if (path === "/api/calibration/start") {
+      if (calibrationMode === "pending") {
+        calibrationStart = route;
+        calibrationReady();
+        return;
+      }
+      return route.fulfill({ json: { state: "error" } });
+    }
     if (path === "/api/stop")
       return route.fulfill({
         status: stopFails ? 409 : 200,
@@ -149,6 +166,7 @@ try {
     for (const [size, width, height] of [
       ["desktop", 1440, 1000],
       ["mobile", 390, 844],
+      ["narrow", 320, 740],
     ]) {
       await page.setViewportSize({ width, height });
       for (const [name, path] of routes) {
@@ -173,6 +191,13 @@ try {
             box.x >= 0 && box.x + box.width <= width + 1,
             `${name} navigation overflow`,
           );
+          assert.equal(await page.evaluate(() => window.innerWidth), width);
+          assert(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= window.innerWidth,
+            ),
+            `${name} page overflow`,
+          );
         }
         const screenshot = `${phase}-${name}-${size}.png`;
         await page.screenshot({ path: resolve(output, screenshot) });
@@ -180,7 +205,7 @@ try {
       }
     }
     result.checks.push(
-      "Real Vite server: all seven routes captured at 1440×1000 and 390×844, English; no camera/service used",
+      "Real Vite server: all seven routes captured at 1440×1000, 390×844 and 320×740, English; no camera/service used",
     );
     if (!baseline) {
       await page.setViewportSize({ width: 390, height: 844 });
@@ -280,6 +305,93 @@ try {
       );
       result.checks.push(
         "Calibration-style app-local ownership veto keeps Maze on its operator page",
+      );
+      // Exercise the merged calibration controller, not only an injected veto.
+      await page.goto(`${url}maze.html`);
+      await page.locator("#maze-calibration").evaluate((details) => {
+        details.open = true;
+      });
+      await page.locator("#maze-cal-1-camera-choice").selectOption("manual");
+      await page
+        .locator("#cal-optics")
+        .fill("Synthetic locked full-frame lens setup");
+      await page.locator("#cal-start").click();
+      await calibrationRequested;
+      await page.locator("#close-settings").click();
+      const mazeNav = page.getByRole("navigation", {
+        name: "Motion Studio navigation",
+      });
+      await mazeNav
+        .getByRole("link", { name: "All games", exact: true })
+        .click();
+      assert.equal(new URL(page.url()).pathname, "/maze.html");
+      assert.match(
+        await page.locator("#cal-capture-status").textContent(),
+        /Stop calibration/,
+      );
+      stopFails = true;
+      await calibrationStart.fulfill({
+        json: { epoch: "synthetic-calibration-owner" },
+      });
+      await page.waitForFunction(() =>
+        document
+          .querySelector("#cal-capture-status")
+          .textContent.includes("Retry"),
+      );
+      await page.locator("#close-settings").click();
+      await mazeNav
+        .getByRole("link", { name: "All games", exact: true })
+        .click();
+      assert.equal(new URL(page.url()).pathname, "/maze.html");
+      await page.screenshot({
+        path: resolve(output, "after-calibration-release-mobile.png"),
+      });
+      stopFails = false;
+      await page.locator("#cal-stop").click();
+      await page.waitForFunction(
+        () => !document.querySelector("#cal-start").disabled,
+      );
+      await page.locator("#close-settings").click();
+      await mazeNav
+        .getByRole("link", { name: "All games", exact: true })
+        .click();
+      await page.waitForURL(url);
+      assert(
+        requests
+          .filter((req) => req.path === "/api/stop")
+          .every((req) =>
+            [
+              "synthetic-navigation-owner",
+              "synthetic-calibration-owner",
+            ].includes(JSON.parse(req.body).epoch),
+          ),
+      );
+      calibrationMode = "unknown";
+      await page.goto(`${url}maze.html`);
+      await page.locator("#maze-calibration").evaluate((details) => {
+        details.open = true;
+      });
+      await page.locator("#maze-cal-1-camera-choice").selectOption("manual");
+      await page
+        .locator("#cal-optics")
+        .fill("Synthetic locked full-frame lens setup");
+      await page.locator("#cal-start").click();
+      await page.waitForFunction(() =>
+        document
+          .querySelector("#cal-capture-status")
+          .textContent.includes("ownership is unknown"),
+      );
+      await page.locator("#close-settings").click();
+      await page
+        .getByRole("navigation", { name: "Motion Studio navigation" })
+        .getByRole("link", { name: "All games", exact: true })
+        .click();
+      assert.equal(new URL(page.url()).pathname, "/maze.html");
+      await page.screenshot({
+        path: resolve(output, "after-calibration-unknown-mobile.png"),
+      });
+      result.checks.push(
+        "Actual Maze calibration: pending cancellation, failed late scoped release, retry recovery and unknown successful ownership all preserve departure barriers",
       );
       await page.goto(`${url}mole.html`);
       await page.locator("#source-select").selectOption("demo");

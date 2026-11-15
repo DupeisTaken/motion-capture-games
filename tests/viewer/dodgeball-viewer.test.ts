@@ -558,6 +558,9 @@ describe("Dodgeball operator integration", () => {
     const score = element("score-value").textContent;
     await sendSpectatorFrame(false);
     expect(element("game-overlay").hidden).toBe(false);
+    expect(element("restart-round").hidden).toBe(true);
+    expect(element("score-value").textContent).toBe(score);
+    advance(500);
     expect(element("restart-round").hidden).toBe(false);
     expect(element("score-value").textContent).toBe(score);
   });
@@ -654,7 +657,7 @@ describe("Dodgeball operator integration", () => {
       expect(element("score-value").textContent).toBe("000");
     },
   );
-  it("never resumes old score after an explicit ambiguous identity or absent participant", async () => {
+  it("never resumes old score after an explicit ambiguous identity", async () => {
     const socket = await startCamera();
     await socket.receive(packet(observation()));
     element<HTMLButtonElement>("start-round").click();
@@ -679,13 +682,35 @@ describe("Dodgeball operator integration", () => {
     await socket.receive(packet(observation()));
     element<HTMLButtonElement>("start-round").click();
     element<HTMLButtonElement>("confirm-start").click();
-    advance(500);
+    advance(350);
     expect(element("overlay-title").textContent).toBe("Finding you again");
     now += 50;
-    await socket.receive(packet(observation(12)));
+    await socket.receive(packet(observation(9)));
     expect(element("overlay-title").textContent).toBe("2");
     expect(element("score-value").textContent).toBe("000");
   });
+  it("preserves a round through brief same-ID self-occlusion and requires a new round after expiry", async () => {
+    const socket = await startCamera();
+    await socket.receive(packet(observation()));
+    element<HTMLButtonElement>("start-round").click();
+    element<HTMLButtonElement>("confirm-start").click();
+    now += 50;
+    const missing = observation(2);
+    missing.people = [];
+    missing.detectedCount = 0;
+    await socket.receive(packet(missing));
+    expect(element("restart-round").hidden).toBe(true);
+    now += 50;
+    await socket.receive(packet(observation(3)));
+    expect(element("overlay-title").textContent).toBe("2");
+    expect(element("restart-round").hidden).toBe(true);
+    advance(500);
+    expect(element("restart-round").hidden).toBe(false);
+    now += 50;
+    await socket.receive(packet(observation(14)));
+    expect(element("restart-round").hidden).toBe(false);
+  });
+
   it("suppresses diagnostic graphics in a detached game display", async () => {
     const socket = await startCamera();
     await socket.receive(packet(observation()));

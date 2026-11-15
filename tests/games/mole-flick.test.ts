@@ -12,7 +12,11 @@ import type {
 } from "../../packages/motion/src/index";
 
 class FlickPlay {
-  readonly game = new MoleGame({ interaction: "flick", mode: "practice" }, 42);
+  readonly game = new MoleGame(
+    { interaction: "flick", mode: "practice" },
+    42,
+    2,
+  );
   now = 0;
   sequence = 0;
   contacts: MotionContact[] = [{ name: "left_wrist", x: 0.01, y: 0.01 }];

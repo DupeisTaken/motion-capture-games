@@ -1,0 +1,215 @@
+{
+  "kind": "synthetic-regression-fixtures",
+  "baselineRef": "2cea8d7033a8be02f4f9d7079ecc0e6ca676a6fa",
+  "scope": "Tracker only. No camera/model, session scoring or physical accuracy measured.",
+  "results": {
+    "current": {
+      "iou": {
+        "spectators": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 396.0,
+          "continuityCoverage": 1.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 0.0,
+          "maximumSuspensionMs": 0.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 0
+        },
+        "spectators-during-gap": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 297.0,
+          "continuityCoverage": 0.75,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 99.0,
+          "maximumSuspensionMs": 99.0,
+          "recoveryDurationsMs": [
+            99.0
+          ],
+          "unresolvedAtEnd": 0
+        },
+        "side-back-turn": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 396.0,
+          "continuityCoverage": 1.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 0.0,
+          "maximumSuspensionMs": 0.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 0
+        },
+        "genuine-overlap": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 0.0,
+          "continuityCoverage": 0.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 132.0,
+          "suspendedDurationMs": 396.0,
+          "maximumSuspensionMs": 396.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 1
+        }
+      },
+      "pose": {
+        "spectators": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 396.0,
+          "continuityCoverage": 1.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 0.0,
+          "maximumSuspensionMs": 0.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 0
+        },
+        "spectators-during-gap": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 297.0,
+          "continuityCoverage": 0.75,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 99.0,
+          "maximumSuspensionMs": 99.0,
+          "recoveryDurationsMs": [
+            99.0
+          ],
+          "unresolvedAtEnd": 0
+        },
+        "side-back-turn": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 396.0,
+          "continuityCoverage": 1.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 0.0,
+          "maximumSuspensionMs": 0.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 0
+        },
+        "genuine-overlap": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 0.0,
+          "continuityCoverage": 0.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 132.0,
+          "suspendedDurationMs": 396.0,
+          "maximumSuspensionMs": 396.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 1
+        }
+      }
+    },
+    "baseline": {
+      "iou": {
+        "spectators": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 0.0,
+          "continuityCoverage": 0.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 396.0,
+          "maximumSuspensionMs": 396.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 1
+        },
+        "spectators-during-gap": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 0.0,
+          "continuityCoverage": 0.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 396.0,
+          "maximumSuspensionMs": 396.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 1
+        },
+        "side-back-turn": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 396.0,
+          "continuityCoverage": 1.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 0.0,
+          "maximumSuspensionMs": 0.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 0
+        },
+        "genuine-overlap": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 0.0,
+          "continuityCoverage": 0.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 132.0,
+          "suspendedDurationMs": 396.0,
+          "maximumSuspensionMs": 396.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 1
+        }
+      },
+      "pose": {
+        "spectators": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 0.0,
+          "continuityCoverage": 0.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 396.0,
+          "maximumSuspensionMs": 396.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 1
+        },
+        "spectators-during-gap": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 0.0,
+          "continuityCoverage": 0.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 396.0,
+          "maximumSuspensionMs": 396.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 1
+        },
+        "side-back-turn": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 396.0,
+          "continuityCoverage": 1.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 0.0,
+          "suspendedDurationMs": 0.0,
+          "maximumSuspensionMs": 0.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 0
+        },
+        "genuine-overlap": {
+          "eligibleDurationMs": 396.0,
+          "continuousDurationMs": 0.0,
+          "continuityCoverage": 0.0,
+          "wrongAssociationCount": 0,
+          "wrongAssociationDurationMs": 0.0,
+          "ambiguousDurationMs": 132.0,
+          "suspendedDurationMs": 396.0,
+          "maximumSuspensionMs": 396.0,
+          "recoveryDurationsMs": [],
+          "unresolvedAtEnd": 1
+        }
+      }
+    }
+  }
+}

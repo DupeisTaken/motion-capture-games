@@ -101,6 +101,8 @@ Wrist-flap extension: [issue #29](https://github.com/DupeisTaken/motion-capture-
 - Verify camera loss, recovery, capacity rejection and calibration changes.
 - Include real-server UI screenshots, applicable tests and the HTML report.
 
+**Experimental multiplayer software:** [Issue #59](https://github.com/DupeisTaken/motion-capture-games/issues/59) adds explicit 1–3 anonymous slots and independent Mole/Dodgeball runtimes, targets/obstacles, scores and active clocks using one camera stream. Spectators stay unenrolled; quality failures suspend affected attribution. [The multiplayer policy](multiplayer.md) and [delivery report](../reports/playtest-multiplayer.html) distinguish software evidence from still-open three-person physical trials, hardware capacity, crossing/occlusion accuracy and latency. Runner/Maze remain single-player.
+
 ## M3: Fruit slicing
 
 **Problem:** Recognize fast swept movement between sparse observations without phantom interactions.
@@ -150,9 +152,15 @@ Packaging concerns such as camera permissions may be investigated during M1; fin
 
 **Current status:** Experimental software controls, seeded obstacles, rendered worlds and source-timed pause/recovery are implemented. The gait/pace follow-up adds an articulated runner and an opt-in faster opening; [its report](../reports/runner-motion-pace.html) owns actual evidence. Physical recognition accuracy, camera hardware capability and end-to-end latency remain unmeasured. [Testing scenarios](testing.md#motion-runner-acceptance-scenarios) define future evidence.
 
+[Issue #73](https://github.com/DupeisTaken/motion-capture-games/issues/73) adds body-width camera lanes and a single Start request that waits for fresh standing input. The [delivery report](../reports/runner-body-width.html) records the lane checks and start flow on desktop and mobile.
+
 **Scaffold delivery:** [Issue #5](https://github.com/DupeisTaken/motion-capture-games/issues/5) and [PR #6](https://github.com/DupeisTaken/motion-capture-games/pull/6) track this documentation update; [the runner report](../reports/motion-runner.html) records its actual checks. M6 implementation needs its own issue when work begins; completing the scaffold does not close the game milestone.
 
 ## M7: Single-player virtual maze
+
+**Live floor setup follow-up:** [Issue #60](https://github.com/DupeisTaken/motion-capture-games/issues/60) adds explicitly started sequential camera previews, four named floor correspondences, moved independently measured references, revision/invalidation and an operator floor-contact probe. [The calibration design](games/virtual-maze.md#guided-live-floor-calibration) and [report](../reports/playtest-maze-calibration.html) distinguish these software checks from physical M1/M7 acceptance. Body/root input, synchronization, identity and selected facing remain open; two floor mappings alone cannot enable physical maze play.
+
+**Physical gameplay blocker:** [Issue #65](https://github.com/DupeisTaken/motion-capture-games/issues/65) owns the unimplemented trusted live root/facing/time/identity adapter and actual rig/participant validation. It remains open after #60. Until its acceptance evidence exists, physical maze input is disabled; the setup/probe is not an automated body-control implementation.
 
 **Problem:** Let one participant navigate a virtual maze using directional buzzer feedback while an operator sees the maze and current position. A position estimate alone cannot determine which wall is ahead; facing requires independent Head/Torso evidence.
 

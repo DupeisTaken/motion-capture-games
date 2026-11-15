@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .cameras import discover_cameras
+from .floor_calibration_api import router as floor_calibration_router
 from .runtime import StartRequest, VisionRuntime
 
 ALLOWED_ORIGINS = {
@@ -27,6 +28,7 @@ class StopRequest(BaseModel):
 def create_app(runtime: VisionRuntime | None = None) -> FastAPI:
     vision = runtime or VisionRuntime()
     clients: dict[WebSocket, str | None] = {}
+    start_gate = asyncio.Lock()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -34,6 +36,7 @@ def create_app(runtime: VisionRuntime | None = None) -> FastAPI:
         await asyncio.to_thread(vision.stop)
 
     app = FastAPI(title="Motion diagnostic vision", lifespan=lifespan)
+    app.include_router(floor_calibration_router)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1"])
 
     @app.middleware("http")
@@ -63,9 +66,28 @@ def create_app(runtime: VisionRuntime | None = None) -> FastAPI:
     @app.post("/api/start")
     async def start(settings: StartRequest):
         try:
-            return await asyncio.to_thread(vision.start, settings)
+            async with start_gate:
+                return await asyncio.to_thread(vision.start, settings)
         except RuntimeError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post("/api/calibration/start")
+    async def calibration_start(settings: StartRequest):
+        # Share acquisition, but a setup preview must never replace another tab's source.
+        async with start_gate:
+            if settings.source != "camera":
+                raise HTTPException(
+                    status_code=422, detail="Calibration requires an explicitly selected camera."
+                )
+            if vision.status()["state"] != "idle":
+                raise HTTPException(
+                    status_code=409,
+                    detail="Stop the active source in its owning page before starting calibration. Retry camera stop if release failed.",
+                )
+            try:
+                return await asyncio.to_thread(vision.start, settings)
+            except RuntimeError as error:
+                raise HTTPException(status_code=409, detail=str(error)) from error
 
     @app.post("/api/stop")
     async def stop(source: StopRequest | None = None):

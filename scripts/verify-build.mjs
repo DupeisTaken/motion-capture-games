@@ -56,7 +56,7 @@ if (
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
   const { resolveConfig } = await import("vite");
-  const config = await resolveConfig({}, "build");
+  const config = await resolveConfig({ mode: process.argv[2] }, "build");
   const input = config.build.rollupOptions.input;
   const inputs =
     typeof input === "string" ? [input] : Object.values(input ?? {});

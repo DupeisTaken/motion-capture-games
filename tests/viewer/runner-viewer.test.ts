@@ -310,15 +310,16 @@ describe("runner application", () => {
     expect(state().score).toBe(score);
     expect(element("resume-round").hidden).toBe(true);
   });
-  it("camera startup stays explicit, requests multi-person detection, and never decodes image pixels", async () => {
+  it("camera startup stays explicit, requests multi-person detection, and shares the stream with an optional operator preview", async () => {
     const bitmap = vi.fn();
     vi.stubGlobal("createImageBitmap", bitmap);
     const socket = await startCamera();
     now = 150;
     socket.onmessage?.({ data: packet(observation(1)) });
-    expect(bitmap).not.toHaveBeenCalled();
+    expect(element("body-preview").hidden).toBe(false);
+    expect(element("camera-preview")).toBeTruthy();
     expect(element("camera-status").textContent).toBe(
-      "Player found. Stand at center, then choose Set standing center.",
+      "Player found. Stand comfortably, then choose Set standing reference.",
     );
     expect(element<HTMLButtonElement>("calibrate-player").disabled).toBe(false);
     const call = fetchMock.mock.calls.find(([url]) => url === "/api/start")!;
@@ -330,7 +331,171 @@ describe("runner application", () => {
     expect(state().phase).toBe("ready");
     click("calibrate-player");
     expect(element("practice-status").textContent).toContain("1 / 6");
-    expect(element("game-status").textContent).toContain("rehearse");
+    expect(element("game-status").textContent).toContain("standing reference");
+  });
+  it("starts after explicit standing without a movement checklist and clears stale preview/actions", async () => {
+    const socket = await startCamera();
+    let sequence = 0;
+    const send = () => {
+      now += 50;
+      socket.onmessage?.({ data: packet(observation(++sequence)) });
+    };
+    send();
+    click("calibrate-player");
+    send();
+    send();
+    send();
+    expect(element("practice-status").textContent).toContain("optional");
+    click("start-round");
+    expect(state().phase).toBe("countdown");
+    socket.onmessage?.({ data: JSON.stringify({ state: "stale" }) });
+    expect(state().phase).toBe("paused");
+    expect(element("preview-freshness").textContent).toContain("STALE");
+    expect(element("head-guides").hasAttribute("hidden")).toBe(true);
+    send();
+    send();
+    send();
+    expect(state().phase).toBe("countdown");
+    toggle("show-preview", false);
+    expect(element("camera-preview").hidden).toBe(true);
+    click("source-stop");
+    await flush();
+    expect(element("preview-freshness").textContent).toBe("Camera off");
+    choose("source-select", "demo");
+    expect(element("body-preview").hidden).toBe(true);
+  });
+  it("starts on one press despite a noisy hip and shows the calibrated lane guides", async () => {
+    const socket = await startCamera();
+    let sequence = 0;
+    const send = (x = 0, hipNoise = 0) => {
+      now += 50;
+      const value = observation(++sequence);
+      for (const joint of Object.values(value.people[0].joints))
+        if (joint?.x != null) joint.x += x;
+      value.people[0].joints.left_hip!.y! += hipNoise;
+      socket.onmessage?.({ data: packet(value) });
+    };
+    send(0.05);
+    expect(element("lane-guides").hasAttribute("hidden")).toBe(true);
+    click("calibrate-player");
+    expect(element("lane-guides").hasAttribute("hidden")).toBe(false);
+    expect(Number(element("lane-guide-left").getAttribute("x"))).toBeCloseTo(
+      27,
+    );
+    expect(Number(element("lane-guide-center").getAttribute("x"))).toBeCloseTo(
+      45,
+    );
+    expect(Number(element("lane-guide-right").getAttribute("x"))).toBeCloseTo(
+      63,
+    );
+    click("overlay-start");
+    expect(state().phase).toBe("ready");
+    expect(element("overlay-copy").textContent).toMatch(/stand comfortably/i);
+    expect(element("overlay-start").textContent).toBe("Cancel start");
+    send(0.05, 0.022);
+    send(0.05, -0.022);
+    expect(state().phase).toBe("ready");
+    expect(element("player-badge").textContent).toBe("STAND TO START");
+    send(0.05, 0.022);
+    expect(state().phase).toBe("countdown");
+    for (let index = 0; index < 65; index++) send(0.05, 0.022);
+    expect(state().phase).toBe("playing");
+    for (let index = 0; index < 6; index++) send(0.17);
+    expect(state().avatarX).toBe(-1);
+    for (let index = 0; index < 6; index++) send(0.05);
+    expect(state().avatarX).toBe(0);
+    for (let index = 0; index < 6; index++) send(-0.07);
+    expect(state().avatarX).toBe(1);
+  });
+  it("shows the missing camera step in the stage and lets either Start control cancel", async () => {
+    choose("source-select", "camera");
+    await flush();
+    click("overlay-start");
+    expect(element("overlay-copy").textContent).toMatch(/start the camera/i);
+    expect(fetchMock.mock.calls.some(([url]) => url === "/api/start")).toBe(
+      false,
+    );
+    click("start-round");
+    const socket = await startCamera();
+    now += 50;
+    socket.onmessage?.({ data: packet(observation(1)) });
+    click("calibrate-player");
+    for (let sequence = 2; sequence <= 6; sequence++) {
+      now += 50;
+      socket.onmessage?.({ data: packet(observation(sequence)) });
+    }
+    expect(state().phase).toBe("ready");
+    expect(element("overlay-start").textContent).toMatch(
+      /start body-controlled/i,
+    );
+  });
+  it("recovers only the same track after brief loss, freezes scoring, and expires without packets", async () => {
+    const socket = await startCamera();
+    let sequence = 0;
+    function send(
+      mode: "fresh" | "missing" | "tentative" | "ambiguous" = "fresh",
+    ) {
+      now += 50;
+      const value = observation(++sequence, 2);
+      if (mode === "missing") value.people.shift();
+      value.detectedCount = value.people.length;
+      if (mode === "tentative" || mode === "ambiguous")
+        value.people[0].identity = mode;
+      socket.onmessage?.({ data: packet(value) });
+    }
+    // Bind while alone, then let a spectator enter before calibration.
+    now += 50;
+    socket.onmessage?.({ data: packet(observation(++sequence)) });
+    send();
+    click("calibrate-player");
+    send();
+    send();
+    send();
+    click("start-round");
+    for (let i = 0; i < 65; i++) send();
+    expect(state().phase).toBe("playing");
+    const frozen = state();
+    send("missing");
+    expect(state().phase).toBe("paused");
+    expect(state().score).toBe(frozen.score);
+    expect(state().distance).toBe(frozen.distance);
+    send("tentative");
+    expect(state().phase).toBe("paused");
+    send();
+    expect(state().phase).toBe("paused");
+    send();
+    send();
+    expect(state().phase).toBe("countdown");
+    for (let i = 0; i < 45; i++) send();
+    expect(state().phase).toBe("playing");
+    advance(451);
+    expect(state().phase).toBe("paused");
+    expect(element("resume-round").hidden).toBe(true);
+    const score = state().score;
+    send();
+    send();
+    send();
+    expect(state().score).toBe(score);
+    expect(state().phase).toBe("paused");
+    click("new-round");
+    send();
+    click("calibrate-player");
+    send();
+    send();
+    send();
+    click("start-round");
+    send("ambiguous");
+    expect(element("resume-round").hidden).toBe(true);
+  });
+  it("rejects stale calibration clicks even if the old button was enabled", async () => {
+    const socket = await startCamera();
+    now += 50;
+    socket.onmessage?.({ data: packet(observation(1)) });
+    now += 351;
+    click("calibrate-player");
+    app.tick();
+    expect(element("practice-status").textContent).toContain("reference first");
+    expect(element<HTMLButtonElement>("calibrate-player").disabled).toBe(true);
   });
   it("releases only its acknowledged epoch and blocks replacements while release is unconfirmed", async () => {
     await startCamera();
@@ -372,6 +537,7 @@ describe("runner application", () => {
     expect(element<HTMLSelectElement>("source-select").disabled).toBe(true);
     element("source-connect").dispatchEvent(new Event("click"));
     await flush();
+    click("source-connect");
     expect(
       fetchMock.mock.calls.filter(([url]) => url === "/api/start"),
     ).toHaveLength(1);
@@ -421,7 +587,7 @@ describe("runner application", () => {
     expect(element<HTMLButtonElement>("start-round").disabled).toBe(true);
     expect(element<HTMLButtonElement>("overlay-start").disabled).toBe(true);
   });
-  it("admits a camera run only after movement practice, keeps the owner in control with a spectator and refuses a replacement owner", async () => {
+  it("keeps camera start explicit, offers optional practice, keeps the owner in control with a spectator and refuses a replacement owner", async () => {
     const socket = await startCamera();
     let sequence = 0;
     function send(x = 0, y = 0, duck = false, people = 1, replacement = false) {
@@ -434,6 +600,7 @@ describe("runner application", () => {
         }
       if (duck) {
         for (const name of [
+          "nose",
           "left_shoulder",
           "right_shoulder",
           "left_hip",
@@ -449,11 +616,14 @@ describe("runner application", () => {
     }
     send();
     click("calibrate-player");
-    send(0.14);
+    send(0.22);
     send();
-    send(-0.14);
+    send(-0.22);
     send();
     send(0, 0, true);
+    send();
+    send();
+    send();
     send(0, -0.08);
     send(0, -0.08);
     send(0, -0.08);
@@ -487,7 +657,7 @@ describe("runner application", () => {
     for (let index = 0; index < 65; index++) send();
     expect(state().phase).toBe("playing");
     const before = state();
-    for (let index = 0; index < 20; index++) send(0.14, 0, false, 2);
+    for (let index = 0; index < 20; index++) send(0.22, 0, false, 2);
     expect(state().phase).toBe("playing");
     expect(state().score).toBeGreaterThan(before.score);
     expect(state().distance).toBeGreaterThan(before.distance);
@@ -496,6 +666,7 @@ describe("runner application", () => {
     expect(state().phase).toBe("playing");
     send(0, 0, false, 1, true);
     expect(state().phase).toBe("paused");
+    advance(500);
     expect(element("resume-round").hidden).toBe(true);
     expect(element("overlay-copy").textContent).toContain("score ownership");
     const ownedScore = state().score;

@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
+const buildMode = vi.hoisted(() => ({ hostedRehearsal: false }));
+vi.mock("../../apps/mirror/src/build-mode", () => buildMode);
 import {
   appDestinations,
   mountAppNavigation,
@@ -12,13 +14,17 @@ afterEach(() => {
   mounted?.dispose();
   document.body.replaceChildren();
   vi.restoreAllMocks();
+  buildMode.hostedRehearsal = false;
 });
-function setup(blocker: () => string | null = () => null) {
-  window.history.replaceState(null, "", "/runner.html");
+function setup(
+  blocker: () => string | null = () => null,
+  path = "/runner.html",
+) {
+  window.history.replaceState(null, "", path);
   document.body.innerHTML =
-    '<header class="mm-header"><a href="/">Brand</a><nav><a href="/runner.html">Old links</a></nav></header><main id="game-stage"></main>';
+    '<header class="mm-header"><a href="./">Brand</a><nav><a href="./runner.html">Old links</a></nav></header><main id="game-stage"></main>';
   mounted = mountAppNavigation({
-    path: "/runner.html",
+    path,
     owner: { navigationBlocker: blocker },
   });
   vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(
@@ -27,11 +33,61 @@ function setup(blocker: () => string | null = () => null) {
   return document.querySelector<HTMLElement>(".studio-navigation")!;
 }
 describe("operator navigation", () => {
+  it.each([false, true])(
+    "preserves project-path destinations and ownership checks (hosted=%s)",
+    (hosted) => {
+      buildMode.hostedRehearsal = hosted;
+      const nav = setup(
+        () => "Camera release is pending.",
+        "/motion-capture-games/runner.html",
+      );
+      const links = [...nav.querySelectorAll<HTMLAnchorElement>("a")];
+      expect(links).toHaveLength(hosted ? 5 : 7);
+      expect(
+        links.every((link) =>
+          new URL(link.href).pathname.startsWith("/motion-capture-games/"),
+        ),
+      ).toBe(true);
+      expect(nav.querySelector('[aria-current="page"]')?.textContent).toBe(
+        "Motion Runner",
+      );
+      expect(nav.textContent?.includes("Operator tools")).toBe(!hosted);
+      expect(
+        nav
+          .querySelector('a[href="./maze.html"]')!
+          .dispatchEvent(
+            new MouseEvent("click", { bubbles: true, cancelable: true }),
+          ),
+      ).toBe(false);
+      expect(nav.querySelector('[role="status"]')?.textContent).toContain(
+        "Camera release is pending",
+      );
+      expect(
+        nav
+          .querySelector('a[href="./runner.html"]')!
+          .dispatchEvent(
+            new MouseEvent("click", { bubbles: true, cancelable: true }),
+          ),
+      ).toBe(false);
+    },
+  );
+
+  it("treats the project directory index alias as its current destination", () => {
+    const nav = setup(() => null, "/motion-capture-games/index.html");
+    const link = nav.querySelector<HTMLAnchorElement>('a[href="./"]')!;
+    expect(link.getAttribute("aria-current")).toBe("page");
+    expect(
+      link.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      ),
+    ).toBe(false);
+  });
+
   it("offers every route outside the participant stage, with one current location", () => {
     const nav = setup();
     expect(
       [...nav.querySelectorAll("a")].map((a) => a.getAttribute("href")).sort(),
-    ).toEqual(appDestinations.map((a) => a.path).sort());
+    ).toEqual(appDestinations.map((a) => `.${a.path}`).sort());
     expect(nav.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
     expect(nav.querySelector('[aria-current="page"]')?.textContent).toBe(
       "Motion Runner",
@@ -49,7 +105,7 @@ describe("operator navigation", () => {
     button.click();
     expect(button.getAttribute("aria-expanded")).toBe("true");
     expect(menu.hidden).toBe(false);
-    nav.querySelector<HTMLAnchorElement>('a[href="/maze.html"]')!.focus();
+    nav.querySelector<HTMLAnchorElement>('a[href="./maze.html"]')!.focus();
     nav.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     );
@@ -59,7 +115,7 @@ describe("operator navigation", () => {
   });
   it("keeps blocked navigation on the owner page with accessible recovery; permits modified clicks", () => {
     const nav = setup(() => "Retry camera stop before switching.");
-    const link = nav.querySelector('a[href="/maze.html"]')!;
+    const link = nav.querySelector('a[href="./maze.html"]')!;
     const activate = (ctrlKey = false) =>
       link.dispatchEvent(
         new MouseEvent("click", { bubbles: true, cancelable: true, ctrlKey }),
@@ -84,7 +140,7 @@ describe("operator navigation", () => {
     const nav = setup(() => reason);
     const click = () =>
       nav
-        .querySelector('a[href="/maze.html"]')!
+        .querySelector('a[href="./maze.html"]')!
         .dispatchEvent(
           new MouseEvent("click", { bubbles: true, cancelable: true }),
         );
@@ -111,7 +167,7 @@ describe("source navigation safety", () => {
     document.body.addEventListener("motion-studio:navigation-check", listener);
     const click = () =>
       nav
-        .querySelector('a[href="/maze.html"]')!
+        .querySelector('a[href="./maze.html"]')!
         .dispatchEvent(
           new MouseEvent("click", { bubbles: true, cancelable: true }),
         );

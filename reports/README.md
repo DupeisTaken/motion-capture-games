@@ -1,5 +1,17 @@
 # Change reports
 
+[PR #67 integration](pr67-integration.html) records conflict resolution against the arcade/Pages mainline, combined camera ownership barriers, actual Maze calibration departure checks, current English before/after screenshots and software validation.
+
+[CI recovery and arcade polish](ci-pr-readiness.html) records the Pages configuration repair, PR #75 validation, theme contrast corrections and English desktop/mobile before/after evidence. PR #67 remains blocked by integration conflicts.
+
+[GitHub Pages arcade](github-pages.html) records the static rehearsal build, desktop and mobile game starts, and the publishing prerequisite.
+
+[Motion Runner body-width lanes and start](runner-body-width.html) records the calibrated guides, the queued Start flow, and desktop/mobile evidence using synthetic camera packets.
+
+[Playtest multiplayer](playtest-multiplayer.html) records explicit 1–3 anonymous slots, real per-player Mole/Dodgeball engines, spectator isolation, bounded recovery integration, synthetic real-server desktop/mobile evidence and remaining physical gates.
+
+[Playtest tracking](playtest-tracking.html) records scoped spectator ambiguity, body-only MediaPipe bounds, opt-in bounded same-track session recovery, synthetic continuity/wrong-association/suspension metrics, the local held-out route and remaining physical evidence gaps.
+
 [Slap a Mole palm and foot contact](slap-a-mole-palm-contact.html) records the visible Touch rings, palm scoring, replay compatibility and synthetic browser verification.
 
 [Root game directory](game-directory.html) records the four-game landing page, explicit diagnostics route, navigation/build checks and embedded English desktop/mobile before/after screenshots.

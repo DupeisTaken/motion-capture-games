@@ -138,7 +138,7 @@ try {
       await page.keyboard.press("Tab");
       assert.equal(
         await page.evaluate(() => document.activeElement.getAttribute("href")),
-        "/mole.html",
+        "./mole.html",
       );
       result.viewports.push({
         name,
@@ -166,7 +166,7 @@ try {
       page.on("pageerror", (error) => result.errors.push(error.message));
       await page.goto(url);
       await page
-        .locator(`.game-card[href="/${path}"], .tool-link[href="/${path}"]`)
+        .locator(`.game-card[href="./${path}"], .tool-link[href="./${path}"]`)
         .click();
       assert.equal(new URL(page.url()).pathname, `/${path}`);
       await page.locator("main").waitFor();

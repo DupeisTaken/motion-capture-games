@@ -1,5 +1,7 @@
 # Motion layer
 
+`src/floor-mapping.ts` projects an explicitly identified floor-contact point with a revision/geometry-bound homography. It rejects elevated, invalid and outside points without clamping. This setup/probe helper supplies neither body-root input nor orientation and cannot bypass `assessMazePose`'s physical-play gate. See [guided floor calibration](../../docs/games/virtual-maze.md#guided-live-floor-calibration).
+
 For [Virtual Maze](../../docs/games/virtual-maze.md), `src/maze-input.ts` validates model-independent XYZ and the explicitly selected head/torso forward vector, with identity/clock/revision/freshness/order checks. It rejects physical-origin input in this rehearsal slice. Four manually named, already-calibrated rig-floor corners support rigid metric registration with explicit scale/residual rejection; photo clicks are planning annotations. This in-process adapter does not extend the canonical wire schema or implement inference.
 
 Model-independent TypeScript helpers for the diagnostic mirror. [src/index.ts](src/index.ts) exposes:

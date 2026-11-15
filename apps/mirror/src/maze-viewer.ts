@@ -1,4 +1,5 @@
 import type { NavigationOwner } from "./app-navigation";
+import { hostedRehearsal } from "./build-mode";
 import { createResumeControl } from "./resume-control";
 import {
   generateMaze,
@@ -25,13 +26,14 @@ import {
   mazeParticipantDocument,
 } from "./maze-display";
 import { mountMazePhotoCorners } from "./maze-photo-corners";
+import { mountMazeCalibration } from "./maze-calibration";
 
 export function mountMaze(
   root: HTMLElement,
 ): NavigationOwner & { dispose(): void } {
   root.innerHTML = `
   <a class="skip-link" href="#maze-map">Skip to maze</a>
-  <header class="maze-header"><a class="brand" href="/">Motion<span class="brand-light">Studio</span></a><a href="/">All games ↗</a><a href="/rig.html">Two-camera workspace ↗</a><a href="/mole.html">Slap a Mole ↗</a><span class="maze-badge">Synthetic rehearsal</span></header>
+  <header class="maze-header"><a class="brand" href="./">Motion<span class="brand-light">Studio</span></a><a href="./">All games ↗</a>${hostedRehearsal ? "" : '<a href="./rig.html">Two-camera workspace ↗</a>'}<a href="./mole.html">Slap a Mole ↗</a><span class="maze-badge">Synthetic rehearsal</span></header>
   <main class="maze-workspace"><div class="maze-title"><div><p class="maze-eyebrow">Movement lab / Virtual maze</p><h1>Find your way by sound.</h1><p>Build a maze. Follow the quiet. Keep the map with the operator.</p></div><button id="maze-view" class="maze-button">Preview participant display</button></div>
   <div class="maze-round-toolbar"><button id="open-settings" class="maze-button">Video & game settings</button><p class="maze-hint">Confirm a new round in setup. Pause and Resume preserve the current player.</p></div>
   <div id="maze-admin"><div class="maze-grid">
@@ -49,6 +51,7 @@ export function mountMaze(
   const dialog = get<HTMLDialogElement>("pre-game-settings");
   dialog.classList.add("maze-setup");
   const photoCorners = mountMazePhotoCorners(root);
+  const calibration = hostedRehearsal ? null : mountMazeCalibration(root);
   const audio = new MazeAudio();
   const listeners = new AbortController();
   type MazeEvents = HTMLElementEventMap & WindowEventMap & DocumentEventMap;
@@ -609,6 +612,7 @@ export function mountMaze(
     window.clearInterval(timer);
     setup.dispose();
     photoCorners.dispose();
+    calibration?.dispose();
     audio.dispose();
     participantWindow?.close();
   }
@@ -621,10 +625,13 @@ export function mountMaze(
   openSetup();
   return {
     dispose,
-    navigationBlocker() {
-      return participantWindow && !participantWindow.closed
-        ? "Close the participant window before switching pages."
-        : null;
+    navigationBlocker(): string | null {
+      return (
+        calibration?.navigationBlocker ||
+        (participantWindow && !participantWindow.closed
+          ? "Close the participant window before leaving the maze."
+          : null)
+      );
     },
   };
 }

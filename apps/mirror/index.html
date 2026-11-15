@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-build="%MODE%">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -16,19 +16,20 @@
     <a class="skip-link" href="#games">Skip to games</a>
     <div class="directory-shell">
       <header class="directory-header">
-        <a class="directory-brand" href="/" aria-label="Motion Studio home"
+        <a class="directory-brand" href="./" aria-label="Motion Studio home"
           ><b class="directory-mark" aria-hidden="true">✳</b>
           <div>Motion<span>Studio</span></div></a
         >
         <nav aria-label="Directory">
-          <a href="#games">The games</a><a href="#tools">Operator tools</a>
+          <a href="#games">The games</a
+          ><a class="local-only" href="#tools">Operator tools</a>
         </nav>
-        <span class="local-note">Play locally</span>
+        <span class="local-note local-only">Play locally</span>
       </header>
       <main>
         <section class="directory-hero" aria-labelledby="directory-title">
           <div>
-            <p class="eyebrow">The motion arcade / your local collection</p>
+            <p class="eyebrow">The motion arcade</p>
             <h1 id="directory-title">
               A little movement.<br />A lot of <em>play.</em>
             </h1>
@@ -47,7 +48,11 @@
             <span>Camera-free rehearsal available</span>
           </div>
           <div class="game-grid">
-            <a class="game-card" href="/mole.html" aria-labelledby="mole-title">
+            <a
+              class="game-card"
+              href="./mole.html"
+              aria-labelledby="mole-title"
+            >
               <div class="game-art art-mole">
                 <span class="game-number">01 / REACH</span
                 ><svg viewBox="0 0 280 200" fill="none" aria-hidden="true">
@@ -76,7 +81,9 @@
                   Catch the cheeky moles. Keep your reflexes sharp and watch out
                   for the bomb.
                 </p>
-                <p class="game-input">Camera or pointer / keyboard</p>
+                <p class="game-input">
+                  <span class="local-only">Camera or </span>pointer / keyboard
+                </p>
                 <div class="game-action">
                   Play game <span aria-hidden="true">↗</span>
                 </div>
@@ -84,7 +91,7 @@
             </a>
             <a
               class="game-card"
-              href="/dodgeball.html"
+              href="./dodgeball.html"
               aria-labelledby="dodgeball-title"
             >
               <div class="game-art art-dodge">
@@ -121,7 +128,9 @@
                   Read the warning rings, find a gap and move clear before the
                   balls arrive.
                 </p>
-                <p class="game-input">Camera or pointer / keyboard</p>
+                <p class="game-input">
+                  <span class="local-only">Camera or </span>pointer / keyboard
+                </p>
                 <div class="game-action">
                   Play game <span aria-hidden="true">↗</span>
                 </div>
@@ -129,7 +138,7 @@
             </a>
             <a
               class="game-card"
-              href="/runner.html"
+              href="./runner.html"
               aria-labelledby="runner-title"
             >
               <div class="game-art art-runner">
@@ -168,13 +177,19 @@
                   Three lanes, two worlds. Collect coins, jump hurdles and roll
                   under gates.
                 </p>
-                <p class="game-input">Camera or touch / keyboard</p>
+                <p class="game-input">
+                  <span class="local-only">Camera or </span>touch / keyboard
+                </p>
                 <div class="game-action">
                   Play game <span aria-hidden="true">↗</span>
                 </div>
               </div>
             </a>
-            <a class="game-card" href="/maze.html" aria-labelledby="maze-title">
+            <a
+              class="game-card"
+              href="./maze.html"
+              aria-labelledby="maze-title"
+            >
               <div class="game-art art-maze">
                 <span class="game-number">04 / EXPLORE</span
                 ><svg viewBox="0 0 280 200" fill="none" aria-hidden="true">
@@ -219,7 +234,7 @@
           </div>
         </section>
         <section
-          class="directory-tools"
+          class="directory-tools local-only"
           id="tools"
           aria-labelledby="tools-title"
         >
@@ -230,12 +245,12 @@
               are right here.
             </p>
           </div>
-          <a class="tool-link" href="/diagnostics.html"
+          <a class="tool-link" href="./diagnostics.html"
             ><strong>Tracking console</strong
             ><small>Single-camera preview & diagnostics</small
             ><span aria-hidden="true">↗</span></a
           >
-          <a class="tool-link" href="/rig.html"
+          <a class="tool-link" href="./rig.html"
             ><strong>Two-camera workspace</strong
             ><small>Rig planning & synthetic XYZ rehearsal</small
             ><span aria-hidden="true">↗</span></a

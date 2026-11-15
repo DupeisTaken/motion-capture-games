@@ -75,6 +75,9 @@ header > nav[hidden],
   align-content: start;
   gap: 4px;
 }
+.studio-navigation[data-hosted="true"] .studio-destinations {
+  grid-template-columns: 1fr;
+}
 .studio-destinations h2 {
   flex-basis: 100%;
   margin: 0 12px 8px;

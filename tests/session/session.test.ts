@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fixture from "../../contracts/examples/synthetic-observation.json";
 import type { Observation, Person } from "../../packages/motion/src/index";
-import { SinglePlayerSession } from "../../packages/session/src/index";
+import {
+  EphemeralIdentityMemory,
+  SinglePlayerSession,
+} from "../../packages/session/src/index";
 
 const originNs = 98_765_432_109_876_543n;
 const body = (trackId = "participant"): Person => ({
@@ -347,5 +350,174 @@ describe("game source-clock mapping and stale-input rejection", () => {
     });
     expect(session.ingest(next, 1030)).toBeNull();
     expect(session.reason).toMatch(/stale/i);
+  });
+});
+
+describe("opt-in bounded same-track recovery", () => {
+  function recovering(): SinglePlayerSession {
+    const session = new SinglePlayerSession({ recoveryWindowMs: 450 });
+    expect(session.join(observation(), "participant", 1000)).not.toBeNull();
+    return session;
+  }
+
+  it("suspends empty and tentative frames, then recovers only current same-ID joints", () => {
+    const session = recovering();
+    const binding = session.binding;
+    expect(session.ingest(observation(30, { people: [] }), 1030)).toBeNull();
+    expect(session.suspended).toBe(true);
+    expect(session.binding).toEqual(binding);
+    expect(
+      session.ingest(
+        observation(60, { people: [{ ...body(), identity: "tentative" }] }),
+        1060,
+      ),
+    ).toBeNull();
+    const current = body();
+    delete current.joints.left_wrist;
+    const frame = session.ingest(
+      observation(90, { people: [body("spectator"), current] }),
+      1090,
+    );
+    expect(
+      frame?.contacts.some((contact) => contact.name === "left_wrist"),
+    ).toBe(false);
+    expect(frame?.spaceRevision).toBe(binding?.spaceRevision);
+    expect(session.recovered).toBe(true);
+    expect(session.suspended).toBe(false);
+    expect(session.ingest(observation(120), 1120)).not.toBeNull();
+    expect(session.recovered).toBe(false);
+  });
+
+  it("never selects a new ID or lets spectator/tentative traffic extend the deadline", () => {
+    const session = recovering();
+    for (const at of [30, 200, 400]) {
+      expect(
+        session.ingest(
+          observation(at, { people: [body("replacement")] }),
+          1000 + at,
+        ),
+      ).toBeNull();
+      expect(session.binding?.trackId).toBe("participant");
+    }
+    expect(session.ingest(observation(451), 1451)).toBeNull();
+    expect(session.binding).toBeNull();
+    expect(session.reason).toMatch(/expired/i);
+  });
+
+  it("expires on either clock, including silent input from a frame-loop poll", () => {
+    const session = recovering();
+    expect(session.expire(1450)).toBe(false);
+    expect(session.expire(1450.001)).toBe(true);
+    expect(session.binding).toBeNull();
+    expect(session.expire(1451)).toBe(false);
+    const sourceExpired = recovering();
+    expect(sourceExpired.ingest(observation(451), 1440)).toBeNull();
+    expect(sourceExpired.binding).toBeNull();
+    expect(sourceExpired.reason).toMatch(/expired/i);
+  });
+
+  it("accepts a fresh same-track return at the fixed boundary and signals the gap", () => {
+    const session = recovering();
+    expect(session.ingest(observation(450), 1450)).not.toBeNull();
+    expect(session.recovered).toBe(true);
+    expect(session.binding?.trackId).toBe("participant");
+  });
+
+  it.each(["ambiguous", "duplicate"])(
+    "invalidates explicit %s ownership evidence",
+    (kind) => {
+      const session = recovering();
+      const people =
+        kind === "duplicate"
+          ? [body(), body()]
+          : [{ ...body(), identity: "ambiguous" as const }];
+      expect(session.ingest(observation(30, { people }), 1030)).toBeNull();
+      expect(session.binding).toBeNull();
+      expect(session.ingest(observation(60), 1060)).toBeNull();
+    },
+  );
+
+  it("suspends stale missing membership without refreshing its memory", () => {
+    const session = recovering();
+    expect(session.ingest(observation(10, { people: [] }), 1400)).toBeNull();
+    expect(session.reason).toMatch(/stale/i);
+    expect(session.binding?.trackId).toBe("participant");
+    expect(session.expire(1451)).toBe(true);
+  });
+
+  it.each(["ambiguous", "duplicate"])(
+    "does not soften stale %s ownership contradictions",
+    (kind) => {
+      const session = recovering();
+      const people =
+        kind === "duplicate"
+          ? [body(), body()]
+          : [{ ...body(), identity: "ambiguous" as const }];
+      expect(session.ingest(observation(10, { people }), 1400)).toBeNull();
+      expect(session.binding).toBeNull();
+      expect(session.ingest(observation(420), 1420)).toBeNull();
+    },
+  );
+
+  it("does not let repeated outdated packets keep the binding alive", () => {
+    const session = recovering();
+    expect(session.ingest(observation(), 1451)).toBeNull();
+    expect(session.binding).toBeNull();
+    expect(session.reason).toMatch(/expired/i);
+  });
+
+  it.each([
+    { epoch: "epoch-2" },
+    { cameraId: "camera-2" },
+    { calibrationId: "new-calibration" },
+    { transformRevision: "new-transform" },
+    { modelId: "new-model" },
+    { tracker: "iou" as const },
+  ])("flushes suspended working memory on provenance change %j", (changes) => {
+    const session = recovering();
+    session.ingest(observation(30, { people: [] }), 1030);
+    expect(session.ingest(observation(60, changes), 1060)).toBeNull();
+    expect(session.binding).toBeNull();
+    expect(session.suspended).toBe(false);
+  });
+
+  it("release/new-round clears recovery, and a different explicit join changes revision", () => {
+    const session = recovering();
+    const oldRevision = session.binding?.spaceRevision;
+    session.ingest(observation(30, { people: [] }), 1030);
+    session.release();
+    expect(session.suspended).toBe(false);
+    expect(session.ingest(observation(60), 1060)).toBeNull();
+    const fresh = session.join(
+      observation(60, { people: [body("replacement")] }),
+      "replacement",
+      1060,
+    );
+    expect(fresh?.spaceRevision).not.toBe(oldRevision);
+  });
+
+  it("does not accept an arbitrary/unbounded memory interval", () => {
+    for (const recoveryWindowMs of [-1, NaN, Infinity, 451])
+      expect(() => new SinglePlayerSession({ recoveryWindowMs })).toThrow(
+        RangeError,
+      );
+  });
+
+  it("stores one token with scope and dual-clock bounds, and clears it explicitly", () => {
+    const memory = new EphemeralIdentityMemory(450);
+    memory.remember("epoch-a/player-1/source-a", 1_000_000n, 1000);
+    expect(memory.allows("epoch-b/player-1/source-a", 2_000_000n, 1001)).toBe(
+      false,
+    );
+    expect(memory.allows("epoch-a/player-1/source-a", 452_000_000n, 1400)).toBe(
+      false,
+    );
+    expect(memory.allows("epoch-a/player-1/source-a", 2_000_000n, 1451)).toBe(
+      false,
+    );
+    memory.clear();
+    expect(memory.allows("epoch-a/player-1/source-a", 2_000_000n, 1001)).toBe(
+      false,
+    );
   });
 });

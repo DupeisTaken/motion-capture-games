@@ -157,14 +157,19 @@ export function drawDodgeScene(
   }
   if (obstacle) {
     const { x, y, radius, phase } = obstacle;
+    // A local dark under-stroke preserves contrast on bright/busy video.
+    // Its centerline is the existing game footprint; collision stays game-owned.
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.lineWidth = 0.012;
+    ctx.strokeStyle = "#17242bf2";
+    ctx.stroke();
     ctx.fillStyle =
       phase === "warning"
-        ? "#efbc7725"
+        ? "#322c22d9"
         : phase === "danger"
           ? "#ed8060e8"
-          : "#bfe5ca15";
+          : "#193c31d9";
     ctx.fill();
     ctx.lineWidth = phase === "danger" ? 0.006 : 0.0035;
     ctx.strokeStyle =
@@ -229,6 +234,38 @@ export function drawDodgeScene(
   }
   ctx.restore();
   ctx.restore();
+  if (obstacle) {
+    const point = mapJoint(obstacle, rect, mirror);
+    const label =
+      obstacle.phase === "warning"
+        ? "MOVE CLEAR"
+        : obstacle.phase === "danger"
+          ? "DANGER"
+          : obstacle.hit
+            ? "CONTACT"
+            : "CLEAR";
+    const size = Math.max(10, Math.min(14, rect.width / 65));
+    const labelWidth = size * (label.length * 0.68 + 1.2);
+    const labelX = Math.max(
+      rect.x + labelWidth / 2,
+      Math.min(rect.x + rect.width - labelWidth / 2, point.x),
+    );
+    const labelY = Math.max(
+      rect.y + size * 1.6,
+      point.y - obstacle.radius * rect.height - 8,
+    );
+    ctx.fillStyle = "#17242bf2";
+    ctx.fillRect(
+      labelX - labelWidth / 2,
+      labelY - size * 1.2,
+      labelWidth,
+      size * 1.6,
+    );
+    ctx.font = `800 ${size}px Segoe UI`;
+    ctx.textAlign = "center";
+    ctx.fillStyle = obstacle.phase === "danger" ? "#ffe3d4" : "#fff0ce";
+    ctx.fillText(label, labelX, labelY);
+  }
   if (diagnostics) {
     // Source boundary remains visible even on mobile letterboxing.
     ctx.strokeStyle = "#c5dfc74d";

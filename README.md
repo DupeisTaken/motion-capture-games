@@ -2,7 +2,7 @@
 
 A collection of local games played through body movement, with immediate on-screen feedback in a mirrored camera view or a rendered game world.
 
-**Status: diagnostic viewer, experimental Slap a Mole, Dodgeball and Motion Runner games, and Virtual Maze rehearsal.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Slap a Mole](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both offer a combined pre-game setup menu, raw mirrored camera pictures and an optional separate game window. [Virtual Maze](docs/games/virtual-maze.md) adds camera-free metric maze generation and directional sound. Production model selection, calibrated push input, physical collision tuning, multiplayer games, live multi-view reconstruction and hardware certification remain open.
+**Status: diagnostic viewer, experimental Slap a Mole, Dodgeball and Motion Runner games, and Virtual Maze rehearsal.** A Python vision service and TypeScript viewer render body skeletons and automatically count current detections. [Slap a Mole](docs/games/mole-motion.md) adds touch play and depth-ready push rehearsal; [Dodgeball](docs/games/dodgeball.md) adds full-body avoidance of telegraphed virtual balls. Both offer a combined pre-game setup menu, raw mirrored camera pictures and an optional separate game window. [Virtual Maze](docs/games/virtual-maze.md) adds camera-free metric maze generation and directional sound. Production model selection, calibrated push input, physical collision tuning, multiplayer hardware certification, live multi-view reconstruction and hardware certification remain open.
 
 ## Open the game directory
 
@@ -18,6 +18,10 @@ Open **http://127.0.0.1:5173/** to choose any implemented game or operator tool.
 | Two-camera workspace | /rig.html | [Rig planning and XYZ rehearsal](docs/two-camera-workspace.md) |
 
 The directory needs only the frontend: after installing dependencies, run `pnpm exec vite`. It makes no vision-service or camera requests. Camera play needs the full setup below and explicit **Start camera** in a game or console. Virtual Maze supports synthetic rehearsal; physical input remains pending. See [application entry points](apps/mirror/README.md#entry-points) and [the directory report](reports/game-directory.html).
+
+### Play in GitHub Pages
+
+The [browser arcade](https://dupeistaken.github.io/motion-capture-games/) provides camera-free rehearsal for all four games after Pages is enabled and the deployment succeeds. Use the local setup below for body tracking and operator tools. Motion Runner requires WebGL 2.
 
 ## Run the diagnostic viewer
 
@@ -62,13 +66,17 @@ Open [Slap a Mole](http://127.0.0.1:5173/mole.html) or [Dodgeball](http://127.0.
 
 These are early experimental game slices. Physical framing/collision accuracy, participant height and movement tuning, hardware capacity and latency still require M1/M4 evidence.
 
+Mole and Dodgeball also offer **Multiplayer · experimental 1–3 players** under Camera setup. Select a visible track and **Enroll** for each anonymous slot, close setup, then **Start enrolled players**. Each labeled panel has an independent game and score; other detections remain spectators. Tracking problems pause affected attribution. Leaving clears that slot’s score; new identities never inherit it. Multiplayer uses the same camera stream and stays inline. See [multiplayer policy](docs/multiplayer.md) and [software evidence](reports/playtest-multiplayer.html); three-player physical capacity and continuity remain unmeasured.
+
 ## Play Motion Runner
 
 Open **http://127.0.0.1:5173/runner.html**. Choose **Neon Rails** or **Gold Rush** and Nova, Moss or Ember. Rehearsal starts without a camera: select left/center/right with the buttons or Left / C / Right, Space or Up to jump, and hold Down or Roll to duck. Choose **Fast start** for a 14 m/s opening instead of the standard 10 m/s; both gradually build to 18 m/s. The setting is fixed during a run and remains selected for New run. Three shields end a competitive run; Practice removes the life limit. The game shows an original 3D world, never camera imagery.
 
-For body control choose Camera, explicitly start the selected device, set a comfortable standing center, and rehearse all six movement checks. Stand alone for camera setup. During the run, spectators can enter the frame while the joined player remains confidently tracked. Loss of reliable tracking freezes the world, distance, hazards and score. A changed player or source requires a new run. The camera remains off until explicitly started. Physical recognition thresholds, varied body sizes and visible latency still need M1/M6 trials. See [the runner design](docs/games/motion-runner.md) and [implementation report](reports/motion-runner-game.html).
+For body control choose Camera, explicitly start the selected device and set a comfortable standing reference. The live learning preview shares that capture: step sideways between lanes about one shoulder-width apart around your standing reference, raise your head and torso to jump, or lower both to roll. Movement practice is optional. Press Start run once to request play. The game shows the next setup step and starts its countdown when it confirms fresh standing input. Spectators may remain after the intended player is bound. Brief same-track loss freezes scoring and recovers through standing/countdown; ambiguous identity, changed source or expired recovery requires New run. The game world stays rendered. Physical accuracy and action-to-display latency remain unmeasured. See [the runner design](docs/games/motion-runner.md) and [controls repair report](reports/playtest-runner-controls.html).
 
 ## Rehearse Virtual Maze
+
+Setup also provides **Live floor calibration · cameras 1 → 2**: explicitly start a camera preview, mark the measured floor rectangle, check an independently measured edge at near/centre/far positions, stop camera 1, then repeat with camera 2. A manual floor-contact probe shows X/Z after checks. This is a planar setup tool; body position, facing and physical gameplay remain gated. See the [guided workflow](docs/games/virtual-maze.md#guided-live-floor-calibration) and [calibration report](reports/playtest-maze-calibration.html).
 
 Virtual Maze now has a [camera-free rehearsal](docs/games/virtual-maze.md) at **http://127.0.0.1:5173/maze.html**. The shared setup menu opens automatically: choose independent 5–10 m width/depth, Easy/Medium/Hard difficulty and optional internal loops, then confirm Start round. New round returns to setup; Pause/Resume stays outside it. The input section includes a two-camera placement diagram and practical calibration/accuracy checks. Loop mode verifies that both canonical hand followers miss its reachable interior goal. Choose **Head** or **Torso** orientation (Torso is the default), start rehearsal and move/turn through the map and controls. **Enable sound** activates the directional wall cue. The admin retains the map while the participant view/window shows buzzer intensity only. Local photos support four named corner annotations; physical XYZ, cone detection and hardware buzzer integration remain open. See [issue #40](https://github.com/DupeisTaken/motion-capture-games/issues/40), [M7](docs/roadmap.md#m7-single-player-virtual-maze) and the [report](reports/virtual-maze.html). `pnpm verify:maze` verifies the real server; `pnpm exec vite --host 127.0.0.1` serves rehearsal without Python.
 

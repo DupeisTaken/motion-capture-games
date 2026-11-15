@@ -3,8 +3,11 @@ import {
   sourceNavigationBlocker,
   type NavigationOwner,
 } from "./app-navigation";
+import { hostedRehearsal } from "./build-mode";
+import { createMultiplayerView } from "./multiplayer-view";
 import { createResumeControl } from "./resume-control";
 import { bombArt, moleArt } from "./mole-art";
+import { renderMoleTargets } from "./mole-targets";
 import {
   CameraChoice,
   cameraChoiceMarkup,
@@ -19,7 +22,6 @@ import { SinglePlayerSession } from "../../../packages/session/src/index";
 import {
   containRect,
   decodeFramePacket,
-  mapJoint,
   observationSpaceRevision,
   type ContactName,
   type GameMotionFrame,
@@ -42,7 +44,7 @@ const bombWarning = `Avoid bombs · −${TUNING.bombPenalty} points`;
 
 function targetMarkup(id: (typeof targetSlots)[number]): string {
   const bomb = id === "bomb-target";
-  return `<div id="${id}" class="mole-target${bomb ? " mole-bomb" : ""}" hidden>${bomb ? bombArt : moleArt}<progress class="mole-lifetime" max="1" value="1" aria-label="${bomb ? "Bomb" : "Mole"} time remaining"></progress></div>`;
+  return `<div id="${id}" class="mole-target${bomb ? " mole-bomb" : ""}" hidden>${bomb ? bombArt : moleArt}<span class="target-cue" aria-hidden="true"></span><progress class="mole-lifetime" max="1" value="1" aria-label="${bomb ? "Bomb" : "Mole"} time remaining"></progress></div>`;
 }
 
 const modeCopy: Record<string, string> = {
@@ -59,11 +61,11 @@ export function mountMoleGame(
   const now = deps.now || (() => performance.now());
   const setupMarkup = preGameSettingsMarkup(
     "Slap a Mole",
-    `<label for="mode-select">Play mode</label><select id="mode-select"><option value="timed">◷  Timed · 60 seconds</option><option value="challenge">◎  Challenge · 15 moles</option><option value="survival">♡  Survival · 3 misses</option><option value="practice">∞  Practice · untimed</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p><p class="field-note">Whack the two moles as they appear. ${bombWarning}.</p>
+    `<label for="mode-select">Play mode</label><select id="mode-select"><option value="timed">◷  Timed · 60 seconds</option><option value="challenge">◎  Challenge · 15 moles</option><option value="survival">♡  Survival · 3 misses</option><option value="practice">∞  Practice · untimed</option></select><p id="mode-description" class="field-note">${modeCopy.timed}</p><p class="field-note">Wait for HIT on a mole, then strike. ${bombWarning}.</p>
     <label for="difficulty-select">Difficulty</label><select id="difficulty-select"><option value="easy">Easy · room to warm up</option><option value="normal" selected>Normal · find your rhythm</option><option value="hard">Hard · stretch your reach</option></select><p class="field-note">Hard favors moles farther from your available contact points, within the play area.</p>
-    <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-flick" aria-pressed="false">Flick</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Overlap a mole with the ring around your palm or foot.</p>
+    <label>How to whack</label><div class="mm-segment" role="group" aria-label="Interaction"><button id="interaction-touch" aria-pressed="true">Touch</button><button id="interaction-flick" aria-pressed="false">Flick</button><button id="interaction-push" aria-pressed="false">Push →</button></div><p id="interaction-note" class="field-note">Move your palm or foot ring into a HIT mole.</p>
     `,
-    `<label for="source-select">Input source</label><select id="source-select"><option value="camera">Camera · body tracking</option><option value="demo">Rehearsal · no camera</option></select>
+    `<label for="source-select">Input source</label><select id="source-select">${hostedRehearsal ? "" : '<option value="camera">Camera · body tracking</option>'}<option value="demo">Rehearsal · no camera</option></select>
     <div id="setup-camera-release" hidden><p id="setup-release-message" class="field-note" role="status"></p><button id="setup-retry-camera-stop" class="mm-secondary">Retry camera stop</button></div><p id="setup-input-status" class="field-note" role="status"></p><div id="demo-controls"><label for="demo-contact">Rehearsal contact</label><select id="demo-contact"><option value="left_wrist">Left wrist / hand</option><option value="right_wrist">Right wrist / hand</option><option value="left_hip">Left hip</option><option value="right_hip">Right hip</option><option value="left_foot">Left foot</option><option value="right_foot">Right foot</option></select><label class="check-row"><input id="demo-framing" type="checkbox" checked> Both feet in view</label></div>
     <div id="camera-controls" hidden>${cameraChoiceMarkup}<p class="field-note">Start only when ready. Vision owns the camera; frames stay local.</p><button id="source-connect" class="mm-secondary">Start camera</button><button id="setup-stop-camera" class="mm-text" disabled>Stop camera</button><details class="advanced-controls"><summary>Participant & tracking options</summary><label for="player-track">Participant override</label><select id="player-track"><option value="">Automatic · one participant</option></select><p class="field-note">Choose a player here if several people are in view before starting. Spectators can enter during play while the joined player stays tracked.</p></details></div>
     <div class="display-controls"><button id="open-game-display" class="mm-secondary">Open game window ↗</button><p id="display-status" class="field-note" role="status">Move the game window to your display; keep controls here.</p><label class="check-row"><input id="show-tracking" type="checkbox"> Show tracking diagnostics</label></div>
@@ -71,17 +73,17 @@ export function mountMoleGame(
   );
   root.innerHTML = `
   <a class="skip" href="#game-stage">Skip to game</a>
-  <header class="mm-header"><a class="mm-brand" href="/">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="/" aria-label="All games">All games</a><a href="/diagnostics.html">Tracking console</a><a class="current" href="/mole.html" aria-current="page">Slap a Mole</a><a href="/dodgeball.html">Dodgeball</a><a href="/runner.html">Runner</a></nav><span class="local-pill"><i></i> Local & private</span></header>
+  <header class="mm-header"><a class="mm-brand" href="./">✳ <span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="./" aria-label="All games">All games</a>${hostedRehearsal ? "" : '<a href="./diagnostics.html">Tracking console</a>'}<a class="current" href="./mole.html" aria-current="page">Slap a Mole</a><a href="./dodgeball.html">Dodgeball</a><a href="./runner.html">Runner</a></nav>${hostedRehearsal ? "" : '<span class="local-pill"><i></i> Local & private</span>'}</header>
   <main class="mm-main"><div class="mm-heading"><div><p class="eyebrow">THE MOTION ARCADE <span>/</span> GAME 01</p><h1>Slap a Mole<span class="heading-dot">.</span></h1><p class="intro">A little reach. A little rhythm. A whole lot of moles.</p></div><span class="experiment">Single player <span>Experimental</span></span></div>
   <div class="mm-layout play-layout">
-  <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="player-readiness" role="status">Press Start round. We’ll wait until your input is ready.</p><button id="source-stop" class="mm-text" disabled>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
+  <div class="round-toolbar"><button id="open-settings" class="mm-secondary">Video & game settings</button><p id="player-binding" class="field-note" hidden></p><p id="player-status" class="player-readiness" role="status">Press Start round. We’ll wait until your input is ready.</p><button id="source-stop" class="mm-text" disabled ${hostedRehearsal ? "hidden" : ""}>Stop camera</button></div><div id="camera-release" hidden><p id="camera-release-message" class="field-note" role="status"></p><button id="retry-camera-stop" class="mm-secondary">Retry camera stop</button></div>
   <section class="mm-game" aria-label="Slap a Mole game"><div class="scoreboard"><div class="score-item primary-score"><span>SCORE</span><strong id="score-value">000</strong></div><div class="score-item"><span id="time-label">TIME LEFT</span><strong id="time-value">1:00</strong></div><div class="score-item"><span>HITS</span><strong id="hits-value">0</strong></div><div class="score-item"><span>BEST STREAK</span><strong id="streak-value">0</strong></div><span id="source-label" class="source-tag">SYNTHETIC REHEARSAL</span></div>
-    <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Game play area. Rehearsal: move pointer or arrow keys to aim; Space to push."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera and game view"></canvas><div class="display-hud" aria-label="Live round score"><span>SCORE <strong id="display-score">000</strong></span><span>TIME <strong id="display-time">1:00</strong></span></div><div class="stage-label"><i></i><span id="stage-mode">TOUCH TO WHACK</span></div><div class="player-label">P1 <span id="stage-player">NOT JOINED</span></div>${targetSlots.map(targetMarkup).join("")}<div id="hit-feedback" class="hit-feedback" aria-hidden="true"></div><div class="mm-overlay" id="game-overlay"><div class="overlay-mole">${moleArt}</div><p id="overlay-kicker">READY, SET, REACH</p><h2 id="overlay-title">Small moles.<br>Big moves.</h2><p id="overlay-copy">Press Start round and make your first move.<br>Keep your whole body inside the camera view.</p><button id="resume-round" class="mm-primary" hidden>Resume</button></div><div class="stage-bottom"><span id="stage-help">Rehearsal · move your cursor or use arrow keys</span><span class="bomb-warning">${bombWarning}</span></div></div>
+    <div id="game-stage" class="mm-stage" tabindex="0" role="group" aria-label="Game play area. Rehearsal: move pointer or arrow keys to aim; Space to push."><canvas id="game-canvas" width="960" height="600" aria-label="Mirrored camera and game view"></canvas><div class="display-hud" aria-label="Live round score"><span>SCORE <strong id="display-score">000</strong></span><span>TIME <strong id="display-time">1:00</strong></span></div><div class="stage-label"><i></i><span id="stage-mode">TOUCH TO WHACK</span></div><div class="player-label">P1 <span id="stage-player">NOT JOINED</span></div>${targetSlots.map(targetMarkup).join("")}<div id="target-effects" aria-hidden="true"></div><div id="hit-feedback" class="hit-feedback" aria-hidden="true"></div><div class="mm-overlay" id="game-overlay"><div class="overlay-mole">${moleArt}</div><p id="overlay-kicker">READY, SET, REACH</p><h2 id="overlay-title">Small moles.<br>Big moves.</h2><p id="overlay-copy">Press Start round and make your first move.<br>Keep your whole body inside the camera view.</p><button id="resume-round" class="mm-primary" hidden>Resume</button></div><div class="stage-bottom"><span id="stage-help">Rehearsal · move your cursor or use arrow keys</span><span class="bomb-warning">${bombWarning}</span></div></div>
     <div class="target-track"><span id="target-life"></span><span id="misses-value">0 escaped</span></div>
     <div class="game-actions"><button id="start-round" class="mm-primary">Set up round <span>↗</span></button><button id="pause-round" class="mm-secondary" disabled>Pause</button><button id="end-round" class="mm-text" disabled>End round</button><button id="restart-round" class="mm-primary" hidden>Play again ↗</button><span id="game-status" role="status">Press Start round. Input checks happen automatically.</span></div>
     <p class="source-disclosure" id="source-disclosure">Synthetic controls, including simulated depth. This rehearsal does not measure camera or push accuracy.</p>
   </section></div>
-  <section class="how-grid" aria-label="How to play"><article><span class="how-number">01</span><div><h2>Meet your mole</h2><p>Touch with a hand or foot, or choose Flick and flap your wrist near a mole. Push needs depth input.</p></div></article><article><span class="how-number">02</span><div><h2>Move, reset, repeat</h2><p>Each mole counts once. Move away after a touch, settle your hand after a flick, or bring your push back.</p></div></article><article><span class="how-number">03</span><div><h2>Stay in the picture</h2><p>Missing feet? Step back, check framing or clear an occlusion. Play pauses fairly.</p></div></article></section>
+  <section class="how-grid" aria-label="How to play"><article><span class="how-number">01</span><div><h2>Meet your mole</h2><p>Wait for HIT, then enter with a palm or foot ring. Flick uses a wrist flap; Push needs depth.</p></div></article><article><span class="how-number">02</span><div><h2>Move, reset, repeat</h2><p>Each mole counts once. Move away after a touch, settle your hand after a flick, or bring your push back.</p></div></article><article><span class="how-number">03</span><div><h2>Stay in the picture</h2><p>Missing feet? Step back, check framing or clear an occlusion. Play pauses fairly.</p></div></article></section>
   <footer class="mm-footer"><span>Built for movement. Played in your space.</span><span>One player · English · M2 software preview</span></footer>${setupMarkup}</main>`;
 
   // Cache references before the stage moves to its separate display document.
@@ -105,7 +107,7 @@ export function mountMoleGame(
     get("game-stage"),
     listeners.signal,
   );
-  const session = new SinglePlayerSession();
+  const session = new SinglePlayerSession({ recoveryWindowMs: 450 });
   const nextSeed = () => deps.seed ?? Math.floor(Math.random() * 4_294_967_296);
   let game = new MoleGame({}, nextSeed());
   let interaction: GameOptions["interaction"] = "touch";
@@ -139,6 +141,10 @@ export function mountMoleGame(
   const cameraChoice = new CameraChoice(root);
   const releases = new CameraReleases(fetch, updateReleaseControls);
   const setup = createPreGameSettings(root, () => {
+    if (multiplayer.enabled()) {
+      multiplayer.start();
+      return;
+    }
     resetGame();
     requested = true;
     manualPaused = false;
@@ -169,6 +175,14 @@ export function mountMoleGame(
     difficulty: select("difficulty-select").value as GameOptions["difficulty"],
     interaction,
   });
+  const multiplayer = createMultiplayerView(
+    root,
+    "mole",
+    config,
+    now,
+    nextSeed(),
+    () => display.close(),
+  );
   function setMessage(message: string) {
     if (get("setup-input-status").textContent !== message)
       get("setup-input-status").textContent = message;
@@ -274,8 +288,8 @@ export function mountMoleGame(
           : "Hold your wrist near a mole, then give a quick flap. Settle briefly to rearm. Your wrist must visibly move; finger-only flaps are not tracked."
         : interaction === "touch"
           ? demo
-            ? "Move the contact ring until it overlaps a mole."
-            : "Overlap a mole with the ring around your palm or foot. Camera Push requires calibrated depth."
+            ? "Wait for HIT, then move the contact ring into a mole."
+            : "Move your palm or foot ring into a HIT mole. Camera Push requires calibrated depth."
           : "Line up a hip, hand or wrist, then push toward the screen. Rehearsal simulates depth: tap or press Space.";
     for (const option of select("demo-contact").options)
       option.disabled =
@@ -306,7 +320,7 @@ export function mountMoleGame(
           : "Rehearsal · aim, then tap or press Space to push"
       : interaction === "flick"
         ? "Flick near a mole · settle between flaps"
-        : "Touch with the palm or foot ring · keep both feet visible";
+        : "Wait for HIT · enter with a palm or foot ring";
   }
   function demoFrame(t: number): GameMotionFrame | null {
     if (!demoJoined) return null;
@@ -365,24 +379,14 @@ export function mountMoleGame(
       isDemo(),
       touchRegions,
     );
-    const moles = state.targets.filter((target) => target.kind === "mole");
-    const bomb = state.targets.find((target) => target.kind === "bomb");
-    const visibleTargets = [moles[0], moles[1], bomb];
     const lifetime = TUNING[state.options.difficulty].lifetimeMs;
-    get("target-life").textContent = `${lifetime / 1000}s per target`;
-    targetSlots.forEach((id, index) => {
-      const element = get(id);
-      const target = visibleTargets[index];
-      element.hidden = !target || state.phase !== "playing";
-      if (element.hidden || !target) return;
-      const position = mapJoint(target, rect);
-      element.dataset.targetId = String(target.id);
-      element.style.left = `${position.x}px`;
-      element.style.top = `${position.y}px`;
-      element.style.width = `${target.radius * 2 * rect.width}px`;
-      element.style.height = `${target.radius * 2 * rect.height}px`;
-      element.querySelector("progress")!.value = target.remainingMs / lifetime;
-    });
+    get("target-life").textContent = `Ready cue → ${lifetime / 1000}s to react`;
+    renderMoleTargets(
+      targetSlots.map((id) => get(id)),
+      get("target-effects"),
+      state,
+      rect,
+    );
     get("score-value").textContent = String(state.score).padStart(3, "0");
     get("hits-value").textContent =
       `${state.hits}${state.options.mode === "challenge" ? " / 15" : ""}`;
@@ -541,6 +545,8 @@ export function mountMoleGame(
   }
   function ingestCamera() {
     if (!observation) return;
+    multiplayer.ingest(observation, image, receivedAt);
+    if (multiplayer.enabled()) return;
     const revision = observationSpaceRevision(observation);
     const receiptGap = cameraLastReceipt ? receivedAt - cameraLastReceipt : 0;
     cameraLastReceipt = receivedAt;
@@ -553,13 +559,7 @@ export function mountMoleGame(
     );
     const override = select("player-track").value;
     // Explicit identity loss cannot prove who returned: restart rather than attach an old score.
-    if (
-      roundOwner &&
-      (receiptGap > MAX_RECOVERY_GAP_MS ||
-        tracks.filter((person) => person.trackId === roundOwner!.trackId)
-          .length !== 1)
-    )
-      needsNewOwner = true;
+    if (roundOwner && receiptGap > MAX_RECOVERY_GAP_MS) needsNewOwner = true;
     if (!roundOwner && !override && tracks.length !== 1) {
       session.release();
       readySince = null;
@@ -572,14 +572,13 @@ export function mountMoleGame(
       needsNewOwner = true;
     const previousBinding = session.binding;
     frame = previousBinding ? session.ingest(observation, receivedAt) : null;
+    if (session.recovered)
+      game.pause(
+        "Tracking recovered. Reset movement for the recovery countdown.",
+      );
     if (previousBinding && !session.binding) {
       readySince = null;
-      if (
-        !/missing or uncertain|Tracking was interrupted/.test(
-          session.reason || "",
-        )
-      )
-        needsNewOwner = !!roundOwner;
+      needsNewOwner = !!roundOwner;
     }
     if (!session.binding && !needsNewOwner) {
       // Automatic admission is only for a unique confident identity, never array order.
@@ -607,7 +606,17 @@ export function mountMoleGame(
   }
   function tick() {
     if (disposed) return;
+    if (multiplayer.enabled()) {
+      multiplayer.tick();
+      updateReleaseControls();
+      return;
+    }
     const t = now();
+    if (!isDemo() && session.expire(t)) {
+      frame = null;
+      readySince = null;
+      needsNewOwner = !!roundOwner;
+    }
     if (isDemo()) {
       demoJoined = true;
       frame = demoFrame(t);
@@ -632,10 +641,12 @@ export function mountMoleGame(
       game.resume(t);
     updateTrackChoices();
     render();
+    multiplayer.tick();
   }
   async function stopCamera(
     message = "Camera stopped. Start it again when ready.",
   ) {
+    multiplayer.interrupt(message, true);
     generation++;
     connecting = false;
     cameraMessage = message;
@@ -750,11 +761,13 @@ export function mountMoleGame(
                 status.message || "Camera stopped. Reconnect to continue.",
               );
             if (status.state === "stale") {
+              multiplayer.interrupt(
+                "Camera input is stale. Waiting for fresh input.",
+              );
               frame = null;
               observation = null;
               image?.close();
               image = null;
-              session.release();
               readySince = null;
               game.pause(
                 "Camera input is stale. Waiting for the same participant.",
@@ -973,7 +986,7 @@ export function mountMoleGame(
   const stopTicker =
     deps.autoTick === false ? () => {} : display.startTicker(tick);
   updateSettings();
-  void cameraChoice.refresh();
+  if (!isDemo()) void cameraChoice.refresh();
   tick();
   setup.open();
   return {
@@ -991,6 +1004,7 @@ export function mountMoleGame(
     tick,
     dispose() {
       disposed = true;
+      multiplayer.dispose();
       setup.dispose();
       cameraChoice.dispose();
       listeners.abort();

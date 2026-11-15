@@ -1,4 +1,5 @@
 import "./app-navigation.css";
+import { hostedRehearsal } from "./build-mode";
 
 export const appDestinations = [
   { path: "/", label: "All games", group: "directory" },
@@ -75,21 +76,33 @@ export function mountAppNavigation(
   const doc = options.document ?? document;
   const host = doc.defaultView!;
   const path = options.path ?? host.location.pathname;
-  const current = appDestinations.find(
-    (item) => item.path === (path === "/index.html" ? "/" : path),
+  // Canonical names stay stable while relative links preserve a Pages project path.
+  const name = path.slice(path.lastIndexOf("/") + 1);
+  const currentPath = !name || name === "index.html" ? "/" : `/${name}`;
+  const available = appDestinations.filter(
+    (item) => !hostedRehearsal || item.group !== "tools",
   );
+  const current = available.find((item) => item.path === currentPath);
+  const href = (item: (typeof appDestinations)[number]) => `.${item.path}`;
+  const destinationPaths = new Set(
+    available.map((item) => new URL(href(item), host.location.href).pathname),
+  );
+  const currentDestination = current
+    ? new URL(href(current), host.location.href).pathname
+    : host.location.pathname;
   const nav = doc.createElement("nav");
   nav.className = "studio-navigation";
+  nav.dataset.hosted = String(hostedRehearsal);
   nav.setAttribute("aria-label", "Motion Studio navigation");
   const links = (group: string) =>
-    appDestinations
+    available
       .filter((item) => item.group === group)
       .map(
         (item) =>
-          `<a href="${item.path}"${current === item ? ' aria-current="page"' : ""}>${item.label}</a>`,
+          `<a href="${href(item)}"${current === item ? ' aria-current="page"' : ""}>${item.label}</a>`,
       )
       .join("");
-  nav.innerHTML = `<div class="studio-nav-bar">${links("directory")}<span class="studio-location">${current?.group === "tools" ? "Operator tool" : current?.group === "games" ? "Game & controls" : "Game directory"}<strong>${current?.label ?? "Motion Studio"}</strong></span><button type="button" aria-expanded="false" aria-controls="studio-destinations">Switch view <span aria-hidden="true">⌄</span></button></div><div id="studio-destinations" class="studio-destinations" hidden><div><h2>Games</h2>${links("games")}</div><div><h2>Operator tools</h2>${links("tools")}<p>Tracking console provides camera diagnostics. Two-camera workspace includes role planning and synthetic rehearsal. Game settings contain input setup.</p></div><p class="studio-nav-note">Switching pages ends the current round and resets unsaved settings. Separate participant windows show only the game.</p></div><div class="studio-navigation-message" role="status" tabindex="-1" hidden></div>`;
+  nav.innerHTML = `<div class="studio-nav-bar">${links("directory")}<span class="studio-location">${current?.group === "tools" ? "Operator tool" : current?.group === "games" ? "Game & controls" : "Game directory"}<strong>${current?.label ?? "Motion Studio"}</strong></span><button type="button" aria-expanded="false" aria-controls="studio-destinations">Switch view <span aria-hidden="true">⌄</span></button></div><div id="studio-destinations" class="studio-destinations" hidden><div><h2>Games</h2>${links("games")}</div>${hostedRehearsal ? "" : `<div><h2>Operator tools</h2>${links("tools")}<p>Tracking console provides camera diagnostics. Two-camera workspace includes role planning and synthetic rehearsal. Game settings contain input setup.</p></div>`}<p class="studio-nav-note">Switching pages ends the current round and resets unsaved settings. Separate participant windows show only the game.</p></div><div class="studio-navigation-message" role="status" tabindex="-1" hidden></div>`;
   // Hide redundant legacy header links only after the complete replacement mounts.
   const legacy = [
     ...doc.querySelectorAll<HTMLElement>(
@@ -149,10 +162,10 @@ export function mountAppNavigation(
       const target = new URL(link.href, host.location.href);
       if (
         target.origin !== host.location.origin ||
-        !appDestinations.some((item) => item.path === target.pathname)
+        !destinationPaths.has(target.pathname)
       )
         return;
-      if (target.pathname === host.location.pathname) {
+      if (target.pathname === currentDestination) {
         // Current-location links are inert; reloading could discard a source owner.
         if (!target.hash) event.preventDefault();
         return;

@@ -92,7 +92,13 @@ def landmark_person(landmarks: list[Any]) -> Person | None:
         name: landmark_joint(landmarks[index])
         for name, index in zip(COCO17, MP_INDICES, strict=True)
     }
-    usable = [item for item in joints.values() if item["score"] >= 0.25 and item["x"] is not None]
+    # Face visibility changes sharply during turns. It must not move the body
+    # association box or admit a face-only observation as a playable body.
+    usable = [
+        joints[name]
+        for name in COCO17[5:]
+        if joints[name]["score"] >= 0.25 and joints[name]["x"] is not None
+    ]
     if len(usable) < 3:
         return None
     xs, ys = [item["x"] for item in usable], [item["y"] for item in usable]

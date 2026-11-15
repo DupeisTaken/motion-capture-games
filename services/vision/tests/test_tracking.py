@@ -47,6 +47,78 @@ def test_count_is_current_detections_not_retained_tracks(mode: str) -> None:
 
 
 @pytest.mark.parametrize("mode", ["iou", "pose"])
+@pytest.mark.parametrize("missing", [False, True])
+def test_unrelated_spectator_overlap_preserves_isolated_incumbent(mode: str, missing: bool) -> None:
+    tracker = Tracker(mode)
+    established = []
+    for at in (0, 33_000_000, 66_000_000):
+        established = tracker.update([person(0.35, width=0.10)], at)
+    incumbent_id = established[0]["trackId"]
+    spectators = [person(0.57, width=0.10), person(0.59, width=0.10)]
+    detections = spectators if missing else [person(0.35, width=0.10), *spectators]
+    output = tracker.update(detections, 99_000_000)
+    assert all(item["identity"] == "ambiguous" for item in output[-2:])
+    if not missing:
+        assert output[0]["trackId"] == incumbent_id
+        assert output[0]["identity"] == "confident"
+    returned = tracker.update([person(0.35, width=0.10)], 132_000_000)
+    assert returned[0]["trackId"] == incumbent_id
+    assert returned[0]["identity"] == ("tentative" if missing else "confident")
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
+def test_missing_incumbent_inside_ambiguous_group_cannot_recover_old_id(mode: str) -> None:
+    tracker = Tracker(mode)
+    established = tracker.update([person(0.35, width=0.10)], 0)
+    tracker.update([person(0.35, width=0.10), person(0.37, width=0.10)], 33_000_000)
+    returned = tracker.update([person(0.35, width=0.10)], 66_000_000)
+    assert returned[0]["trackId"] != established[0]["trackId"]
+    assert returned[0]["identity"] == "tentative"
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_retiring_a_candidate_cannot_manufacture_a_confident_switch(
+    mode: str, reverse: bool
+) -> None:
+    tracker = Tracker(mode)
+    established = []
+    for at in (0, 33_000_000, 66_000_000):
+        established = tracker.update([person(0.10, width=0.20), person(0.22, width=0.20)], at)
+    assert all(item["identity"] == "confident" for item in established)
+    # B is implicated in reachable spectator ambiguity, but A also has a weaker
+    # feasible edge to B's current detection. Removing B must not make A clear.
+    detections = [person(0.22, width=0.20), person(0.43, width=0.10), person(0.45, width=0.10)]
+    if reverse:
+        detections.reverse()
+    output = tracker.update(detections, 166_000_000)
+    observed_b = next(item for item in output if item["box"]["x"] == 0.22)
+    assert observed_b["trackId"] is None
+    assert observed_b["identity"] == "ambiguous"
+    assert not {item["trackId"] for item in established} & {
+        item["trackId"] for item in tracker.update([person(0.10, width=0.20)], 199_000_000)
+    }
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
+def test_turns_with_sparse_or_missing_joints_use_current_geometry_only(mode: str) -> None:
+    tracker = Tracker(mode)
+    established = []
+    for at in (0, 33_000_000, 66_000_000):
+        established = tracker.update([person(0.35)], at)
+    for index, width in enumerate((0.12, 0.08, 0.12, 0.16), start=3):
+        current = person(0.43 - width / 2, width=width)
+        for name, joint in current["joints"].items():
+            if name.startswith("right_"):
+                joint.update(status="missing", x=None, y=None, score=0, inFrame=False)
+        current["joints"]["left_wrist"]["status"] = "estimated"
+        output = tracker.update([current], index * 33_000_000)
+        assert output[0]["trackId"] == established[0]["trackId"]
+        assert output[0]["identity"] == "confident"
+        assert output[0]["joints"] == current["joints"]
+
+
+@pytest.mark.parametrize("mode", ["iou", "pose"])
 def test_detection_array_reordering_does_not_exchange_ids(mode: str) -> None:
     tracker = Tracker(mode)
     first = tracker.update([person(0.1), person(0.7)], 0)
