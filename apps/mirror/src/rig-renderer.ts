@@ -39,7 +39,7 @@ export function renderRigView(target: HTMLElement, view: RigView) {
     height,
     "Synthetic unmirrored camera-joint diagram",
   );
-  shape(svg, "rect", { width, height, fill: "#172132" });
+  shape(svg, "rect", { width, height, fill: "#0d1f1a" });
   for (let x = 0; x <= width; x += width / 8)
     shape(svg, "line", {
       x1: x,
@@ -74,7 +74,7 @@ export function renderRigView(target: HTMLElement, view: RigView) {
         y1: from.y,
         x2: to.x,
         y2: to.y,
-        stroke: "#72e0ed",
+        stroke: "#8dddc0",
         "stroke-width": width / 260,
         "stroke-linecap": "round",
       });
@@ -86,8 +86,8 @@ export function renderRigView(target: HTMLElement, view: RigView) {
         cx: point.x,
         cy: point.y,
         r: width / 175,
-        fill: joint.name.includes("hip") ? "#f4c875" : "#b8f3f7",
-        stroke: "#172132",
+        fill: joint.name.includes("hip") ? "#d6a23d" : "#d6f3e8",
+        stroke: "#0d1f1a",
         "stroke-width": width / 650,
       });
   }
@@ -101,7 +101,7 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
     350,
     "Synthetic rig: XZ top view and Y height ruler",
   );
-  shape(svg, "rect", { width: 620, height: 350, fill: "#f8fafd" });
+  shape(svg, "rect", { width: 620, height: 350, fill: "#f7f9f5" });
   const map = (point: RigPoint) => ({
     x: 40 + ((point.x + 3) / 6) * 420,
     y: 300 - (point.z / 6) * 260,
@@ -111,8 +111,8 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
     y: 40,
     width: 420,
     height: 260,
-    fill: "#edf4fc",
-    stroke: "#b7cbe5",
+    fill: "#eff3ea",
+    stroke: "#b6c6b8",
   });
   for (let x = -3; x <= 3; x++) {
     const p = map({ x, y: 0, z: 0 });
@@ -121,7 +121,7 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
       y1: 40,
       x2: p.x,
       y2: 300,
-      stroke: "#dce5f0",
+      stroke: "#d5dfd6",
     });
     shape(
       svg,
@@ -129,8 +129,8 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
       {
         x: p.x,
         y: 318,
-        fill: "#52647a",
-        "font-size": 11,
+        fill: "#4d6156",
+        "font-size": 12,
         "text-anchor": "middle",
       },
       String(x),
@@ -143,7 +143,7 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
       y1: p.y,
       x2: 460,
       y2: p.y,
-      stroke: "#dce5f0",
+      stroke: "#d5dfd6",
     });
     shape(
       svg,
@@ -151,8 +151,8 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
       {
         x: 29,
         y: p.y + 4,
-        fill: "#52647a",
-        "font-size": 11,
+        fill: "#4d6156",
+        "font-size": 12,
         "text-anchor": "end",
       },
       String(z),
@@ -161,7 +161,7 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
   shape(
     svg,
     "text",
-    { x: 40, y: 23, fill: "#415774", "font-size": 12, "font-weight": 600 },
+    { x: 40, y: 23, fill: "#0d1f1a", "font-size": 12, "font-weight": 600 },
     "Z · into play area (m)",
   );
   shape(
@@ -170,7 +170,7 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
     {
       x: 250,
       y: 340,
-      fill: "#415774",
+      fill: "#0d1f1a",
       "font-size": 12,
       "text-anchor": "middle",
     },
@@ -181,7 +181,7 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
     y1: 300,
     x2: 315,
     y2: 300,
-    stroke: "#435874",
+    stroke: "#4d6156",
     "stroke-width": 4,
   });
   shape(
@@ -190,8 +190,8 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
     {
       x: 250,
       y: 270,
-      fill: "#52647a",
-      "font-size": 10,
+      fill: "#4d6156",
+      "font-size": 12,
       "text-anchor": "middle",
     },
     "Display / floor origin",
@@ -205,7 +205,7 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
       y1: 289,
       x2: p.x,
       y2: p.y - 7,
-      stroke: "#8297b3",
+      stroke: "#7a9181",
       "stroke-width": 1,
     });
     shape(svg, "rect", {
@@ -222,8 +222,8 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
       {
         x: labelX,
         y: 285,
-        fill: "#415774",
-        "font-size": 11,
+        fill: "#0d1f1a",
+        "font-size": 12,
         "text-anchor": "middle",
       },
       view.role === "primary" ? "Reference" : "Supporting",
@@ -234,8 +234,8 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
     cx: reference.x,
     cy: reference.y,
     r: 8,
-    fill: "#f4c875",
-    stroke: "#946c21",
+    fill: "#d6a23d",
+    stroke: "#7c5214",
     "stroke-width": 1.5,
   });
   const root = frame.reconstruction.root;
@@ -246,14 +246,14 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
       y1: reference.y,
       x2: p.x,
       y2: p.y,
-      stroke: "#8b7046",
+      stroke: "#4d6156",
       "stroke-dasharray": "4 3",
     });
     shape(svg, "circle", {
       cx: p.x,
       cy: p.y,
       r: 5,
-      fill: "#235ac4",
+      fill: "#1a7a5e",
       stroke: "white",
       "stroke-width": 1.5,
     });
@@ -264,7 +264,7 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
     {
       x: 535,
       y: 23,
-      fill: "#415774",
+      fill: "#0d1f1a",
       "font-size": 12,
       "text-anchor": "middle",
       "font-weight": 600,
@@ -276,16 +276,16 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
     y1: 40,
     x2: 535,
     y2: 300,
-    stroke: "#b7cbe5",
+    stroke: "#b6c6b8",
     "stroke-width": 2,
   });
   for (const y of [0, 1, 2, 2.6]) {
     const at = 300 - (y / 2.6) * 260;
-    shape(svg, "line", { x1: 529, y1: at, x2: 541, y2: at, stroke: "#8297b3" });
+    shape(svg, "line", { x1: 529, y1: at, x2: 541, y2: at, stroke: "#7a9181" });
     shape(
       svg,
       "text",
-      { x: 550, y: at + 4, fill: "#52647a", "font-size": 11 },
+      { x: 550, y: at + 4, fill: "#4d6156", "font-size": 12 },
       String(y),
     );
   }
@@ -293,15 +293,15 @@ export function renderRigSpace(target: HTMLElement, frame: RigFrame) {
     cx: 535,
     cy: 300 - (frame.reference.root.y / 2.6) * 260,
     r: 8,
-    fill: "#f4c875",
-    stroke: "#946c21",
+    fill: "#d6a23d",
+    stroke: "#7c5214",
   });
   if (root)
     shape(svg, "circle", {
       cx: 535,
       cy: 300 - (root.y / 2.6) * 260,
       r: 5,
-      fill: "#235ac4",
+      fill: "#1a7a5e",
       stroke: "white",
       "stroke-width": 1.5,
     });

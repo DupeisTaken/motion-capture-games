@@ -1,3 +1,4 @@
+import "./studio-tokens.css";
 import "./pre-game-settings.css";
 
 export function preGameSettingsMarkup(
@@ -6,13 +7,13 @@ export function preGameSettingsMarkup(
   videoOptions: string,
 ): string {
   return `<dialog id="pre-game-settings" class="mm-settings pre-game-settings" aria-labelledby="setup-title" aria-describedby="setup-description">
-    <header class="setup-heading"><div><p class="eyebrow">BEFORE YOU PLAY</p><h2 id="setup-title">Set up ${gameName}</h2><p id="setup-description">Check your video and game options before each round.</p></div><button id="close-settings" class="mm-secondary" aria-label="Close setup">Close</button></header>
-    <div class="setup-columns"><section class="setup-section" aria-labelledby="video-settings-title"><h3 id="video-settings-title"><span>01</span> Video & input</h3>${videoOptions}</section><section class="setup-section" aria-labelledby="game-settings-title"><h3 id="game-settings-title"><span>02</span> Game settings</h3>${gameOptions}</section></div>
-    <footer class="setup-actions"><p>Your choices stay selected for the next round. Start waits for ready input.</p><button id="confirm-start" class="mm-primary">Start round <span>↗</span></button></footer>
+    <header class="setup-heading"><div><h2 id="setup-title">Set up ${gameName}</h2><p id="setup-description">Choose input and game options.</p></div><button id="close-settings" type="button" class="mm-secondary" aria-label="Close setup">Close</button></header>
+    <div class="setup-columns"><section class="setup-section" aria-labelledby="video-settings-title"><h3 id="video-settings-title"><span>1</span> Video & input</h3>${videoOptions}</section><section class="setup-section" aria-labelledby="game-settings-title"><h3 id="game-settings-title"><span>2</span> Game settings</h3>${gameOptions}</section></div>
+    <footer class="setup-actions"><p>Saved for your next round.</p><button id="confirm-start" type="button" class="mm-primary">Start round <span>↗</span></button></footer>
   </dialog>`;
 }
 
-/** Every new-round entry point shares one confirmation; opening never resets play. */
+/** Every setup confirmation shares one dialog; closing never resets play. */
 export function createPreGameSettings(
   root: HTMLElement,
   onStart: () => void,

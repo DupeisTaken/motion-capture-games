@@ -1,90 +1,94 @@
+@import "./studio-tokens.css";
+
 .rig-game-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.rig-game-controls > div {
-  flex: 1 0 100%;
-}
-.rig-game-controls h3 {
-  margin: 0 0 5px;
-  font-size: 15px;
-}
-.rig-game-disclosure,
-.rig-game-location {
-  color: #52647a;
-  font-size: 12px;
-  line-height: 1.65;
+  gap: 6px;
 }
 .rig-game-controls button {
-  min-height: 44px;
-  border: 1px solid #b7c9e2;
-  border-radius: 5px;
-  padding: 8px 12px;
-  background: #f6f9fd;
-  color: #274e7f;
+  min-height: var(--operator-control-height, 40px);
+  border: 1px solid var(--studio-border-strong);
+  border-radius: var(--studio-radius-sm);
+  padding: 6px 10px;
+  background: var(--studio-surface);
+  color: var(--studio-ink);
   font: inherit;
+  font-weight: 650;
   cursor: pointer;
+}
+.rig-game-controls button:hover:not(:disabled) {
+  background: var(--studio-teal-soft);
+}
+#rig-game-start {
+  background: var(--studio-teal);
+  border-color: var(--studio-teal);
+  color: var(--studio-surface);
+}
+#rig-game-start:hover:not(:disabled) {
+  background: var(--studio-teal-dark);
+  border-color: var(--studio-teal-dark);
 }
 .rig-game-controls button:focus-visible,
 .rig-game-inline > summary:focus-visible,
-.rig-game-stage:focus-visible {
-  outline: 3px solid #5685ef;
-  outline-offset: 3px;
+.rig-game-stage:focus-visible,
+.rig-game-image > .game-resume:focus-visible {
+  outline: 3px solid var(--studio-focus);
+  outline-offset: 2px;
 }
-.rig-game-controls button:disabled {
-  opacity: 0.5;
-  cursor: default;
+.rig-game-location {
+  color: var(--studio-muted);
+  font-size: 12px;
+  margin: 0;
+}
+.rig-game-location:not(:empty) {
+  margin-top: 6px;
+}
+.rig-game-inline {
+  margin-top: 8px;
 }
 .rig-game-inline > summary {
   cursor: pointer;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  color: #235ac4;
-  font-weight: 600;
+  min-height: var(--operator-control-height, 40px);
+  padding: 9px 2px;
+  color: var(--studio-teal-dark);
+  font-size: 13px;
+  font-weight: 650;
 }
 .rig-game-stage {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 16px;
-  border-radius: 7px;
-  background: #152c36;
-  color: #f0f6ed;
+  padding: 12px;
+  border-radius: var(--studio-radius-md);
+  background: var(--studio-ink);
+  color: var(--studio-paper);
 }
 .rig-game-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-.rig-game-heading h3 {
-  margin: 0;
-  font-size: 19px;
-  color: #f0f6ed;
+  margin-bottom: 8px;
 }
 .rig-game-source-label {
-  font-size: 11px;
-  color: #efcc7f;
-  margin: 0 0 4px;
+  font-size: 12px;
+  color: #d5dfd6;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 .rig-game-hud {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  font-size: 11px;
-  align-items: center;
+  gap: 6px 12px;
+  align-items: baseline;
+  font-size: 12px;
 }
 .rig-game-hud strong {
-  display: block;
-  font-size: 24px;
+  margin-left: 3px;
+  font-size: 20px;
   font-variant-numeric: tabular-nums;
-  color: #f8e9b4;
+  color: var(--studio-lime);
 }
 .rig-game-image {
   position: relative;
@@ -92,8 +96,8 @@
   height: 330px;
   min-height: 180px;
   overflow: hidden;
-  background: #10212c;
-  border-radius: 5px;
+  background: var(--studio-ink);
+  border-radius: var(--studio-radius-sm);
   touch-action: none;
 }
 .rig-game-image > svg {
@@ -107,23 +111,20 @@
   display: grid;
   place-content: center;
   text-align: center;
-  padding: 24px;
-  background: #0d1e28b8;
-  color: #fff0bf;
-  font-size: 22px;
+  padding: 20px;
+  background: #0d1f1ab8;
+  color: var(--studio-paper);
+  font-size: 20px;
   font-weight: 650;
   pointer-events: none;
 }
-.rig-game-reason,
-.rig-game-limit {
+.rig-game-reason {
   font-size: 12px;
-  line-height: 1.6;
-  margin: 9px 0 0;
+  margin: 8px 0 0;
   overflow-wrap: anywhere;
 }
-.rig-game-limit {
-  color: #d6c996;
-  font-size: 11px;
+.rig-game-reason:empty {
+  margin: 0;
 }
 .game-display-window .rig-game-stage {
   overflow: auto;
@@ -137,28 +138,32 @@
   height: 100dvh;
   border-radius: 0;
 }
-@media (max-width: 600px) {
-  .rig-game-stage {
-    padding: 12px;
+.rig-game-image > .game-resume {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  transform: translateX(-50%);
+  min-height: var(--operator-control-height, 40px);
+  color: var(--studio-ink);
+  background: var(--studio-lime);
+  border: 1px solid var(--studio-lime);
+  border-radius: var(--studio-radius-sm);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+@media (max-width: 760px) {
+  .rig-game-controls button,
+  .rig-game-inline > summary,
+  .rig-game-image > .game-resume {
+    min-height: 44px;
   }
+}
+@media (max-width: 600px) {
   .rig-game-image {
     height: 230px;
   }
   .rig-game-controls button {
     flex: 1 0 auto;
   }
-}
-
-.rig-game-image > .game-resume {
-  position: absolute;
-  left: 50%;
-  top: 55%;
-  transform: translateX(-50%);
-  color: #173b35;
-  background: #d7efac;
-  border: 1px solid #d7efac;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
 }

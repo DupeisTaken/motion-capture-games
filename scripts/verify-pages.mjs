@@ -60,8 +60,9 @@ try {
           0,
         );
       }
+      assert.equal(await page.locator("dialog[open]").count(), 0);
       await page
-        .locator(game === "runner" ? "#overlay-start" : "#confirm-start")
+        .locator(game === "maze" ? "#maze-start" : "#overlay-start")
         .click();
       if (game === "runner")
         await page.locator('[data-runner-phase="playing"]').waitFor();
@@ -111,7 +112,7 @@ try {
         new URL(page.url()).pathname,
         `${base}${nextGame === "Dodgeball" ? "dodgeball" : "mole"}.html`,
       );
-      await page.locator("#close-settings").click();
+      assert.equal(await page.locator("dialog[open]").count(), 0);
       await page
         .getByRole("navigation", { name: "Motion Studio navigation" })
         .getByRole("link", { name: "All games", exact: true })

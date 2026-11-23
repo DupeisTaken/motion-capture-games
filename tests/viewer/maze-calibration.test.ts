@@ -158,9 +158,14 @@ describe("guided maze floor measurements", () => {
     expect(
       vi.mocked(fetch).mock.calls.every(([url]) => url === "/api/cameras"),
     ).toBe(true);
-    expect(get("root").textContent).toContain(
+    const boundaries = get("root").querySelectorAll(".calibration-warning");
+    expect(boundaries).toHaveLength(1);
+    expect(boundaries[0].textContent).toContain(
       "Physical maze play stays unavailable",
     );
+    expect(
+      get("root").querySelectorAll(".calibration-placements li"),
+    ).toHaveLength(3);
     expect(ui.navigationBlocker).toBeNull();
   });
   it("blocks same-page route departure until acknowledged calibration release", async () => {
@@ -219,9 +224,9 @@ describe("guided maze floor measurements", () => {
     expect(payload.reference.placements).toHaveLength(3);
     expect(payload.imageCorners.nearLeft).toEqual([0.1, 0.9]);
     expect(get("cal-result").textContent).toContain("floor checks passed");
-    expect(get("cal-result").textContent).toContain(
-      "Physical play remains gated",
-    );
+    expect(
+      get("root").querySelector(".calibration-warning")?.textContent,
+    ).toContain("Physical maze play stays unavailable");
     mark(0.5, 0.5);
     expect(get("cal-result").textContent).toContain("X 4.000 m, Z 4.000 m");
     capture().callbacks.frame({} as ImageBitmap, 1280, 720);

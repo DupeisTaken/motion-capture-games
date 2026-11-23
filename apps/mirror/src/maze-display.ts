@@ -7,7 +7,7 @@ export function mazeCueMarkup(): string {
     { length: 10 },
     (_, index) => `<i style="--bar-height:${22 + index * 4}px"></i>`,
   ).join("");
-  return `<div class="maze-cue"><p class="maze-eyebrow">Directional wall cue</p><strong><span data-level>0</span><small> %</small></strong><div class="maze-meter" aria-hidden="true">${bars}</div><p data-cue>Rehearsal paused</p></div>`;
+  return `<div class="maze-cue"><p>Directional wall cue</p><strong><span data-level>0</span><small> %</small></strong><div class="maze-meter" aria-hidden="true">${bars}</div><p data-cue>Rehearsal paused</p></div>`;
 }
 
 /** Fixed, map-free participant content; all dynamic values are assigned as text. */
@@ -16,7 +16,7 @@ export function mazeParticipantContent(
 ): string {
   const popup = buttonId === "participant-toggle";
   const heading = popup ? "h1" : "h2";
-  return `<div><p class="maze-eyebrow">Virtual maze / Synthetic rehearsal</p><${heading}>Listen for the open path.</${heading}>${mazeCueMarkup()}<p data-participant-status>Rehearsal paused</p>${popup ? "" : '<button id="maze-resume" class="maze-button" hidden>Resume</button>'}<button id="${buttonId}" class="maze-button">${popup ? "Resume" : "Return to operator map"}</button>${popup ? "<p>Keep the operator page open. Sound is controlled there.</p>" : ""}</div>`;
+  return `<div><${heading}>Participant display</${heading}>${mazeCueMarkup()}<p data-participant-status>Rehearsal paused</p>${popup ? "" : '<button id="maze-resume" class="maze-button" hidden>Resume</button>'}<button id="${buttonId}" class="maze-button">${popup ? "Resume" : "Return to operator map"}</button>${popup ? "<p>Keep the operator page open. Sound is controlled there.</p>" : ""}</div>`;
 }
 
 /** Vite supplies the same CSS source to the page bundle and the local popup. */

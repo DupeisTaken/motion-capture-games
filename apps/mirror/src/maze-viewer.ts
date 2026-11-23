@@ -32,17 +32,71 @@ export function mountMaze(
   root: HTMLElement,
 ): NavigationOwner & { dispose(): void } {
   root.innerHTML = `
-  <a class="skip-link" href="#maze-map">Skip to maze</a>
+  <a id="maze-skip" class="skip-link" href="#maze-map">Skip to maze</a>
   <header class="maze-header"><a class="brand" href="./">Motion<span class="brand-light">Studio</span></a><a href="./">All games ↗</a>${hostedRehearsal ? "" : '<a href="./rig.html">Two-camera workspace ↗</a>'}<a href="./mole.html">Slap a Mole ↗</a><span class="maze-badge">Synthetic rehearsal</span></header>
-  <main class="maze-workspace"><div class="maze-title"><div><p class="maze-eyebrow">Movement lab / Virtual maze</p><h1>Find your way by sound.</h1><p>Build a maze. Follow the quiet. Keep the map with the operator.</p></div><button id="maze-view" class="maze-button">Preview participant display</button></div>
-  <div class="maze-round-toolbar"><button id="open-settings" class="maze-button">Video & game settings</button><p class="maze-hint">Confirm a new round in setup. Pause and Resume preserve the current player.</p></div>
-  <div id="maze-admin"><div class="maze-grid">
-
-    <section class="maze-panel maze-stage-panel" aria-label="Operator maze map"><div class="maze-toolbar"><h2>Operator map</h2><span id="maze-topology" class="maze-live"></span></div><div class="maze-map"><svg id="maze-map" viewBox="-0.6 -0.6 9.2 9.2" role="img" aria-label="Virtual maze with player position and facing" tabindex="0"></svg></div><div class="maze-legend"><span><i class="maze-key"></i>Player & selected facing</span><span><i class="maze-key start"></i>Start</span><span><i class="maze-key goal"></i>Goal</span></div><dl class="maze-stats"><div><dt>Floor plan</dt><dd id="maze-size"></dd></div><div><dt>Wall ahead</dt><dd id="maze-distance">—</dd></div><div><dt>Orientation</dt><dd id="maze-facing">Torso</dd></div></dl><div class="maze-session"><div class="maze-actions"><button id="maze-start" class="maze-button primary">Set up round</button><button id="maze-reset" class="maze-button">New round</button><button id="maze-window" class="maze-button">Open participant window ↗</button></div><p id="maze-window-status" class="maze-hint" role="status" hidden></p><p id="maze-session-status" class="maze-status" role="status">Ready for rehearsal. Start to activate feedback.</p><p class="maze-hint">Click or drag on the map; arrow keys move X/Z. Virtual walls warn but do not block physical movement.</p></div></section>
-    <section class="maze-panel maze-feedback" aria-label="Feedback and rehearsal controls"><h2>02 / Sound & input</h2>${mazeCueMarkup()}<div><button id="maze-sound" class="maze-button maze-wide">Enable sound</button><p id="maze-audio-status" class="maze-hint" role="status">Sound off · visual cue available</p><label for="maze-volume">Master volume</label><input id="maze-volume" type="range" min="0" max="100" value="40"><p class="maze-hint">Relative signal level; not measured decibels.</p></div><div><dl class="maze-coordinates"><div><dt>X · m</dt><dd id="maze-x-value">—</dd></div><div><dt>Y · m</dt><dd id="maze-y-value">—</dd></div><div><dt>Z · m</dt><dd id="maze-z-value">—</dd></div></dl><label for="maze-x">Player X</label><input id="maze-x" type="range" min="0" max="8" step="0.01"><label for="maze-z">Player Z</label><input id="maze-z" type="range" min="0" max="8" step="0.01"><label for="maze-torso">Torso heading · <output id="maze-torso-value">0°</output></label><input id="maze-torso" type="range" min="-180" max="180" value="0"><label for="maze-head">Head heading · <output id="maze-head-value">0°</output></label><input id="maze-head" type="range" min="-180" max="180" value="0"><p class="maze-hint">0° faces into the floor plan (+Z); +90° faces right (+X). Y is a synthetic hip height.</p><label for="maze-quality">Input rehearsal</label><select id="maze-quality"><option value="ready">Valid synthetic input</option><option value="missing">Missing position</option><option value="uncertain">Uncertain identity</option><option value="stale">Stale observation</option><option value="head-missing">Head direction unavailable</option><option value="torso-missing">Torso direction unavailable</option></select></div></section>
-  </div></div>
-  <section id="maze-participant" class="maze-participant" tabindex="-1" aria-label="Participant buzzer display" hidden>${mazeParticipantContent("maze-return")}</section>
-  <p class="maze-limit">Experimental software rehearsal · English · position and direction are simulated. No physical accuracy, calibrated sound level or end-to-end latency has been certified.</p>${mazeSetupMarkup()}</main>`;
+  <main class="maze-workspace">
+    <div class="maze-title">
+      <h1>Virtual Maze</h1>
+      <div class="maze-actions">
+        <button id="open-settings" class="maze-button">Maze settings</button>
+        <button id="maze-view" class="maze-button">Preview participant display</button>
+      </div>
+    </div>
+    <div id="maze-admin" class="maze-grid">
+      <section class="maze-panel maze-stage-panel" aria-label="Operator maze map">
+        <div class="maze-toolbar"><h2>Operator map</h2><span id="maze-topology" class="maze-live"></span></div>
+        <div class="maze-session">
+          <div class="maze-actions">
+            <button id="maze-start" class="maze-button primary">Start rehearsal</button>
+            <button id="maze-reset" class="maze-button">New round</button>
+            <button id="maze-window" class="maze-button">Participant window ↗</button>
+          </div>
+          <p id="maze-window-status" class="maze-hint" role="status" hidden></p>
+        </div>
+        <div class="maze-map"><svg id="maze-map" viewBox="-0.6 -0.6 9.2 9.2" role="img" aria-label="Virtual maze with player position and facing" tabindex="0"></svg></div>
+        <div class="maze-legend"><span><i class="maze-key"></i>Player & facing</span><span><i class="maze-key start"></i>Start</span><span><i class="maze-key goal"></i>Goal</span></div>
+        <dl class="maze-stats">
+          <div><dt>Floor plan</dt><dd id="maze-size"></dd></div>
+          <div><dt>Wall ahead</dt><dd id="maze-distance">—</dd></div>
+          <div><dt>Orientation</dt><dd id="maze-facing">Torso</dd></div>
+        </dl>
+        <div class="maze-map-status">
+          <p id="maze-session-status" class="maze-status" role="status">Ready for rehearsal.</p>
+          <p class="maze-hint">Drag on the map or use arrow keys to move.</p>
+        </div>
+      </section>
+      <aside class="maze-feedback" aria-label="Feedback and rehearsal controls">
+        <section class="maze-panel" aria-label="Directional cue and audio">
+          <div class="maze-feedback-heading">
+            <h2>Sound & cue</h2><button id="maze-sound" class="maze-button">Enable sound</button>
+          </div>
+          ${mazeCueMarkup()}
+          <p id="maze-audio-status" class="maze-hint" role="status">Sound off · visual cue available</p>
+          <label for="maze-volume">Master volume</label>
+          <input id="maze-volume" type="range" min="0" max="100" value="40">
+        </section>
+        <section class="maze-panel" aria-labelledby="maze-movement-title">
+          <h2 id="maze-movement-title">Rehearsal movement</h2>
+          <dl class="maze-coordinates" aria-label="Simulated position in meters">
+            <div><dt>X</dt><dd id="maze-x-value">—</dd></div>
+            <div><dt>Y</dt><dd id="maze-y-value">—</dd></div>
+            <div><dt>Z</dt><dd id="maze-z-value">—</dd></div>
+          </dl>
+          <div class="maze-pair">
+            <div><label for="maze-x">Player X</label><input id="maze-x" type="range" min="0" max="8" step="0.01"></div>
+            <div><label for="maze-z">Player Z</label><input id="maze-z" type="range" min="0" max="8" step="0.01"></div>
+            <div><label for="maze-torso">Torso · <output id="maze-torso-value">0°</output></label><input id="maze-torso" type="range" min="-180" max="180" value="0"></div>
+            <div><label for="maze-head">Head · <output id="maze-head-value">0°</output></label><input id="maze-head" type="range" min="-180" max="180" value="0"></div>
+          </div>
+          <label for="maze-quality">Input rehearsal</label>
+          <select id="maze-quality"><option value="ready">Valid synthetic input</option><option value="missing">Missing position</option><option value="uncertain">Uncertain identity</option><option value="stale">Stale observation</option><option value="head-missing">Head direction unavailable</option><option value="torso-missing">Torso direction unavailable</option></select>
+        </section>
+      </aside>
+    </div>
+    <section id="maze-participant" class="maze-participant" tabindex="-1" aria-label="Participant buzzer display" hidden>${mazeParticipantContent("maze-return")}</section>
+    <p class="maze-limit">Synthetic rehearsal · position and facing are simulated.</p>
+    ${mazeSetupMarkup()}
+  </main>`;
 
   const get = <T extends HTMLElement>(id: string) =>
     root.querySelector<T>(`#${id}`)!;
@@ -80,7 +134,6 @@ export function mountMaze(
   let cursor: MazeInputCursor | null = null;
   let sequence = 0;
   let syntheticNowMs = 10000;
-  let roundConfirmed = false;
   let activeOrientation: MazeOrientationSource = "torso";
   let preparedRound: { maze: Maze; orientation: MazeOrientationSource } | null =
     null;
@@ -95,7 +148,7 @@ export function mountMaze(
       "viewBox",
       `-0.6 -0.6 ${maze.config.widthM + 1.2} ${maze.config.depthM + 1.2}`,
     );
-    map.innerHTML = `<title>Operator-only maze, ${maze.config.widthM} by ${maze.config.depthM} meters</title><rect x="0" y="0" width="${maze.config.widthM}" height="${maze.config.depthM}" rx="0.05" fill="white" stroke="#d3deeb" stroke-width="0.02"/><g transform="translate(0 ${maze.config.depthM}) scale(1 -1)">${maze.walls.map((w) => `<path d="M${w.a.x} ${w.a.z} L${w.b.x} ${w.b.z}" stroke="#5c718d" stroke-width="0.045" stroke-linecap="round"/>`).join("")}<circle cx="${maze.start.x}" cy="${maze.start.z}" r="0.14" fill="#edb24c"/><circle cx="${maze.goal.x}" cy="${maze.goal.z}" r="0.19" fill="#15977a"/><circle cx="${maze.goal.x}" cy="${maze.goal.z}" r="0.08" fill="white"/><g id="maze-avatar"><path id="maze-ray" stroke="#76aaa9" stroke-width="0.04" stroke-dasharray="0.09 0.07"/><path id="maze-heading" fill="#235ac4"/><circle id="maze-player" r="0.12" fill="#235ac4" stroke="white" stroke-width="0.04"/></g></g><text x="0" y="-0.22" fill="#52647a" font-size="0.16">FAR LEFT</text><text x="${maze.config.widthM}" y="-0.22" text-anchor="end" fill="#52647a" font-size="0.16">FAR RIGHT</text><text x="0" y="${maze.config.depthM + 0.35}" fill="#52647a" font-size="0.16">NEAR LEFT / ORIGIN</text><text x="${maze.config.widthM}" y="${maze.config.depthM + 0.35}" text-anchor="end" fill="#52647a" font-size="0.16">NEAR RIGHT</text>`;
+    map.innerHTML = `<title>Operator-only maze, ${maze.config.widthM} by ${maze.config.depthM} meters</title><rect x="0" y="0" width="${maze.config.widthM}" height="${maze.config.depthM}" rx="0.05" fill="white" stroke="#b6c6b8" stroke-width="0.02"/><g transform="translate(0 ${maze.config.depthM}) scale(1 -1)">${maze.walls.map((w) => `<path d="M${w.a.x} ${w.a.z} L${w.b.x} ${w.b.z}" stroke="#294139" stroke-width="0.045" stroke-linecap="round"/>`).join("")}<circle cx="${maze.start.x}" cy="${maze.start.z}" r="0.14" fill="#edb24c"/><circle cx="${maze.goal.x}" cy="${maze.goal.z}" r="0.19" fill="#15977a"/><circle cx="${maze.goal.x}" cy="${maze.goal.z}" r="0.08" fill="white"/><g id="maze-avatar"><path id="maze-ray" stroke="#99580f" stroke-width="0.04" stroke-dasharray="0.09 0.07"/><path id="maze-heading" fill="#99580f"/><circle id="maze-player" r="0.12" fill="#99580f" stroke="white" stroke-width="0.04"/></g></g><text x="0" y="-0.22" fill="#4d6156" font-size="0.26">FAR LEFT</text><text x="${maze.config.widthM}" y="-0.22" text-anchor="end" fill="#4d6156" font-size="0.26">FAR RIGHT</text><text x="0" y="${maze.config.depthM + 0.35}" fill="#4d6156" font-size="0.26">NEAR LEFT / ORIGIN</text><text x="${maze.config.widthM}" y="${maze.config.depthM + 0.35}" text-anchor="end" fill="#4d6156" font-size="0.26">NEAR RIGHT</text>`;
   }
   function resetPlayer() {
     if (disposed) return;
@@ -133,7 +186,6 @@ export function mountMaze(
       activeOrientation = preparedRound.orientation;
       applyMaze(preparedRound.maze);
       preparedRound = null;
-      roundConfirmed = true;
       phase = "playing";
       tick();
       get(participantMode ? "maze-return" : "maze-map").focus();
@@ -151,7 +203,7 @@ export function mountMaze(
           get("maze-config-status").classList.remove("maze-error");
           setMazeText(
             get("maze-config-status"),
-            "Settings confirmed. Opening a new round resets the player.",
+            "Start round applies these settings and resets the player.",
           );
           return true;
         } catch (error) {
@@ -228,11 +280,16 @@ export function mountMaze(
       lastAccepted: cursor,
     });
     let level = 0;
-    let cueText = phase === "finished" ? "Goal reached" : "Rehearsal paused";
+    let cueText =
+      phase === "ready"
+        ? "Ready"
+        : phase === "finished"
+          ? "Goal reached"
+          : "Rehearsal paused";
     let status = dialog.open
       ? "Setup open. Confirm Start round to begin a new rehearsal."
       : phase === "ready"
-        ? "Ready for rehearsal. Set up round, then confirm Start round."
+        ? "Ready for rehearsal."
         : phase === "paused"
           ? "Paused. Resume when ready."
           : phase === "finished"
@@ -295,7 +352,11 @@ export function mountMaze(
     } else {
       cueText = "Input unavailable";
       if (phase === "playing") phase = "paused";
-      status = `Input unavailable: ${assessed.reason.replaceAll("-", " ")}. Restore input, then resume.`;
+      const recovery =
+        phase === "ready"
+          ? "Restore input to start."
+          : "Restore input, then resume.";
+      status = `Input unavailable: ${assessed.reason.replaceAll("-", " ")}. ${recovery}`;
     }
     if (dialog.open || phase !== "playing") level = 0;
     const percent = Math.round(level * 100);
@@ -304,14 +365,16 @@ export function mountMaze(
       setMazeText(get(`${id}-value`), `${input(id).value}°`);
     setMazeText(get("maze-session-status"), status);
     get<HTMLButtonElement>("maze-start").disabled =
-      document.hidden || (roundConfirmed && (!valid || phase === "finished"));
+      dialog.open || document.hidden || !valid || phase === "finished";
     setMazeText(
       get("maze-start"),
       phase === "playing"
         ? "Pause"
         : phase === "paused"
           ? "Resume"
-          : "Set up round",
+          : phase === "finished"
+            ? "Round complete"
+            : "Start rehearsal",
     );
     root
       .querySelectorAll<HTMLElement>("[data-level]")
@@ -324,8 +387,7 @@ export function mountMaze(
       .forEach((el) => setMazeText(el, status));
     const resumeButton = get<HTMLButtonElement>("maze-resume");
     resumeButton.hidden = phase !== "paused";
-    resumeButton.disabled =
-      dialog.open || !roundConfirmed || !valid || document.hidden;
+    resumeButton.disabled = dialog.open || !valid || document.hidden;
     operatorResume.update(
       phase === "paused" && !participantMode && !dialog.open,
     );
@@ -368,9 +430,15 @@ export function mountMaze(
         "#participant-toggle",
       );
       if (toggle) {
-        setMazeText(toggle, phase === "playing" ? "Pause" : "Resume rehearsal");
-        toggle.disabled =
-          dialog.open || !roundConfirmed || !valid || phase === "finished";
+        setMazeText(
+          toggle,
+          phase === "playing"
+            ? "Pause"
+            : phase === "ready"
+              ? "Start rehearsal"
+              : "Resume rehearsal",
+        );
+        toggle.disabled = dialog.open || !valid || phase === "finished";
       }
       popupResume?.update(phase === "paused" && !dialog.open);
       updateMeters(doc, percent);
@@ -401,10 +469,6 @@ export function mountMaze(
           participantWindow.document.hidden))
     )
       return;
-    if (!roundConfirmed) {
-      openSetup(get("maze-start"));
-      return;
-    }
     phase = phase === "playing" ? "paused" : "playing";
     tick();
   }
@@ -414,9 +478,15 @@ export function mountMaze(
     participantMode = value;
     get("maze-admin").hidden = value;
     get("maze-participant").hidden = !value;
+    get("maze-view").hidden = value;
+    get("open-settings").hidden = value;
+    get("maze-skip").setAttribute(
+      "href",
+      value ? "#maze-participant" : "#maze-map",
+    );
     setMazeText(
-      get("maze-view"),
-      value ? "Return to operator map" : "Preview participant display",
+      get("maze-skip"),
+      value ? "Skip to participant display" : "Skip to maze",
     );
     if (value) get(phase === "paused" ? "maze-resume" : "maze-return").focus();
     else get("maze-view").focus();
@@ -430,7 +500,7 @@ export function mountMaze(
     get("maze-config-status").classList.remove("maze-error");
     setMazeText(
       get("maze-config-status"),
-      "Draft changes apply only after Start round. Closing keeps the current round paused.",
+      "Start round applies draft changes.",
     );
   });
   listen(get("maze-shuffle"), "click", () => {
@@ -442,7 +512,12 @@ export function mountMaze(
   listen(get("close-settings"), "click", tick);
   listen(dialog, "cancel", tick);
   listen(dialog, "close", tick);
-  listen(get("maze-start"), "click", toggle);
+  listen(get("maze-start"), "click", () => {
+    const starting = phase === "ready";
+    toggle();
+    if (starting && phase === "playing")
+      get("maze-map").focus({ preventScroll: true });
+  });
   listen(get("maze-reset"), "click", () => openSetup(get("maze-reset")));
   listen(get("maze-view"), "click", () => preview(!participantMode));
   listen(get("maze-return"), "click", () => preview(false));
@@ -554,10 +629,7 @@ export function mountMaze(
     tick();
   });
   listen(get("maze-window"), "click", () => {
-    if (!roundConfirmed || dialog.open) {
-      openSetup(get("maze-window"));
-      return;
-    }
+    if (dialog.open) return;
     if (participantWindow && !participantWindow.closed) {
       get("maze-window-status").hidden = true;
       participantWindow.focus();
@@ -603,7 +675,10 @@ export function mountMaze(
   };
   listen(window, "blur", pause);
   listen(document, "visibilitychange", visibility);
-  applyMaze(generateMaze(readMazeSetup(root).config));
+  const initial = readMazeSetup(root);
+  activeOrientation = initial.orientationSource;
+  applyMaze(generateMaze(initial.config));
+  tick();
   const timer = window.setInterval(tick, 100);
   function dispose() {
     if (disposed) return;
@@ -622,7 +697,6 @@ export function mountMaze(
     if (!event.persisted) dispose();
   }
   listen(window, "pagehide", onPageHide);
-  openSetup();
   return {
     dispose,
     navigationBlocker(): string | null {

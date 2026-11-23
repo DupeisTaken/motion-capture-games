@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment happy-dom
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MultiplayerGame } from "../../apps/mirror/src/multiplayer-game";
+import { createMultiplayerView } from "../../apps/mirror/src/multiplayer-view";
 import { MoleGame } from "../../games/mole-motion/src/index";
 import {
   BODY_NAMES,
@@ -35,6 +37,83 @@ function scene(sequence: number, at: number): Observation {
     })),
   };
 }
+
+describe("multiplayer lobby", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.body.replaceChildren();
+  });
+
+  it("opens Settings from the lobby and reports blocked changes in setup", () => {
+    vi.stubGlobal("Option", function Option(text = "", value = text) {
+      const option = document.createElement("option");
+      option.textContent = text;
+      option.value = value;
+      return option;
+    });
+    const root = document.createElement("div");
+    root.innerHTML = `<span class="experiment">Single player</span><p id="player-status"></p><p id="player-binding"></p><button id="open-game-window"></button><div class="mm-game"></div><dialog><p id="setup-input-status"></p><select id="source-select"><option value="camera">Camera</option><option value="demo">Rehearsal</option></select><div id="camera-controls"></div></dialog>`;
+    document.body.append(root);
+    const openSetup = vi.fn(() => root.querySelector("dialog")!.showModal());
+    const now = 100;
+    const lobby = createMultiplayerView(
+      root,
+      "dodgeball",
+      () => ({}),
+      () => now,
+      7,
+      () => {},
+      openSetup,
+    );
+    const toggle = root.querySelector<HTMLInputElement>(
+      "#multiplayer-enabled",
+    )!;
+    const source = root.querySelector<HTMLSelectElement>("#source-select")!;
+    const board = root.querySelector<HTMLElement>(".multiplayer-board")!;
+    const settings = root.querySelector<HTMLButtonElement>(
+      "#multiplayer-settings",
+    )!;
+    const modalStatus = root.querySelector("#setup-input-status")!;
+    const lobbyStatus = root.querySelector("#multiplayer-message")!;
+
+    expect(board.hidden).toBe(true);
+    toggle.click();
+    expect(board.hidden).toBe(false);
+    expect(root.querySelector<HTMLElement>("#open-game-window")!.hidden).toBe(
+      true,
+    );
+    lobby.ingest(scene(1, now), null, now);
+    lobby.tick();
+    root.querySelector<HTMLSelectElement>("#player-1-track")!.value = "a";
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-slot="player-1"] [data-action="join"]',
+      )!
+      .click();
+    expect(
+      root.querySelector('[data-slot="player-1"] .multiplayer-state')!
+        .textContent,
+    ).toBe("Ready");
+    expect(lobby.hasEnrolledPlayers()).toBe(true);
+
+    settings.click();
+    expect(openSetup).toHaveBeenCalledWith(settings);
+    expect(root.querySelector("dialog")!.open).toBe(true);
+    toggle.click();
+    expect(toggle.checked).toBe(true);
+    expect(modalStatus.textContent).toMatch(/Leave each player/);
+    expect(lobbyStatus.textContent).toBe(modalStatus.textContent);
+
+    source.value = "demo";
+    source.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(source.value).toBe("camera");
+    expect(modalStatus.textContent).toMatch(/Leave enrolled players/);
+    expect(lobbyStatus.textContent).toBe(modalStatus.textContent);
+    expect(lobby.enabled()).toBe(true);
+    expect(lobby.hasEnrolledPlayers()).toBe(true);
+    lobby.dispose();
+  });
+});
 
 describe("independent multiplayer game adapters", () => {
   it("routes reordered crossing tracks to three real Mole engines and isolates scores", () => {

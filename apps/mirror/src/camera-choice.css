@@ -1,5 +1,5 @@
 .camera-choice {
-  margin: 12px 0;
+  margin: 10px 0;
 }
 .camera-choice-row {
   display: flex;
@@ -14,43 +14,46 @@
 }
 .camera-choice-row button {
   flex: 0 0 auto;
-  border: 1.5px solid #c0cfc0;
-  border-radius: 8px;
-  background: #f0f5ef;
-  color: #254c37;
+  border: 1.5px solid var(--studio-border-strong, #b6c6b8);
+  border-radius: var(--studio-radius-sm, 8px);
+  background: var(--studio-surface-subtle, #eff3ea);
+  color: var(--studio-ink, #0d1f1a);
   font: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
-  padding: 8px 12px;
+  padding: 8px 14px;
   min-height: 44px;
   cursor: pointer;
-  transition: background 150ms;
+  transition:
+    background 140ms,
+    border-color 140ms;
 }
 .camera-choice-row button:hover:not(:disabled) {
-  background: #e1eede;
-  border-color: #96b896;
+  background: var(--studio-teal-soft, #e4f2ec);
+  border-color: var(--studio-teal, #1a7a5e);
 }
 .camera-choice-row button:focus-visible {
-  outline: 3px solid #3a8a60;
+  outline: 3px solid var(--studio-focus, #1a7a5e);
   outline-offset: 2px;
-  border-radius: 8px;
+  border-radius: var(--studio-radius-sm, 8px);
 }
 .camera-choice-row button:disabled {
-  cursor: default;
+  cursor: not-allowed;
   opacity: 0.5;
 }
 .camera-choice-manual {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 .camera-choice-manual input {
   width: 100%;
 }
 .camera-advanced {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 .camera-advanced summary {
   cursor: pointer;
-  font-size: 12px;
-  color: #3a5a44;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--studio-muted, #4d6156);
   padding: 6px 0;
 }

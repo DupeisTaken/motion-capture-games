@@ -2,10 +2,12 @@
   padding: 16px;
 }
 .calibration-warning {
-  background: #fff5db;
-  border-left: 3px solid #b97800;
-  padding: 10px;
-  font-size: 12px;
+  background: var(--studio-warning-bg);
+  border-left: 3px solid var(--studio-warning);
+  padding: 8px;
+  color: var(--studio-warning);
+  font-size: 13px;
+  font-weight: 650;
 }
 .calibration-actions {
   display: flex;
@@ -15,7 +17,7 @@
 }
 .calibration-preview {
   position: relative;
-  background: #172a3d;
+  background: var(--studio-ink);
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: 8px;
@@ -46,9 +48,9 @@
   left: 6px;
   top: 6px;
   padding: 3px 6px;
-  background: #172a3deb;
+  background: rgb(13 31 26 / 94%);
   color: white;
-  font-size: 10px;
+  font-size: 12px;
   border-radius: 4px;
   max-width: calc(100% - 12px);
 }
@@ -63,8 +65,14 @@
 }
 .maze-calibration .field-note {
   font-size: 12px;
-  color: #52647a;
+  color: var(--studio-muted);
 }
 .maze-calibration [role="status"] {
   overflow-wrap: anywhere;
+}
+
+.calibration-placements {
+  margin: 6px 0;
+  padding-inline-start: 18px;
+  font-size: 13px;
 }

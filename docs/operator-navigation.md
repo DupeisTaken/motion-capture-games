@@ -1,6 +1,6 @@
 # Game and operator navigation
 
-Every top-level page has the same **All games** return link, current location and **Switch view** button. Open Switch view for all four games, the tracking console and two-camera workspace. The directory remains available at `/` (and `/index.html`); its static cards and tool links also work without JavaScript.
+Every top-level page replaces its legacy header with a single unified Motion Studio top bar (`app-navigation.ts`, backed by `studio-tokens.css`) containing the **MotionStudio / All games** home return link, current location (on non-directory pages), and **Switch view** popover. Open Switch view for all four games, the tracking console and two-camera workspace. The directory remains available at `/` (and `/index.html`); its static cards and tool links also work without JavaScript.
 
 The GitHub Pages build offers the directory and four rehearsal games only. Its chooser omits operator tools that are not shipped. Relative destinations preserve the repository's project path, including current-location detection and departure guards; the local build retains all seven destinations.
 

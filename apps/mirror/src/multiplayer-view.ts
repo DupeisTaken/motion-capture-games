@@ -14,14 +14,23 @@ import { drawMoleScene } from "./mole-renderer";
 import { drawDodgeScene } from "./dodgeball-renderer";
 import { renderMultiplayerTargets } from "./multiplayer-targets";
 
+const phaseLabels = {
+  ready: "Ready",
+  countdown: "Countdown",
+  playing: "Playing",
+  paused: "Paused",
+  results: "Results",
+};
+
 /** Adds enrollment and parallel games to the existing camera owner, never acquisition. */
 export function createMultiplayerView(
   root: HTMLElement,
   kind: MultiplayerKind,
   options: () => Partial<MoleOptions> | Partial<DodgeOptions>,
   now: () => number,
-  seed = 1,
-  onEnable: () => void = () => {},
+  seed: number,
+  onEnable: () => void,
+  openSetup: (trigger: HTMLElement) => void,
 ) {
   const match = new MultiplayerGame(kind, options, seed);
   const abort = new AbortController();
@@ -35,7 +44,7 @@ export function createMultiplayerView(
   board.className = "multiplayer-board";
   board.hidden = true;
   board.setAttribute("aria-label", "Multiplayer lobby and games");
-  board.innerHTML = `<header class="multiplayer-heading"><div><p class="eyebrow">PLAY TOGETHER</p><h2>One camera. Your own score.</h2><p>Match the track labels in an unstarted panel, select that track, then Enroll. Unenrolled people are spectators.</p></div><span class="multiplayer-capacity">Up to 3 · software preview</span></header><p class="multiplayer-policy">Each player has independent targets, score and active time. Only your body controls your panel. Tracking uncertainty freezes your game; other players continue. Physical capacity and identity continuity are unmeasured.</p><p id="multiplayer-spectators" role="status"></p><p id="multiplayer-message" role="status">Start the camera, then enroll each participant.</p><div class="multiplayer-actions"><button id="multiplayer-start" class="mm-primary">Start enrolled players</button><button id="multiplayer-settings" class="mm-secondary">Video & game settings</button></div><div class="multiplayer-grid">${PLAYER_SLOT_IDS.map((id, i) => `<article class="multiplayer-slot" data-slot="${id}"><header><h3>Player ${i + 1}</h3><strong class="multiplayer-score" aria-label="Player ${i + 1} score">0</strong></header><div class="multiplayer-enrollment"><label for="${id}-track">Visible participant</label><select id="${id}-track"><option value="">Select track explicitly</option></select><button class="mm-secondary" data-action="join">Enroll</button><button class="mm-text" data-action="leave" disabled>Leave & clear score</button></div><p class="multiplayer-binding">No participant enrolled</p><div class="multiplayer-stage"><canvas width="640" height="400" aria-label="Player ${i + 1} mirrored game view"></canvas><div class="multiplayer-targets"></div></div><p class="multiplayer-state" role="status">Choose a participant to join.</p><p class="multiplayer-stats">No round started</p><div class="multiplayer-actions"><button class="mm-secondary" data-action="pause" disabled>Pause</button><button class="mm-secondary" data-action="resume" disabled>Resume</button><button class="mm-secondary" data-action="finish" disabled>End round</button><button class="mm-text" data-action="start" disabled>New round</button></div></article>`).join("")}</div>`;
+  board.innerHTML = `<header class="multiplayer-heading"><div><h2>Multiplayer</h2><p>Match each participant to their track label, then choose Enroll.</p></div><span class="multiplayer-capacity">Up to 3 players</span></header><details class="multiplayer-policy"><summary>Each player has their own game and score</summary><p>Unenrolled people are spectators. Uncertain tracking pauses only the affected player. Leaving clears that slot’s score. Physical tracking for three players is experimental.</p></details><p id="multiplayer-spectators" role="status"></p><p id="multiplayer-message" role="status">Start the camera, then enroll each participant.</p><div class="multiplayer-actions"><button id="multiplayer-start" class="mm-primary">Start enrolled players</button><button id="multiplayer-settings" class="mm-secondary">Settings</button></div><div class="multiplayer-grid">${PLAYER_SLOT_IDS.map((id, i) => `<article class="multiplayer-slot" data-slot="${id}"><header><h3>Player ${i + 1}</h3><strong class="multiplayer-score" aria-label="Player ${i + 1} score">0</strong></header><div class="multiplayer-enrollment"><label for="${id}-track">Visible participant</label><select id="${id}-track"><option value="">Select track explicitly</option></select><button class="mm-secondary" data-action="join">Enroll</button><button class="mm-text" data-action="leave" disabled>Leave & clear score</button></div><p class="multiplayer-binding">No participant enrolled</p><div class="multiplayer-stage"><canvas width="640" height="400" aria-label="Player ${i + 1} mirrored game view"></canvas><div class="multiplayer-targets"></div></div><p class="multiplayer-state" role="status">Choose a participant to join.</p><p class="multiplayer-stats">No round started</p><div class="multiplayer-actions"><button class="mm-secondary" data-action="pause" disabled>Pause</button><button class="mm-secondary" data-action="resume" disabled>Resume</button><button class="mm-secondary" data-action="finish" disabled>End round</button><button class="mm-text" data-action="start" disabled>New round</button></div></article>`).join("")}</div>`;
   root.querySelector(".mm-game")!.after(board);
   let observation: Observation | null = null;
   let image: ImageBitmap | null = null;
@@ -53,9 +62,14 @@ export function createMultiplayerView(
   const source = root.querySelector<HTMLSelectElement>("#source-select")!;
   const badge = root.querySelector<HTMLElement>(".experiment")!;
   const originalBadge = badge.innerHTML;
-  const footer = root.querySelector<HTMLElement>(".mm-footer span:last-child")!;
-  const originalFooter = footer.textContent;
   const enabled = () => toggle.checked && source.value === "camera";
+  const setupStatus = get("#setup-input-status", root);
+  let enrollmentError = "";
+  function setupMessage(text: string) {
+    enrollmentError = text;
+    message(text);
+    setupStatus.textContent = text;
+  }
   function render() {
     const active = enabled();
     board.hidden = !active;
@@ -63,25 +77,18 @@ export function createMultiplayerView(
     const modeName = active ? "multiplayer" : "single";
     if (badge.dataset.mode !== modeName) {
       badge.dataset.mode = modeName;
-      badge.innerHTML = active
-        ? "1–3 players <span>Experimental</span>"
-        : originalBadge;
-      footer.textContent = active
-        ? "1–3 players · English · software preview"
-        : originalFooter;
+      badge.innerHTML = active ? "Multiplayer" : originalBadge;
     }
     if (active) {
       root.querySelector<HTMLElement>("#player-status")!.textContent =
-        "Multiplayer lobby · enroll each participant explicitly. Each panel has its own game and score.";
+        "Multiplayer lobby";
       root.querySelector<HTMLElement>("#player-binding")!.hidden = true;
     }
-    toggle.disabled = source.value !== "camera";
-    if (active) source.disabled = match.runtimes.size > 0;
     // A distinct board cannot silently move with the single-player popup stage.
     const popup = root.querySelector<HTMLButtonElement>(
       kind === "mole" ? "#open-game-display" : "#open-game-window",
     );
-    if (popup) popup.disabled = active;
+    if (popup) popup.hidden = popup.disabled = active;
     if (!active) return;
     const fresh = observation && now() - receivedAt <= 350;
     const spectators = observation ? match.session.spectators(observation) : [];
@@ -134,10 +141,9 @@ export function createMultiplayerView(
       get(".multiplayer-state", element).textContent =
         status.status === "rejoin-required"
           ? `${status.reason} Leave, then enroll explicitly for a fresh score.`
-          : state?.reason ||
-            (state
-              ? `${state.phase}${countdown}${runtime?.requested ? " · waiting for ready input" : ""}`
-              : "Choose a participant to join.");
+          : state
+            ? `${phaseLabels[state.phase]}${countdown}${state.reason ? ` · ${state.reason}` : runtime?.requested ? " · waiting for ready input" : ""}`
+            : "Choose a participant to join.";
       get(".multiplayer-stats", element).textContent = state
         ? `${(state.elapsedMs / 1000).toFixed(1)} active seconds · ${state.hits} hits${runtime?.game instanceof MoleGame ? ` · ${runtime.game.state.misses} escaped` : runtime ? ` · ${(runtime.game as import("../../../games/dodgeball/src/index").DodgeGame).state.dodges} dodges` : ""}`
         : "No round started";
@@ -204,7 +210,7 @@ export function createMultiplayerView(
       if (toggle.checked) onEnable();
       if (!toggle.checked && match.runtimes.size) {
         toggle.checked = true;
-        message(
+        setupMessage(
           "Leave each player before returning to single player. Leaving clears that slot’s score.",
         );
       }
@@ -218,7 +224,9 @@ export function createMultiplayerView(
       if (match.runtimes.size) {
         source.value = "camera";
         event.stopImmediatePropagation();
-        message("Leave enrolled players before changing the input source.");
+        setupMessage(
+          "Leave enrolled players before changing the input source.",
+        );
       }
       render();
     },
@@ -226,7 +234,7 @@ export function createMultiplayerView(
   );
   get("#multiplayer-settings").addEventListener(
     "click",
-    () => root.querySelector<HTMLButtonElement>("#open-settings")!.click(),
+    (event) => openSetup(event.currentTarget as HTMLElement),
     { signal: abort.signal },
   );
   get("#multiplayer-start").addEventListener(
@@ -259,6 +267,11 @@ export function createMultiplayerView(
           );
         if (action === "leave") {
           match.leave(id);
+          if (
+            !match.runtimes.size &&
+            setupStatus.textContent === enrollmentError
+          )
+            setupStatus.textContent = "";
           message(
             "Slot released and score cleared. Re-enrollment always starts a fresh game.",
           );
@@ -273,6 +286,10 @@ export function createMultiplayerView(
     );
   return {
     enabled,
+    hasEnrolledPlayers: () => match.runtimes.size > 0,
+    setModeLocked(locked: boolean) {
+      toggle.disabled = locked || source.value !== "camera";
+    },
     start() {
       match.start();
       render();

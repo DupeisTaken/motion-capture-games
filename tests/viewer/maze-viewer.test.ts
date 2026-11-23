@@ -95,6 +95,7 @@ describe("virtual maze operator workflow", () => {
   });
   it("composes pending and failed-release calibration ownership into the shared navigation method", async () => {
     navigation = mountAppNavigation({ owner: workspace, path: "/maze.html" });
+    click("open-settings");
     const link = document.querySelector('.studio-navigation a[href="./"]')!;
     const depart = () =>
       link.dispatchEvent(
@@ -135,7 +136,21 @@ describe("virtual maze operator workflow", () => {
     expect(workspace.navigationBlocker()).toBeNull();
     expect(depart()).toBe(true);
   });
-  it("requires shared setup confirmation before the first round and restores focus on Close or Escape", () => {
+  it("starts the visible default rehearsal directly and opens settings only on request", () => {
+    expect(dialog().open).toBe(false);
+    expect(get("maze-size").textContent).toBe("8 × 8 m");
+    expect(
+      get("maze-map").querySelector('circle[fill="#15977a"]'),
+    ).not.toBeNull();
+    expect(get("maze-start").textContent).toBe("Start rehearsal");
+    expect(get("maze-sound").textContent).toBe("Enable sound");
+    const layout = get("maze-map").innerHTML;
+    click("maze-start");
+    expect(dialog().open).toBe(false);
+    expect(status()).toContain("running");
+    expect(get("maze-map").innerHTML).toBe(layout);
+    expect(document.activeElement).toBe(get("maze-map"));
+    click("open-settings");
     expect(dialog().open).toBe(true);
     expect(document.activeElement).toBe(get("close-settings"));
     expect(
@@ -149,11 +164,11 @@ describe("virtual maze operator workflow", () => {
     expect(dialog().open).toBe(false);
     expect(document.activeElement).toBe(get("open-settings"));
     expect(status()).not.toContain("running");
-    click("maze-start");
+    click("maze-reset");
     expect(dialog().open).toBe(true);
     dialog().dispatchEvent(new Event("cancel", { cancelable: true }));
     expect(dialog().open).toBe(false);
-    expect(document.activeElement).toBe(get("maze-start"));
+    expect(document.activeElement).toBe(get("maze-reset"));
     click("open-settings");
     confirmRound();
     expect(dialog().open).toBe(false);
@@ -168,7 +183,7 @@ describe("virtual maze operator workflow", () => {
       seed: "quiet-path-01",
       loops: true,
     });
-    confirmRound();
+    click("maze-start");
     change("maze-quality", "uncertain");
     change("maze-x", String(maze.goal.x));
     change("maze-z", String(maze.goal.z));
@@ -252,7 +267,7 @@ describe("virtual maze operator workflow", () => {
     expect(get("maze-photo-corners").textContent).not.toContain("10%");
   });
   it("updates live status only when its content changes", () => {
-    confirmRound();
+    click("maze-start");
     const changes: MutationRecord[] = [];
     const observer = new MutationObserver((records) =>
       changes.push(...records),
@@ -268,14 +283,14 @@ describe("virtual maze operator workflow", () => {
     observer.disconnect();
   });
   it("only enumerates camera metadata and requires explicit capture and audio actions", () => {
-    expect(dialog().open).toBe(true);
+    expect(dialog().open).toBe(false);
     expect(get("maze-facing").textContent).toBe("Torso");
     expect(audio.enable).not.toHaveBeenCalled();
     expect(audio.setLevel).not.toHaveBeenCalled();
     expect(
       vi.mocked(fetch).mock.calls.every(([url]) => url === "/api/cameras"),
     ).toBe(true);
-    confirmRound();
+    click("maze-start");
     expect(status()).toContain("running");
     expect(audio.setLevel).not.toHaveBeenCalled();
     expect(
@@ -285,7 +300,7 @@ describe("virtual maze operator workflow", () => {
     ).toBe(true);
   });
   it("keeps head/torso independent and applies selected direction only after confirmation", () => {
-    confirmRound();
+    click("maze-start");
     change("maze-head", "90");
     change("maze-torso", "0");
     const torso = get("maze-heading").getAttribute("d");
@@ -315,7 +330,7 @@ describe("virtual maze operator workflow", () => {
   it.each(["missing", "uncertain", "stale"])(
     "suspends %s input and never resumes automatically",
     (quality) => {
-      confirmRound();
+      click("maze-start");
       change("maze-quality", quality);
       expect(status()).toContain("Input unavailable");
       expect(get("maze-x-value").textContent).toBe("—");
@@ -326,7 +341,7 @@ describe("virtual maze operator workflow", () => {
     },
   );
   it("retains active layout and player through cancelled drafts, invalid confirmation and seed shuffle", () => {
-    confirmRound();
+    click("maze-start");
     change("maze-x", "3");
     const layout = get("maze-map").innerHTML;
     click("open-settings");
@@ -359,6 +374,7 @@ describe("virtual maze operator workflow", () => {
     expect(status()).toContain("running");
   });
   it("rejects forged physical input without hiding setup or changing the active maze", () => {
+    click("open-settings");
     const layout = get("maze-map").innerHTML;
     change("maze-source", "physical");
     confirmRound();
@@ -372,19 +388,32 @@ describe("virtual maze operator workflow", () => {
     confirmRound();
     expect(status()).toContain("running");
   });
-  it("reopens setup before any confirmed round even when pose input is unavailable", () => {
-    click("close-settings");
+  it("blocks unavailable input before the first start and keeps the participant window available", async () => {
     change("maze-quality", "missing");
+    expect(get<HTMLButtonElement>("maze-start").disabled).toBe(true);
     click("maze-start");
-    expect(dialog().open).toBe(true);
-    click("close-settings");
+    expect(dialog().open).toBe(false);
+    expect(status()).toContain("Input unavailable");
+    click("maze-sound");
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(audio.setLevel).not.toHaveBeenCalled();
+
     const openWindow = vi.spyOn(window, "open").mockReturnValue(null);
     click("maze-window");
-    expect(dialog().open).toBe(true);
-    expect(openWindow).not.toHaveBeenCalled();
+    expect(dialog().open).toBe(false);
+    expect(openWindow).toHaveBeenCalledOnce();
+    expect(get("maze-window-status").textContent).toContain("window blocked");
+
+    change("maze-quality", "ready");
+    expect(status()).toBe("Ready for rehearsal.");
+    expect(get<HTMLButtonElement>("maze-start").disabled).toBe(false);
+    expect(audio.setLevel).not.toHaveBeenCalled();
+    click("maze-start");
+    expect(audio.setLevel).toHaveBeenCalled();
   });
   it("keeps pending audio activation silent while setup pauses the active round", async () => {
-    confirmRound();
+    click("maze-start");
     let resolveEnable!: () => void;
     audio.enable.mockReturnValue(
       new Promise<void>((resolve) => {
@@ -405,7 +434,7 @@ describe("virtual maze operator workflow", () => {
     expect(audio.setLevel).toHaveBeenCalled();
   });
   it("resumes the inline participant display with one focused button and preserves the player", () => {
-    confirmRound();
+    click("maze-start");
     change("maze-x", "3");
     click("maze-start");
     expect(document.activeElement).toBe(get("maze-start"));
@@ -418,17 +447,18 @@ describe("virtual maze operator workflow", () => {
     expect(dialog().open).toBe(false);
     expect(get("maze-resume").hidden).toBe(true);
   });
-  it("has a map-free participant preview and an explicit way back", () => {
-    click("close-settings");
+  it("has a map-free participant preview before the first round and an explicit way back", () => {
     click("maze-view");
     expect(get("maze-admin").hidden).toBe(true);
+    expect(get("open-settings").hidden).toBe(true);
+    expect(get("maze-skip").getAttribute("href")).toBe("#maze-participant");
     expect(get("maze-participant").querySelector("svg")).toBeNull();
     expect(document.activeElement).toBe(get("maze-return"));
     click("maze-return");
     expect(get("maze-admin").hidden).toBe(false);
   });
   it("keeps blocked-popup recovery visible across updates", () => {
-    confirmRound();
+    click("maze-start");
     vi.spyOn(window, "open").mockReturnValue(null);
     click("maze-window");
     vi.advanceTimersByTime(1000);
@@ -436,7 +466,7 @@ describe("virtual maze operator workflow", () => {
     expect(get("maze-start").textContent).not.toBe("Pause");
   });
   it("pauses on blur and survives a persisted back/forward-cache pagehide", () => {
-    confirmRound();
+    click("maze-start");
     window.dispatchEvent(new Event("blur"));
     expect(get("maze-start").textContent).toContain("Resume");
     click("maze-start");
@@ -450,7 +480,7 @@ describe("virtual maze operator workflow", () => {
     expect(status()).toContain("running");
   });
   it("pauses when hidden and stops listeners/timers on final disposal", () => {
-    confirmRound();
+    click("maze-start");
     Object.defineProperty(document, "hidden", {
       configurable: true,
       value: true,
@@ -465,7 +495,7 @@ describe("virtual maze operator workflow", () => {
     expect(audio.dispose).toHaveBeenCalledOnce();
   });
   it("requires audio activation and recovers browser-suspended audio in one action", async () => {
-    confirmRound();
+    click("maze-start");
     click("maze-sound");
     await Promise.resolve();
     await Promise.resolve();
@@ -486,7 +516,7 @@ describe("virtual maze operator workflow", () => {
     change("maze-head", "20");
     change("maze-head", "30");
     change("maze-torso", "40");
-    confirmRound();
+    click("maze-start");
     change("maze-head", "45");
     expect(status()).toContain("running");
   });

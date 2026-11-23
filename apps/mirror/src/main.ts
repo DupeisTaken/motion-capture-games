@@ -46,31 +46,25 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <span class="local-indicator"><span></span> Local processing · no recording</span>
   </header>
   <main id="workspace">
-    <div class="page-heading"><div><p class="eyebrow">M1 / SINGLE-VIEW DIAGNOSTICS</p><h1>Tracking console</h1></div><p>One source. Every stage in view.</p><span class="phase-label">Experimental <span>v0.1</span></span></div>
+    <div class="page-heading"><h1>Tracking console</h1><p>Inspect body tracking and timing from one source.</p><span class="subtle-badge heading-status">Local processing</span></div>
     <div class="workspace-grid">
-      <aside class="control-panel" aria-label="Input and detection settings">
-        <section class="control-section"><h2><span class="section-index">01</span> Input source</h2>
+      <section class="control-panel input-panel" aria-labelledby="input-heading">
+          <h2 id="input-heading">Input source</h2>
           <div class="segmented" role="group" aria-label="Input source"><button id="source-camera" aria-pressed="true">Camera</button><button id="source-demo" aria-pressed="false">Synthetic scene</button></div>
-          <div id="camera-settings">
-            ${cameraChoiceMarkup}
-            <details class="camera-advanced"><summary>Browser camera identification</summary>
+          <div id="camera-settings">${cameraChoiceMarkup}</div>
+          <div id="demo-settings" hidden><label class="field-label" for="demo-scenario">Test scene</label><select id="demo-scenario"><option value="three">Three moving people</option><option value="cycle">People enter and leave</option><option value="empty">Empty scene</option></select><p class="field-help">Generated joints. Camera and pose inference are bypassed.</p></div>
+          <div class="run-controls">
+            <div class="run-buttons"><button id="start" class="primary-button">${icon("play")}<span>Start camera</span></button><button id="stop" class="secondary-button" disabled>${icon("stop")}<span>Stop</span></button></div>
+            <div id="camera-release" hidden><p id="camera-release-message" class="field-help" role="status"></p><button id="retry-camera-stop" class="secondary-button">Retry camera stop</button></div>
+          </div>
+          <details id="browser-camera-settings" class="camera-advanced"><summary>Browser camera identification</summary>
             <button id="discover-cameras" class="discovery-button">${icon("camera")} Allow & discover cameras</button>
             <p id="camera-permission" class="field-help" role="status">Explicit browser permission reveals camera names. Native capture also needs OS permission.</p>
             <label class="field-label" for="browser-camera">Browser camera reference</label><div class="device-row"><select id="browser-camera" disabled><option value="">Discover cameras first</option></select><button id="identify-camera" class="small-button" disabled>Identify</button></div>
             <div id="camera-check" hidden><video id="camera-check-video" muted playsinline aria-label="Temporary camera identification preview"></video><button id="release-camera" class="small-button">Release browser camera</button></div>
-            </details>
-          </div>
-          <div id="demo-settings" hidden><label class="field-label" for="demo-scenario">Test scene</label><select id="demo-scenario"><option value="three">Three moving people</option><option value="cycle">People enter and leave</option><option value="empty">Empty scene</option></select><p class="field-help">Generated joints. Camera and pose inference are bypassed.</p></div>
-        </section>
-        <section class="control-section"><h2><span class="section-index">02</span> Detection pipeline</h2>
-          <label class="field-label" for="algorithm">Pose model</label><select id="algorithm"><option value="rtmpose">RTMPose · detector + pose</option><option value="mediapipe">MediaPipe · comparison baseline</option></select>
-          <div class="field-pair"><div><label class="field-label" for="tracker">Association</label><select id="tracker"><option value="pose">Pose assisted</option><option value="iou">Box overlap</option></select></div><div><label class="field-label" for="capacity">Detection cap</label><select id="capacity"><option value="1">1 person</option><option value="3">3 people</option><option value="6" selected>6 people</option></select></div></div>
-          <div class="range-label"><label for="confidence">Joint visibility threshold</label><output id="confidence-value" for="confidence">0.50</output></div><input id="confidence" type="range" min="0.1" max="0.9" step="0.05" value="0.5"><p class="field-help">Display filter only. Model scores are not probabilities.</p>
-        </section>
-        <div class="run-controls"><button id="start" class="primary-button">${icon("play")}<span>Start camera</span></button><button id="stop" class="secondary-button" disabled>${icon("stop")}<span>Stop</span></button></div>
-        <div id="camera-release" hidden><p id="camera-release-message" class="field-help" role="status"></p><button id="retry-camera-stop" class="secondary-button">Retry camera stop</button></div>
-        <p class="privacy-note">Stop before changing source or pipeline.</p>
-      </aside>
+          </details>
+      </section>
+      <div class="viewer-column">
       <section class="viewer-panel" aria-label="Body skeleton viewport">
         <div class="viewer-toolbar"><div class="viewer-title"><span id="source-dot" class="source-dot"></span><strong id="viewport-title">Camera preview</strong><span id="source-badge" class="subtle-badge">Standby</span></div><button id="fullscreen" class="icon-button" aria-label="Expand viewer" title="Expand viewer">${icon("expand")}</button></div>
         <div class="stage" id="stage">
@@ -79,14 +73,32 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div class="standby" id="standby"><span class="standby-icon">${icon("camera")}</span><h2 id="standby-title">Ready to observe</h2><p id="standby-message">Choose an input source, then start the preview.</p></div>
           <div class="stage-corner stage-bottom"><span id="stage-source">No source connected</span><span id="frame-state">Waiting for frames</span></div>
         </div>
-        <div class="view-options"><label><input id="mirror" type="checkbox" checked>Mirror</label><label><input id="show-video" type="checkbox" checked>Image</label><label><input id="show-tracking" type="checkbox" checked>Tracking overlay</label><label><input id="show-boxes" type="checkbox" checked>Bounds</label><span class="view-hint">Untinted camera · anatomical L/R preserved</span></div>
+        <div class="view-options"><label><input id="mirror" type="checkbox" checked>Mirror</label><label><input id="show-video" type="checkbox" checked>Image</label><label><input id="show-tracking" type="checkbox" checked>Tracking overlay</label><label><input id="show-boxes" type="checkbox" checked>Bounds</label></div>
         <div class="status-banner" id="status-banner" role="status"><span class="status-symbol"></span><div><strong id="status-title">Ready when you are</strong><p id="status-message">Choose an input source, then start the preview.</p></div></div>
       </section>
+      <section class="observations" aria-label="Detection observations">
+        <div class="observation-heading"><h2>People in view</h2><div class="count-readout"><strong id="person-count">0</strong><span id="count-label">detected</span></div></div>
+        <div id="person-list" class="person-list"><p class="empty-people">Detected bodies will appear here automatically.</p></div>
+        <p id="capacity-warning" class="capacity-warning" hidden>Detection capacity reached. There may be additional people outside the returned detections.</p>
+      </section>
+      </div>
+      <section class="control-panel pipeline-panel" aria-labelledby="pipeline-heading">
+          <h2 id="pipeline-heading">Detection pipeline</h2>
+          <label class="field-label" for="algorithm">Pose model</label><select id="algorithm"><option value="rtmpose">RTMPose · detector + pose</option><option value="mediapipe">MediaPipe · comparison baseline</option></select>
+          <div class="field-pair"><div><label class="field-label" for="tracker">Association</label><select id="tracker"><option value="pose">Pose assisted</option><option value="iou">Box overlap</option></select></div><div><label class="field-label" for="capacity">Detection cap</label><select id="capacity"><option value="1">1 person</option><option value="3">3 people</option><option value="6" selected>6 people</option></select></div></div>
+          <div class="range-label"><label for="confidence">Joint visibility threshold</label><output id="confidence-value" for="confidence">0.50</output></div><input id="confidence" type="range" min="0.1" max="0.9" step="0.05" value="0.5"><p class="field-help">Display filter only. Model scores are not probabilities.</p>
+      </section>
       <div class="diagnostic-column">
-      <section class="telemetry" aria-label="Preview diagnostics"><div class="panel-heading"><h2><span class="section-index">03</span> Performance</h2><span class="subtle-badge">Last 120 poses</span></div>
-        <dl class="metric-grid">
+      <section class="telemetry" aria-label="Preview diagnostics"><div class="panel-heading"><h2>Performance</h2><span class="subtle-badge">Last 120 poses</span></div>
+        <dl class="metric-grid metric-overview">
           <div class="metric-primary"><dt>Render FPS</dt><dd><strong id="update-rate">—</strong><span>/s</span></dd></div>
-          <div><dt>Camera / source FPS</dt><dd id="camera-rate">—</dd></div><div><dt>Pose FPS</dt><dd id="pose-rate">—</dd></div><div><dt>Overlay gap</dt><dd id="overlay-gap">—</dd></div><div class="metric-primary"><dt>Pose inference</dt><dd><strong id="inference-time">—</strong><span>ms</span></dd></div>
+          <div><dt>Camera FPS</dt><dd id="camera-rate">—</dd></div>
+          <div><dt>Pose FPS</dt><dd id="pose-rate">—</dd></div>
+          <div class="metric-primary"><dt>Pose inference</dt><dd><strong id="inference-time">—</strong><span>ms</span></dd></div>
+          <div><dt>Overlay gap</dt><dd id="overlay-gap">—</dd></div>
+        </dl>
+        <p id="timing-note" class="field-help">Timing will appear when the source is running.</p>
+        <details class="telemetry-details"><summary>Detailed timing &amp; transport</summary><dl class="metric-grid">
           <div><dt>Source processing</dt><dd><strong id="processing-time">—</strong><span>ms</span></dd></div>
           <div><dt>Processing p95</dt><dd><strong id="processing-p95">—</strong><span>ms</span></dd></div>
           <div><dt>JPEG + validation¹</dt><dd><strong id="decode-time">—</strong><span>ms</span></dd></div>
@@ -97,25 +109,16 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           <div><dt>Skipped captures</dt><dd id="capture-drops">—</dd></div>
           <div><dt>Source image</dt><dd id="source-size">—</dd></div>
           <div><dt>Samples</dt><dd id="sample-count">—</dd></div>
-        </dl>
-        <p id="timing-note" class="field-help">Timing will appear when the source is running.</p>
-        <p class="metric-footnote">¹ Packet validation + JPEG decode. ² Draw submission, not screen presentation. Arrival age uses the browser clock.</p>
+        </dl><p class="metric-footnote">¹ Packet validation + JPEG decode. ² Draw submission, not screen presentation. Arrival age uses the browser clock.</p></details>
       </section>
-      <section class="stream-panel" aria-label="Stream context"><h2><span class="section-index">05</span> Stream context</h2><dl class="stream-fields">
+      <section class="stream-panel" aria-label="Stream context"><h2>Stream</h2><dl class="stream-fields">
         <div><dt>Pose / epoch</dt><dd><span id="stream-sequence">—</span> / <span id="stream-epoch">—</span></dd></div>
         <div><dt>Model</dt><dd id="stream-model">—</dd></div><div><dt>Camera / tracker</dt><dd id="stream-camera">—</dd></div>
         <div><dt>Clock quality</dt><dd id="stream-clock">—</dd></div><div><dt>Space / transform</dt><dd id="stream-space">—</dd></div>
         <div><dt>Calibration</dt><dd id="stream-calibration">—</dd></div>
-      </dl><p class="field-help">Independent image + pose · 0–150 ms overlay hold. Exposure and physical latency unverified.</p></section>
+      </dl></section>
       </div>
-      <section class="observations" aria-label="Detection observations">
-        <div class="observation-heading"><div><h2><span class="section-index">04</span> People in view</h2><p>Current detections · not enrolled players</p></div><div class="count-readout"><strong id="person-count">0</strong><span id="count-label">detected</span></div></div>
-        <div id="person-list" class="person-list"><p class="empty-people">Detected bodies will appear here automatically.</p></div>
-        <p id="capacity-warning" class="capacity-warning" hidden>Detection capacity reached. There may be additional people outside the returned detections.</p>
-      </section>
-
     </div>
-    <footer><span><span class="footer-marker"></span> Observation → motion → future game input</span><span>Identity through occlusion is not guaranteed.</span></footer>
   </main>`;
 
 const elements = new Map<string, HTMLElement>();
@@ -126,6 +129,10 @@ function get<T extends HTMLElement>(id: string): T {
 function write(id: string, text: string) {
   const element = get(id);
   if (element.textContent !== text) element.textContent = text;
+}
+function setSourceBadge(label: "Stale" | "Stopped" | "Synthetic" | "Live") {
+  write("source-badge", label);
+  get("source-badge").toggleAttribute("data-stale", label === "Stale");
 }
 const canvas = get<HTMLCanvasElement>("skeleton-canvas");
 const sourceButtons = [
@@ -210,7 +217,7 @@ function renderStatus() {
       ? "Releasing the camera"
       : "Camera release unconfirmed";
     message = release.message!;
-    state = release.releasing ? "starting" : "error";
+    state = release.releasing ? "starting" : "uncertain";
   } else if (pendingStart?.closed) {
     title = "Waiting for startup acknowledgement";
     message =
@@ -284,7 +291,7 @@ function clearStalePreview() {
   get("standby-message").textContent =
     "The source is still running. Waiting for a fresh image; Stop remains available.";
   get("standby").hidden = false;
-  get("source-badge").textContent = "Stale";
+  setSourceBadge("Stale");
   get("frame-state").textContent = "No recent frame";
   setStatus(
     "Waiting for fresh input",
@@ -472,7 +479,7 @@ function teardown(own: CaptureGeneration) {
     "Choose an input source, then start the preview.";
   get("viewport-title").textContent =
     source === "demo" ? "Synthetic test scene" : "Camera preview";
-  get("source-badge").textContent = "Stopped";
+  setSourceBadge("Stopped");
   get("frame-state").textContent = "Source stopped";
   get("stage-source").textContent = "No source connected";
   // A native reset clears retained pixels even if the standby renderer fails.
@@ -670,8 +677,7 @@ async function start() {
             lastDecodeMs = performance.now() - decodeStarted;
             lastPreviewBytes = event.data.byteLength;
             get("standby").hidden = true;
-            get("source-badge").textContent =
-              preview.source === "demo" ? "Synthetic" : "Live";
+            setSourceBadge(preview.source === "demo" ? "Synthetic" : "Live");
           }
         } catch (error) {
           if (!isCurrent(own)) return;
@@ -820,6 +826,7 @@ sourceButtons.forEach((button, index) =>
       item.setAttribute("aria-pressed", String(position === index)),
     );
     get("camera-settings").hidden = source !== "camera";
+    get("browser-camera-settings").hidden = source !== "camera";
     get("demo-settings").hidden = source !== "demo";
     get<HTMLSelectElement>("algorithm").disabled = source === "demo";
     startButton.querySelector("span")!.textContent =

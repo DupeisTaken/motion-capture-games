@@ -84,6 +84,7 @@ export function createGameDisplay(stage: HTMLElement, options: DisplayOptions) {
       const title = doc.createElement("strong");
       title.textContent = options.title;
       const full = doc.createElement("button");
+      full.type = "button";
       full.textContent = "Full screen";
       full.addEventListener("click", () => {
         const unavailable = () => {
@@ -95,6 +96,7 @@ export function createGameDisplay(stage: HTMLElement, options: DisplayOptions) {
         else unavailable();
       });
       const back = doc.createElement("button");
+      back.type = "button";
       back.textContent = "Return to controls";
       back.addEventListener("click", () => restore());
       toolbar.append(title, full, back);
@@ -105,6 +107,7 @@ export function createGameDisplay(stage: HTMLElement, options: DisplayOptions) {
         options.placeholderMessage ??
         "Your game is in its own window. Camera and round controls stay here.";
       const bringBack = home.createElement("button");
+      bringBack.type = "button";
       bringBack.textContent = options.returnButtonLabel ?? "Return game here";
       bringBack.addEventListener("click", () => restore());
       placeholder.append(note, bringBack);

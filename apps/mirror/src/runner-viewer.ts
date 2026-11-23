@@ -38,31 +38,32 @@ export function mountRunnerGame(
   root.innerHTML = `
   <a class="skip" href="#game-stage">Skip to game</a>
   <header class="mm-header"><a class="mm-brand" href="./"><span>Motion<span class="light">Studio</span></span></a><nav aria-label="Main"><a href="./" aria-label="All games">All games</a>${hostedRehearsal ? "" : '<a href="./diagnostics.html">Tracking console</a>'}<a href="./mole.html">Slap a Mole</a><a href="./dodgeball.html">Dodgeball</a><a href="./runner.html" class="current" aria-current="page">Runner</a></nav>${hostedRehearsal ? "" : '<span class="local-pill"><i></i> Local & private</span>'}</header>
-  <main class="runner-main"><div class="runner-heading"><div><p class="eyebrow">THE MOTION ARCADE <span>/</span> GAME 03</p><h1>Find your flow<span>.</span></h1><p>Three lanes. Two worlds. Your next great escape.</p></div><span class="runner-tag">1 PLAYER <span>EXPERIMENTAL</span></span></div>
+  <main class="runner-main"><div class="runner-heading"><h1>Motion Runner</h1><p>Switch lanes, jump hurdles, and roll under gates.</p><span class="runner-tag">Single player</span></div>
   <div class="runner-layout"><section class="runner-play" aria-label="Motion runner">
-    <div class="runner-stage" id="game-stage" tabindex="0" role="region" aria-label="Runner play area. Left, center and right choose lanes. Up or Space jumps. Hold Down to roll.">
-      <canvas id="game-canvas" aria-label="Original three-dimensional runner world. Gameplay is shown instead of camera video.">Your browser needs WebGL to display the runner world.</canvas>
+    <div class="runner-cabinet"><div class="runner-scoreboard">
       <div class="runner-top"><div><span class="stage-eyebrow" id="source-label">BODY TRACKING</span><strong id="world-title">Neon Rails</strong></div><span id="player-badge">WAITING FOR PLAYER</span></div>
       <div class="runner-hud"><div><span>SCORE</span><strong id="score-value">00000</strong></div><div><span>COINS</span><strong id="coins-value">0</strong></div><div><span>DISTANCE</span><strong><span id="distance-value">0</span><small> m</small></strong></div><div><span>SHIELDS</span><strong id="lives-value">3</strong></div></div>
-      <div class="runner-overlay" id="game-overlay"><div class="runner-overlay-card"><p id="overlay-kicker">YOUR BODY. YOUR CONTROLLER.</p><h2 id="overlay-title">A new kind of<br>runner's high.</h2><p id="overlay-copy">Step left or right. Jump the hurdles. Duck into a roll. The city is yours to explore.</p><button id="resume-round" class="runner-primary" hidden>Resume</button><button id="overlay-start" class="runner-primary">Start run <span>→</span></button></div></div>
-      <div id="runner-feedback" class="runner-feedback" role="status" aria-live="polite" hidden></div>
-      <button id="stage-pause" class="stage-pause" hidden>Pause</button>
-      <div class="runner-bottom"><span id="action-label">CENTER · STANDING</span><span id="speed-label">0.0 m/s</span></div>
     </div>
-    <div class="runner-toolbar"><p id="game-status" role="status" aria-live="polite">Choose your input, then start your run.</p><div><button id="start-round" class="runner-primary">Start run →</button><button id="pause-round" hidden>Pause</button><button id="new-round" hidden>New run</button><button id="end-round" hidden>End run</button></div></div>
-    <div class="runner-controls" id="demo-controls"><span>REHEARSAL CONTROLS</span><div class="lane-buttons" role="group" aria-label="Choose lane"><button id="lane-left" aria-label="Select left lane">← <span>Left</span></button><button id="lane-center" aria-label="Select center lane">● <span>Center</span></button><button id="lane-right" aria-label="Select right lane"><span>Right</span> →</button></div><div class="action-buttons"><button id="jump-action">↑ <span>Jump</span></button><button id="duck-action" aria-pressed="false">↓ <span>Roll</span></button></div><p>Keyboard: ← / C / → lanes · Space jump · hold ↓ to roll.<br>Touch: tap a lane or Jump; hold Roll.</p></div>
-    <section id="body-preview" class="body-preview" aria-label="Live body control preview" hidden><div class="preview-heading"><div><p class="eyebrow">LEARN YOUR CONTROLS</p><h2>Your movement, live.</h2></div><label class="runner-check"><input id="show-preview" type="checkbox" checked> Show camera</label></div><p>Set standing to place the center lane. Take a small step left or right to switch lanes. Lift your head and torso to jump, or lower both to roll.</p><div class="preview-picture"><canvas id="camera-preview" width="640" height="480" aria-label="Mirrored camera from the existing body tracking source"></canvas><svg id="preview-guides" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Calibrated lane and head height guides"><g id="lane-guides" hidden><path id="lane-boundaries" class="lane-lines"/><g class="lane-labels"><text id="lane-guide-left" y="9">LEFT</text><text id="lane-guide-center" y="9">CENTER</text><text id="lane-guide-right" y="9">RIGHT</text></g></g><g id="head-guides" hidden><line id="jump-guide" x1="0" x2="100"/><line id="standing-guide" x1="0" x2="100"/><line id="duck-guide" x1="0" x2="100"/><circle id="head-marker" r="1.8"/></g></svg><p id="preview-empty">Start camera to see your controls.</p></div><div class="preview-readout"><strong id="preview-action">WAITING FOR PLAYER</strong><span id="preview-freshness" role="status">Camera off</span><span id="preview-age"></span></div><p id="preview-thresholds">Head guides appear after Set standing reference. Green: jump · white: standing · amber: roll.</p></section>
-    <div class="runner-principles"><p><strong>Move to a lane</strong><span>Each lane is about one body width. Holding a position keeps your lane.</span></p><p><strong>Jump & roll</strong><span>Jump low hurdles. Duck under the overhead gates.</span></p><p><strong>Your run stays yours</strong><span>Spectators can enter the frame. The game pauses if it loses your tracking.</span></p></div>
-  </section><aside class="runner-settings" aria-label="Run setup"><div class="runner-section-label"><span>MAKE IT YOURS</span><span>01</span></div><h2>Choose your escape.</h2>
-    <label for="world-select">World</label><select id="world-select"><option value="rail">Neon Rails · the mint skyline</option><option value="gold">Gold Rush · a sunlit getaway</option></select><p class="field-note" id="world-description">A mint skyline, railway runs and colorful city streets.</p>
-    <label for="skin-select">Runner skin</label><select id="skin-select"><option value="nova">Nova · cobalt & mint</option><option value="moss">Moss · forest explorer</option><option value="ember">Ember · sunset sprint</option></select><div class="skin-swatches" aria-hidden="true"><i class="nova"></i><i class="moss"></i><i class="ember"></i><span>All skins included. Same abilities.</span></div>
-    <div class="runner-pace"><label class="runner-check pace-option"><input id="fast-start" type="checkbox" role="switch" aria-label="Fast start" aria-describedby="pace-description"><span><strong>Fast start</strong><small>A quicker opening pace.</small></span></label><p class="field-note" id="pace-description">Off: 10 m/s · On: 14 m/s. Both build up to 18 m/s.</p></div>
+    <div class="runner-stage" id="game-stage" tabindex="0" role="region" aria-label="Runner play area. Left, center and right choose lanes. Up or Space jumps. Hold Down to roll.">
+      <canvas id="game-canvas" aria-label="Original three-dimensional runner world. Gameplay is shown instead of camera video.">Your browser needs WebGL to display the runner world.</canvas>
+      <div class="runner-overlay" id="game-overlay"><div class="runner-overlay-card"><p id="overlay-kicker">REHEARSAL</p><h2 id="overlay-title">Ready to run?</h2><p id="overlay-copy">Use the keyboard or touch controls to run.</p><button id="resume-round" class="runner-primary" hidden>Resume</button><button id="overlay-start" class="runner-primary">Start run <span>→</span></button></div></div>
+      <div id="runner-feedback" class="runner-feedback" role="status" aria-live="polite" hidden></div>
+      <button id="stage-pause" hidden>Pause</button>
+      <div class="runner-bottom"><span id="action-label">CENTER · STANDING</span><span id="speed-label">0.0 m/s</span></div>
+    </div></div>
+    <div class="runner-toolbar"><p id="game-status" role="status" aria-live="polite">Choose your input, then start your run.</p><div><button id="start-round" class="runner-primary" hidden>Start run →</button><button id="pause-round" hidden>Pause</button><button id="new-round" hidden>New run</button><button id="end-round" hidden>End run</button></div></div>
+    <div class="runner-controls" id="demo-controls" aria-label="Rehearsal controls"><div class="lane-buttons" role="group" aria-label="Choose lane"><button id="lane-left" aria-label="Select left lane">← <span>Left</span></button><button id="lane-center" aria-label="Select center lane">● <span>Center</span></button><button id="lane-right" aria-label="Select right lane"><span>Right</span> →</button></div><div class="action-buttons"><button id="jump-action">↑ <span>Jump</span></button><button id="duck-action" aria-pressed="false">↓ <span>Roll</span></button></div><p>← C → lanes · Space jump · hold ↓ roll</p></div>
+  </section><aside class="runner-settings" aria-label="Run setup"><h2>Run setup</h2>
+    <label for="world-select">World</label><select id="world-select"><option value="rail">Neon Rails</option><option value="gold">Gold Rush</option></select><p class="field-note" id="world-description">Mint skyline and railway tracks.</p>
+    <label for="skin-select">Runner skin</label><select id="skin-select"><option value="nova">Nova · cobalt & mint</option><option value="moss">Moss · forest explorer</option><option value="ember">Ember · sunset sprint</option></select>
+    <div class="runner-pace"><label class="runner-check pace-option"><input id="fast-start" type="checkbox" role="switch" aria-label="Fast start" aria-describedby="pace-description"><strong>Fast start</strong></label><p class="field-note" id="pace-description">10 m/s standard · 14 m/s fast · 18 m/s max</p></div>
     <label class="runner-check"><input id="practice-mode" type="checkbox"> Practice · no penalties</label>
-    <div class="runner-section-label input-section"><span>YOUR CONTROLLER</span><span>02</span></div><label for="source-select">Input</label><select id="source-select"><option value="demo">Rehearsal · keyboard & touch</option>${hostedRehearsal ? "" : '<option value="camera">Camera · body tracking</option>'}</select>
-    <div id="camera-controls">${cameraChoiceMarkup}<div class="camera-actions"><button id="source-connect">Start camera</button><button id="source-stop" disabled>Stop camera</button></div><p class="field-note" id="camera-status" role="status">Camera stays off until you choose Start camera. The learning preview shares body tracking; the game stays rendered.</p><div id="camera-release" hidden><p id="camera-release-message" role="status"></p><button id="retry-camera-stop">Retry camera stop</button></div><button id="calibrate-player" disabled>Set standing reference</button><p class="field-note">Face the camera and stand where you want the center lane, with your head, shoulders and hips in view. Set standing again if the camera moves. Try the moves below if you like; they do not block Start.</p><div id="practice-checklist" aria-label="Optional camera movement practice">${practiceLabels.map((label, index) => `<span id="practice-${index}">${label}</span>`).join("")}</div><p class="field-note" id="practice-status" role="status">Set standing, try a move, then Start run when ready.</p></div>
-    <div id="rehearsal-note" hidden><p class="rehearsal-note">Camera-free simulation. Choose Start run, then use the keyboard or touch controls.</p><details><summary>Tracking rehearsal</summary><label class="runner-check"><input id="demo-extra" type="checkbox"> Simulate a spectator</label><label class="runner-check"><input id="demo-missing" type="checkbox"> Simulate lost tracking</label></details></div>
-    <div class="runner-safety"><strong>A little room to move.</strong><p>One player only. Clear space for small side steps, jumping and ducking. Tracking accuracy and physical timing are experimental.</p></div>
-  </aside></div><footer class="runner-footer">Original worlds & characters · Local play · English <span>No recording. No camera image on the game screen.</span></footer></main>`;
+    <label for="source-select" class="input-section">Input</label><select id="source-select"><option value="demo">Rehearsal · keyboard & touch</option>${hostedRehearsal ? "" : '<option value="camera">Camera · body tracking</option>'}</select>
+    <div id="camera-controls">${cameraChoiceMarkup}<div class="camera-actions"><button id="source-connect">Start camera</button><button id="source-stop" disabled>Stop camera</button></div><p class="field-note" id="camera-status" role="status">Choose a camera, then press Start camera.</p><div id="camera-release" hidden><p id="camera-release-message" role="status"></p><button id="retry-camera-stop">Retry camera stop</button></div><button id="calibrate-player" disabled>Set standing reference</button><p class="field-note">Stand at the center lane with your head, shoulders and hips in view. Reset the reference if the camera moves.</p><div id="practice-checklist" aria-label="Optional camera movement practice">${practiceLabels.map((label, index) => `<span id="practice-${index}">${label}</span>`).join("")}</div><p class="field-note" id="practice-status" role="status">Set your standing reference first.</p></div>
+    <div id="rehearsal-note" hidden><details><summary>Tracking rehearsal</summary><label class="runner-check"><input id="demo-extra" type="checkbox"> Simulate a spectator</label><label class="runner-check"><input id="demo-missing" type="checkbox"> Simulate lost tracking</label></details></div>
+  </aside>
+    <section id="body-preview" class="body-preview" aria-label="Live body control preview" hidden><div class="preview-heading"><h2>Body control preview</h2><label class="runner-check"><input id="show-preview" type="checkbox" checked> Show camera</label></div><p>Step sideways to switch lanes. Raise your head and torso to jump, or lower both to roll.</p><div class="preview-picture"><canvas id="camera-preview" width="640" height="480" aria-label="Mirrored camera from the existing body tracking source"></canvas><svg id="preview-guides" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Calibrated lane and head height guides"><g id="lane-guides" hidden><path id="lane-boundaries" class="lane-lines"/><g class="lane-labels"><text id="lane-guide-left" y="9">LEFT</text><text id="lane-guide-center" y="9">CENTER</text><text id="lane-guide-right" y="9">RIGHT</text></g></g><g id="head-guides" hidden><line id="jump-guide" x1="0" x2="100"/><line id="standing-guide" x1="0" x2="100"/><line id="duck-guide" x1="0" x2="100"/><circle id="head-marker" r="1.8"/></g></svg><p id="preview-empty">Start camera to see your controls.</p></div><div class="preview-readout"><strong id="preview-action">WAITING FOR PLAYER</strong><span id="preview-freshness" role="status">Camera off</span><span id="preview-age"></span></div><p id="preview-thresholds">Head guides appear after Set standing reference. Green: jump · white: standing · amber: roll.</p></section>
+  </div></main>`;
   const get = <T extends HTMLElement = HTMLElement>(id: string) => {
     const value = root.querySelector<T>(`#${id}`);
     if (!value) throw new Error(`Missing runner element: ${id}`);
@@ -366,6 +367,11 @@ export function mountRunnerGame(
         "preview-thresholds",
         `Head y ${(feedback.headY * 100).toFixed(1)}% · Jump above ${(feedback.jumpY * 100).toFixed(1)}% · Roll below ${(feedback.duckY * 100).toFixed(1)}% · ${feedback.evidence}. Green: jump · white: standing · amber: roll.`,
       );
+    } else {
+      setText(
+        "preview-thresholds",
+        "Set a standing reference to see head guides.",
+      );
     }
     setText(
       "preview-action",
@@ -471,33 +477,28 @@ export function mountRunnerGame(
       setText("overlay-copy", reason);
       setText("game-status", reason);
     } else if (state.phase === "ready") {
-      setText("overlay-kicker", "YOUR BODY. YOUR CONTROLLER.");
-      setText(
-        "overlay-title",
-        options().variant === "rail"
-          ? "Chase the mint skyline."
-          : "Chase a little sunshine.",
-      );
+      setText("overlay-kicker", isDemo() ? "REHEARSAL" : "BODY TRACKING");
+      setText("overlay-title", "Ready to run?");
       setText(
         "overlay-copy",
         isDemo()
-          ? "Choose a lane. Jump the hurdles. Roll under the gates. Keyboard and touch controls are ready."
-          : "Set a comfortable standing reference. Try the live lane and head guides, then Start run when ready.",
+          ? "Use the keyboard or touch controls to run."
+          : "Start the camera and set your standing reference.",
       );
     } else if (state.phase === "countdown") {
-      setText("overlay-kicker", "FIND YOUR FLOW");
+      setText("overlay-kicker", "STARTING RUN");
       setText(
         "overlay-title",
         String(Math.max(1, Math.ceil(state.countdownMs / 1000))),
       );
-      setText("overlay-copy", "Stand tall. Pick your lane. Here we go.");
+      setText("overlay-copy", "Choose your opening lane.");
     } else if (state.phase === "paused") {
-      setText("overlay-kicker", "YOUR RUN IS SAFE");
+      setText("overlay-kicker", "RUN PAUSED");
       setText(
         "overlay-title",
         ownershipChanged || state.requiresNewRound
           ? "A fresh run is needed."
-          : "Taking a breather.",
+          : "Ready to resume?",
       );
       setText(
         "overlay-copy",
@@ -507,11 +508,11 @@ export function mountRunnerGame(
               "The world, distance and scoring are frozen. Resume when you are ready."),
       );
     } else if (state.phase === "results") {
-      setText("overlay-kicker", "THAT'S YOUR RUN");
-      setText("overlay-title", "One more escape?");
+      setText("overlay-kicker", "RESULTS");
+      setText("overlay-title", "Run complete");
       setText(
         "overlay-copy",
-        `${Math.floor(state.distance)} meters · ${state.coins} coins · ${state.score} points. Choose New run to try again or explore another world.`,
+        `${Math.floor(state.distance)} meters · ${state.coins} coins · ${state.score} points`,
       );
     }
     const locked = active();
@@ -522,9 +523,7 @@ export function mountRunnerGame(
       "fast-start",
     ])
       get<HTMLInputElement>(id).disabled = locked;
-    get("start-round").hidden = state.phase !== "ready";
     get("pause-round").hidden = !["playing", "countdown"].includes(state.phase);
-    get("stage-pause").hidden = !["playing", "countdown"].includes(state.phase);
     get("resume-round").hidden =
       state.phase !== "paused" ||
       state.requiresNewRound ||
@@ -559,9 +558,11 @@ export function mountRunnerGame(
     }
     setText(
       "practice-status",
-      practiced.size === practiceLabels.length
-        ? "All movements rehearsed. Stand comfortably, then Start run."
-        : `${practiced.size} / ${practiceLabels.length} optional moves tried. ${pose.calibrated ? "Stand comfortably, then Start run whenever ready." : "Set your standing reference first."}`,
+      pose.calibrated
+        ? practiced.size === practiceLabels.length
+          ? "All movements rehearsed. Start when ready."
+          : `${practiced.size} / ${practiceLabels.length} optional moves tried.`
+        : "Set your standing reference first.",
     );
     for (const [id, lane] of [
       ["lane-left", -1],
@@ -584,8 +585,8 @@ export function mountRunnerGame(
     setText(
       "world-description",
       options().variant === "rail"
-        ? "A mint skyline, railway runs and colorful city streets."
-        : "Warm rooftops, palm-lined streets and a trail of gold.",
+        ? "Mint skyline and railway tracks."
+        : "Sunlit rooftops and palm-lined streets.",
     );
     if (renderingUnavailable) {
       get("game-overlay").hidden = false;
