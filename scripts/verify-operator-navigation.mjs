@@ -308,6 +308,8 @@ try {
       );
       // Exercise the merged calibration controller, not only an injected veto.
       await page.goto(`${url}maze.html`);
+      if (!(await page.locator("#pre-game-settings").isVisible()))
+        await page.locator("#open-settings").click();
       await page.locator("#maze-calibration").evaluate((details) => {
         details.open = true;
       });
@@ -368,6 +370,8 @@ try {
       );
       calibrationMode = "unknown";
       await page.goto(`${url}maze.html`);
+      if (!(await page.locator("#pre-game-settings").isVisible()))
+        await page.locator("#open-settings").click();
       await page.locator("#maze-calibration").evaluate((details) => {
         details.open = true;
       });
@@ -394,14 +398,16 @@ try {
         "Actual Maze calibration: pending cancellation, failed late scoped release, retry recovery and unknown successful ownership all preserve departure barriers",
       );
       await page.goto(`${url}mole.html`);
+      if (!(await page.locator("#pre-game-settings").isVisible()))
+        await page.locator("#open-settings").click();
       await page.locator("#source-select").selectOption("demo");
+      await page.locator("#close-settings").click();
       const popupReady = context.waitForEvent("page");
       await page.locator("#open-game-display").click();
       const popup = await popupReady;
       await popup.waitForLoadState("domcontentloaded");
       assert.equal(await popup.locator(".studio-navigation").count(), 0);
       assert.equal(await popup.locator("#game-stage").count(), 1);
-      await page.locator("#close-settings").click();
       await page
         .getByRole("navigation", { name: "Motion Studio navigation" })
         .getByRole("link", { name: "All games", exact: true })

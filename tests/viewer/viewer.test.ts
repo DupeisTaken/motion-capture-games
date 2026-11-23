@@ -205,6 +205,47 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 describe("independent diagnostic viewer", () => {
+  it("keeps source actions and the viewer ahead of pipeline tuning and leaves the primary diagnostics exposed", () => {
+    const input = document.querySelector(".input-panel")!;
+    const viewer = document.querySelector(".viewer-column")!;
+    const pipeline = document.querySelector(".pipeline-panel")!;
+    expect(input.contains(el("start"))).toBe(true);
+    expect(input.contains(el("stop"))).toBe(true);
+    expect(input.contains(el("camera-release"))).toBe(true);
+    expect(input.nextElementSibling).toBe(viewer);
+    expect(viewer.nextElementSibling).toBe(pipeline);
+
+    const details =
+      document.querySelector<HTMLDetailsElement>(".telemetry-details")!;
+    expect(details.open).toBe(false);
+    expect(details.querySelectorAll("dl > div")).toHaveLength(10);
+    expect(details.contains(el("processing-p95"))).toBe(true);
+    expect(details.contains(el("sample-count"))).toBe(true);
+    const primaryIds = [
+      "update-rate",
+      "camera-rate",
+      "pose-rate",
+      "inference-time",
+      "overlay-gap",
+    ];
+    expect(
+      [
+        ...document.querySelectorAll(
+          ".metric-overview dd [id], .metric-overview dd[id]",
+        ),
+      ].map((element) => element.id),
+    ).toEqual(primaryIds);
+    for (const id of [
+      "timing-note",
+      "stream-camera",
+      "stream-epoch",
+      "view-label",
+      "confidence-value",
+    ])
+      expect(el(id).closest("details")).toBeNull();
+    expect(requests("/api/start")).toHaveLength(0);
+  });
+
   it("lets the operator hide tracking while retaining independent raw camera delivery", async () => {
     const streams = await start();
     await frame(streams, pose(1));
@@ -321,6 +362,7 @@ describe("independent diagnostic viewer", () => {
       expect(expired.close).toHaveBeenCalledOnce();
       expect(renderer.drawFrame).not.toHaveBeenCalled();
       expect(el("source-badge").textContent).toBe("Stale");
+      expect(el("source-badge").hasAttribute("data-stale")).toBe(true);
       expect(el("status-title").textContent).toBe("Waiting for fresh input");
       expect(el("status-message").textContent).toContain("including decoding");
       expect(el("standby").hidden).toBe(false);
@@ -337,6 +379,7 @@ describe("independent diagnostic viewer", () => {
       createBitmap.mockResolvedValueOnce(fresh);
       await frame(s, pose(1, 3));
       expect(el("source-badge").textContent).toBe("Live");
+      expect(el("source-badge").hasAttribute("data-stale")).toBe(false);
       expect(el("person-count").textContent).toBe("1");
       expect(renderer.drawFrame.mock.calls.at(-1)?.[1]).toBe(fresh);
       expect(fresh.close).not.toHaveBeenCalled();

@@ -37,14 +37,14 @@ const empty = (): Evidence => ({
 
 export function mazeCalibrationMarkup() {
   return `<section class="maze-panel maze-calibration"><details id="maze-calibration"><summary>Live floor calibration · cameras 1 → 2</summary>
-  <p class="maze-hint">First set your measured width and depth in Game settings. Fix both cameras in place. Mark the four named floor corners, then move a measured rigid ruler or checkerboard edge to three separated positions. Keep it flat on the floor. Camera pixels stay in memory.</p>
-  <p class="calibration-warning">Floor mapping only. Physical maze play stays unavailable: facing, synchronized body position and identity are not established by this procedure.</p>
+  <p class="maze-hint">Enter the measured floor dimensions in Game settings and fix both camera mounts. After starting the preview, freeze a frame and mark the four floor corners.</p>
+  <p class="calibration-warning">Physical maze play stays unavailable. This procedure checks floor mappings only.</p>
   <label for="cal-role">Camera role</label><select id="cal-role"><option value="0">Camera 1 · primary floor view</option><option value="1">Camera 2 · alternate floor view</option></select>
   <div id="cal-camera-1">${cameraChoiceMarkupFor("maze-cal-1")}</div><div id="cal-camera-2" hidden>${cameraChoiceMarkupFor("maze-cal-2")}</div>
   <label for="cal-optics">Locked image / lens setup</label><input id="cal-optics" type="text" maxlength="160" placeholder="e.g. full frame, no zoom, focus locked at floor">
-  <p class="maze-hint">Record crop, rotation, focus, optical and digital zoom. Lock automatic focus/zoom. Any change or camera movement needs new calibration; hidden lens changes cannot be detected automatically.</p>
+  <p class="maze-hint">Record crop, rotation, focus and zoom. Lock automatic focus and zoom. Repeat calibration after moving a camera or changing its optics.</p>
   <div class="calibration-actions"><button id="cal-start" type="button" class="maze-button">Start camera 1</button><button id="cal-stop" type="button" class="maze-button" disabled>Stop camera / retry stop</button></div>
-  <p id="cal-capture-status" class="maze-hint" role="status">Camera off. Start is the only action that acquires a camera.</p>
+  <p id="cal-capture-status" class="maze-hint" role="status">Camera off.</p>
   <div class="calibration-preview"><canvas id="cal-preview" width="640" height="360" aria-label="Raw camera preview; freeze then mark named floor points"></canvas><svg id="cal-marks" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><span id="cal-frame-label">Camera off</span></div>
   <button id="cal-freeze" type="button" class="maze-button maze-wide" disabled>Freeze current view to mark points</button>
   <p id="cal-step" class="maze-hint" role="status">Start camera, wait for a live frame, then freeze it.</p>
@@ -52,12 +52,16 @@ export function mazeCalibrationMarkup() {
   <button id="cal-add" type="button" class="maze-button maze-wide" disabled>Mark next point / probe floor</button>
   <div class="calibration-actions"><button id="cal-undo" type="button" class="maze-button" disabled>Undo last point</button><button id="cal-reset" type="button" class="maze-button">Clear this camera calibration</button></div>
   <label for="cal-reference-length">Independently measured reference length · m</label><input id="cal-reference-length" type="number" min="0.2" max="2" step="0.001" value="1">
-  <p class="maze-hint">Measure the edge with a tape, including print scale. It is checked after the floor fit, never used to fit it. Near-left: lay the edge along width. Centre: turn it diagonally. Far-right: lay it along depth. Span at least 40% of both field dimensions. Resume live video between placements.</p>
+  <p class="maze-hint">Measure a rigid ruler or checkerboard edge with a tape. Lay it flat at each position and freeze a fresh view before marking both endpoints.</p>
+  <ul class="calibration-placements">
+    <li>Near-left · along the width</li><li>Centre · diagonal</li><li>Far-right · along the depth</li>
+  </ul>
+  <p class="maze-hint">The placements must span at least 40% of both floor dimensions.</p>
   <ol id="cal-evidence" class="maze-hint"></ol><button id="cal-fit" type="button" class="maze-button primary maze-wide" disabled>Check held-out distances & fit floor</button>
-  <p id="cal-result" class="maze-hint" role="status">No floor mapping. A single object at one position cannot establish arbitrary camera geometry.</p>
+  <p id="cal-result" class="maze-hint" role="status">Floor mapping pending.</p>
   <p id="cal-pair-status" class="maze-hint" role="status">Camera 1: not calibrated. Camera 2: not calibrated.</p>
   <button id="cal-invalidate" type="button" class="maze-button maze-wide">Camera moved / lens changed · invalidate both</button>
-  <p class="maze-hint">After both roles pass, you have two independently checked floor mappings with matching named corners, not stereo extrinsics or validated XYZ. A tiny fit error from four corners is expected and is not independent accuracy evidence. Lens distortion and manual marking errors need physical checks across the field.</p>
+  <p class="maze-hint">Stop camera 1 after its checks pass, then repeat with a different device for camera 2.</p>
   </details></section>`;
 }
 
@@ -206,7 +210,7 @@ export function mountMazeCalibration(root: HTMLElement) {
           (item, i) =>
             `Camera ${i + 1}: ${item.mapping ? item.quality : "not calibrated"}`,
         )
-        .join(". ") + ". Physical maze remains unavailable.",
+        .join(" · "),
     );
     const placement = e.references.findIndex((p) => p.length < 2);
     say(
@@ -495,7 +499,7 @@ export function mountMazeCalibration(root: HTMLElement) {
       e.quality = `floor checks passed · max reference error ${data.heldOut!.maxErrorM.toFixed(3)} m`;
       say(
         "cal-result",
-        `${e.quality}. Revision ${e.mapping.revision}. Mark a known floor contact to inspect X/Z. Stop camera ${role + 1} before choosing the other role. Physical play remains gated.`,
+        `${e.quality}. Revision ${e.mapping.revision}. Mark a known floor contact to inspect X/Z. Stop camera ${role + 1} before choosing the other role.`,
       );
     } catch (error) {
       if (own === version && !disposed) {

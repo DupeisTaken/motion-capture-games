@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f8f9f4" />
+    <meta name="theme-color" content="#f5f7f0" />
     <meta
       name="description"
       content="Choose a local motion game: Slap a Mole, Dodgeball, Motion Runner or Virtual Maze. Find tracking and camera setup tools."
@@ -14,8 +14,8 @@
   </head>
   <body>
     <a class="skip-link" href="#games">Skip to games</a>
-    <div class="directory-shell">
-      <header class="directory-header">
+    <header class="directory-header">
+      <div class="directory-header-inner">
         <a class="directory-brand" href="./" aria-label="Motion Studio home"
           ><b class="directory-mark" aria-hidden="true">✳</b>
           <div>Motion<span>Studio</span></div></a
@@ -24,29 +24,20 @@
           <a href="#games">The games</a
           ><a class="local-only" href="#tools">Operator tools</a>
         </nav>
-        <span class="local-note local-only">Play locally</span>
-      </header>
+      </div>
+    </header>
+    <div class="directory-shell">
       <main>
         <section class="directory-hero" aria-labelledby="directory-title">
-          <div>
-            <p class="eyebrow">The motion arcade</p>
-            <h1 id="directory-title">
-              A little movement.<br />A lot of <em>play.</em>
-            </h1>
-          </div>
-          <div class="hero-note">
-            <p>
-              Reach, dodge, run or find your way.<br />Pick a game and make your
-              next move.
-            </p>
-            <span class="collection-tag">4 EXPERIMENTAL GAMES · 1 PLAYER</span>
-          </div>
+          <h1 id="directory-title">
+            A little movement. A lot of <em>play.</em>
+          </h1>
+          <p class="hero-summary">
+            Pick a game to start right away—with a camera or keyboard & pointer.
+          </p>
         </section>
         <section id="games" tabindex="-1" aria-labelledby="games-title">
-          <div class="section-heading">
-            <h2 id="games-title">Choose your game</h2>
-            <span>Camera-free rehearsal available</span>
-          </div>
+          <h2 id="games-title" class="visually-hidden">Choose your game</h2>
           <div class="game-grid">
             <a
               class="game-card"
@@ -75,17 +66,15 @@
                 </svg>
               </div>
               <div class="game-copy">
-                <p class="game-kind">Reach & react</p>
                 <h3 id="mole-title">Slap a Mole</h3>
                 <p class="game-description">
-                  Catch the cheeky moles. Keep your reflexes sharp and watch out
-                  for the bomb.
+                  Whack the moles when they light up and dodge the bombs.
                 </p>
                 <p class="game-input">
                   <span class="local-only">Camera or </span>pointer / keyboard
                 </p>
                 <div class="game-action">
-                  Play game <span aria-hidden="true">↗</span>
+                  Play <span aria-hidden="true">↗</span>
                 </div>
               </div>
             </a>
@@ -122,17 +111,15 @@
                 </svg>
               </div>
               <div class="game-copy">
-                <p class="game-kind">Move & avoid</p>
                 <h3 id="dodgeball-title">Dodgeball</h3>
                 <p class="game-description">
-                  Read the warning rings, find a gap and move clear before the
-                  balls arrive.
+                  Read the warning ring and sidestep clear before impact.
                 </p>
                 <p class="game-input">
                   <span class="local-only">Camera or </span>pointer / keyboard
                 </p>
                 <div class="game-action">
-                  Play game <span aria-hidden="true">↗</span>
+                  Play <span aria-hidden="true">↗</span>
                 </div>
               </div>
             </a>
@@ -171,17 +158,16 @@
                 </svg>
               </div>
               <div class="game-copy">
-                <p class="game-kind">Jump & duck</p>
                 <h3 id="runner-title">Motion Runner</h3>
                 <p class="game-description">
-                  Three lanes, two worlds. Collect coins, jump hurdles and roll
-                  under gates.
+                  Switch lanes, jump hurdles and roll under gates across two
+                  worlds.
                 </p>
                 <p class="game-input">
                   <span class="local-only">Camera or </span>touch / keyboard
                 </p>
                 <div class="game-action">
-                  Play game <span aria-hidden="true">↗</span>
+                  Play <span aria-hidden="true">↗</span>
                 </div>
               </div>
             </a>
@@ -217,17 +203,15 @@
                 </svg>
               </div>
               <div class="game-copy">
-                <p class="game-kind">Listen & navigate</p>
                 <h3 id="maze-title">Virtual Maze</h3>
                 <p class="game-description">
-                  Build a maze and follow directional sound toward the hidden
-                  destination.
+                  Follow directional sound cues toward the hidden goal.
                 </p>
                 <p class="game-input">
                   Synthetic rehearsal · physical input pending
                 </p>
                 <div class="game-action">
-                  Explore maze <span aria-hidden="true">↗</span>
+                  Explore <span aria-hidden="true">↗</span>
                 </div>
               </div>
             </a>
@@ -239,11 +223,8 @@
           aria-labelledby="tools-title"
         >
           <div class="tools-intro">
-            <h2 id="tools-title">Behind the movement</h2>
-            <p>
-              Setting up a camera or checking tracking?<br />Your operator tools
-              are right here.
-            </p>
+            <h2 id="tools-title">Operator tools</h2>
+            <p>Check cameras, tracking and two-view rig geometry.</p>
           </div>
           <a class="tool-link" href="./diagnostics.html"
             ><strong>Tracking console</strong
@@ -252,17 +233,17 @@
           >
           <a class="tool-link" href="./rig.html"
             ><strong>Two-camera workspace</strong
-            ><small>Rig planning & synthetic XYZ rehearsal</small
+            ><small>Rig planning & synthetic XYZ</small
             ><span aria-hidden="true">↗</span></a
           >
         </section>
       </main>
       <footer class="directory-footer">
         <p>
-          Camera play needs local vision setup. Cameras start only when you
-          choose Start camera.
+          Cameras stay off until you choose Start camera. All processing runs
+          locally.
         </p>
-        <p>Motion Studio / Experimental collection</p>
+        <p>Motion Studio</p>
       </footer>
     </div>
     <script type="module" src="/src/directory.ts"></script>

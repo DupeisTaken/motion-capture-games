@@ -1,3 +1,4 @@
+import "./studio-tokens.css";
 import "./app-navigation.css";
 import { hostedRehearsal } from "./build-mode";
 
@@ -61,11 +62,11 @@ export function sourceNavigationBlocker(
   if (pendingRelease)
     return "Camera release is not confirmed. Use Retry camera stop and wait for confirmation before switching pages.";
   return active
-    ? "A source is active. Choose Stop camera (or Stop in the tracking console), then switch pages. Your current round will end when you leave."
+    ? "A source is active. Stop the camera before switching pages."
     : null;
 }
 
-/** Operator chrome stays outside live stages and never enters participant windows. */
+/** Unified single-bar product header; stays outside live stages and participant windows. */
 export function mountAppNavigation(
   options: {
     owner?: NavigationOwner;
@@ -90,9 +91,11 @@ export function mountAppNavigation(
   const currentDestination = current
     ? new URL(href(current), host.location.href).pathname
     : host.location.pathname;
+  const isDirectory = current?.path === "/";
   const nav = doc.createElement("nav");
   nav.className = "studio-navigation";
   nav.dataset.hosted = String(hostedRehearsal);
+  nav.dataset.page = isDirectory ? "directory" : (current?.group ?? "other");
   nav.setAttribute("aria-label", "Motion Studio navigation");
   const links = (group: string) =>
     available
@@ -102,18 +105,22 @@ export function mountAppNavigation(
           `<a href="${href(item)}"${current === item ? ' aria-current="page"' : ""}>${item.label}</a>`,
       )
       .join("");
-  nav.innerHTML = `<div class="studio-nav-bar">${links("directory")}<span class="studio-location">${current?.group === "tools" ? "Operator tool" : current?.group === "games" ? "Game & controls" : "Game directory"}<strong>${current?.label ?? "Motion Studio"}</strong></span><button type="button" aria-expanded="false" aria-controls="studio-destinations">Switch view <span aria-hidden="true">⌄</span></button></div><div id="studio-destinations" class="studio-destinations" hidden><div><h2>Games</h2>${links("games")}</div>${hostedRehearsal ? "" : `<div><h2>Operator tools</h2>${links("tools")}<p>Tracking console provides camera diagnostics. Two-camera workspace includes role planning and synthetic rehearsal. Game settings contain input setup.</p></div>`}<p class="studio-nav-note">Switching pages ends the current round and resets unsaved settings. Separate participant windows show only the game.</p></div><div class="studio-navigation-message" role="status" tabindex="-1" hidden></div>`;
-  // Hide redundant legacy header links only after the complete replacement mounts.
+  const homeAttrs = isDirectory ? ' aria-current="page"' : "";
+  const locationMarkup = isDirectory
+    ? ""
+    : `<span class="studio-divider" aria-hidden="true">/</span><span class="studio-location"><strong>${current?.label ?? "Motion Studio"}</strong></span>`;
+  nav.innerHTML = `<div class="studio-nav-inner"><div class="studio-nav-bar"><a class="studio-home brand mm-brand" href="./" aria-label="All games"${homeAttrs}><b class="studio-mark" aria-hidden="true">✳</b><span class="studio-wordmark">Motion<span>Studio</span></span>${isDirectory ? "" : '<span class="studio-back-cue" aria-hidden="true">· All games</span>'}</a>${locationMarkup}<button type="button" class="studio-switcher" aria-expanded="false" aria-controls="studio-destinations">Switch view <span class="studio-chevron" aria-hidden="true">⌄</span></button></div><div id="studio-destinations" class="studio-destinations" hidden><div class="studio-dest-group"><h2>Games</h2>${links("games")}</div>${hostedRehearsal ? "" : `<div class="studio-dest-group"><h2>Operator tools</h2>${links("tools")}</div>`}<p class="studio-nav-note">Switching pages ends the current round.</p></div><div class="studio-navigation-message" role="status" tabindex="-1" hidden></div></div>`;
+  // Hide legacy headers and their inner links once the unified product bar mounts.
   const legacy = [
     ...doc.querySelectorAll<HTMLElement>(
-      "header.app-header > nav, header.mm-header > nav, header.maze-header > a:not(.brand), header.directory-header > nav, .rig-console-link",
+      "header.app-header, header.mm-header, header.maze-header, header.directory-header, header.app-header > nav, header.mm-header > nav, header.maze-header > a:not(.brand), header.directory-header > nav, .rig-console-link",
     ),
   ];
   legacy.forEach((item) => (item.hidden = true));
   const header = doc.querySelector("header");
-  if (header) header.after(nav);
+  if (header) header.before(nav);
   else doc.body.prepend(nav);
-  const button = nav.querySelector<HTMLButtonElement>("button")!;
+  const button = nav.querySelector<HTMLButtonElement>(".studio-switcher")!;
   const destinations = nav.querySelector<HTMLElement>("#studio-destinations")!;
   const message = nav.querySelector<HTMLElement>(".studio-navigation-message")!;
   const events = new AbortController();
@@ -138,6 +145,15 @@ export function mountAppNavigation(
         message.hidden = true;
         button.focus();
       }
+    },
+    { signal: events.signal },
+  );
+  // Close the switcher cleanly when clicking outside it.
+  doc.addEventListener(
+    "click",
+    (event) => {
+      if (!destinations.hidden && !nav.contains(event.target as Node))
+        collapse();
     },
     { signal: events.signal },
   );

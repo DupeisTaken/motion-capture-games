@@ -322,6 +322,11 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
   it("leaves the preview collapsed until requested and preserves inline play when a popup is blocked", () => {
     controller.setSource(sample(), "camera-0");
     expect(get<HTMLDetailsElement>("rig-game-inline").open).toBe(false);
+    expect(get("rig-game-start").closest("details")).toBeNull();
+    expect(get("rig-game-source-label").textContent).toContain(
+      "pointer controlled",
+    );
+    expect(host.querySelector("h2, h3")).toBeNull();
     vi.spyOn(window, "open").mockReturnValue(null);
     click("rig-game-open");
     expect(get<HTMLDetailsElement>("rig-game-inline").open).toBe(true);
@@ -346,6 +351,9 @@ describe("genuine Slap a Mole with selected synthetic presentation", () => {
     vi.spyOn(popup, "focus").mockImplementation(() => {});
     click("rig-game-open");
     expect(popup.document.getElementById("rig-game-stage")).toBe(stage);
+    expect(
+      popup.document.querySelector(".game-display-toolbar strong")?.textContent,
+    ).toContain("Slap a Mole");
     expect(controller.navigationBlocker()).toMatch(/participant game window/i);
     controller.setSource(sample(), "camera-1");
     expect(controller.state).toEqual(before);

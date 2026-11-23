@@ -154,9 +154,23 @@ describe("runner application", () => {
     );
     expect(state().options.variant).toBe("rail");
     expect(element("demo-controls").hidden).toBe(false);
+    const stage = element("game-stage");
+    const scoreboard = stage.previousElementSibling!;
+    expect(scoreboard.matches(".runner-scoreboard")).toBe(true);
+    for (const id of [
+      "world-title",
+      "player-badge",
+      "score-value",
+      "lives-value",
+    ])
+      expect(scoreboard.contains(element(id))).toBe(true);
+    expect(stage.contains(element("body-preview"))).toBe(false);
+    expect(stage.contains(element("overlay-start"))).toBe(true);
+    expect(element("overlay-start").hidden).toBe(false);
+    expect(element("start-round").hidden).toBe(true);
   });
   it("plays, chooses absolute lanes, jumps once and holds roll until release", () => {
-    click("start-round");
+    click("overlay-start");
     advance(3100);
     expect(state().phase).toBe("playing");
     now += 16;
@@ -240,11 +254,16 @@ describe("runner application", () => {
   it("does not automatically resume a manual pause and starts a fresh score on New run", () => {
     click("start-round");
     advance(3400);
-    expect(element("stage-pause").hidden).toBe(false);
-    click("stage-pause");
+    expect(element("stage-pause").hidden).toBe(true);
+    expect(element("pause-round").hidden).toBe(false);
+    click("pause-round");
     const score = state().score;
     advance(1000);
     expect(state().phase).toBe("paused");
+    expect(element("pause-round").hidden).toBe(true);
+    expect(element("game-overlay").contains(element("resume-round"))).toBe(
+      true,
+    );
     expect(state().score).toBe(score);
     click("resume-round");
     advance(2100);
@@ -407,7 +426,7 @@ describe("runner application", () => {
     for (let index = 0; index < 6; index++) send(-0.07);
     expect(state().avatarX).toBe(1);
   });
-  it("shows the missing camera step in the stage and lets either Start control cancel", async () => {
+  it("shows the missing camera step in the stage and cancels through the same control", async () => {
     choose("source-select", "camera");
     await flush();
     click("overlay-start");
@@ -415,7 +434,7 @@ describe("runner application", () => {
     expect(fetchMock.mock.calls.some(([url]) => url === "/api/start")).toBe(
       false,
     );
-    click("start-round");
+    click("overlay-start");
     const socket = await startCamera();
     now += 50;
     socket.onmessage?.({ data: packet(observation(1)) });

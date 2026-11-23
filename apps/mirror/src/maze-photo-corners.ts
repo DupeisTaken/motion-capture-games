@@ -4,7 +4,7 @@ const cornerNames = ["Near left", "Near right", "Far right", "Far left"];
 
 /** Local image annotations only; normalized photo points never grant metric input. */
 export function mazePhotoCornersMarkup(): string {
-  return `<section class="maze-panel"><details id="maze-corners"><summary>03 / Label the play-area corners</summary><p class="maze-hint">Cone colors are optional. Load a local reference photo, then label the four floor corners in the order below. These image labels plan setup; they do not establish metric camera calibration.</p><label for="maze-photo">Reference photo · stays in this page</label><input id="maze-photo" type="file" accept="image/png,image/jpeg,image/webp"><p id="maze-photo-status" class="maze-hint" role="status">No photo loaded. No upload or storage.</p><button id="maze-photo-zone" type="button" class="maze-photo-zone" aria-label="Label next corner on reference photo" hidden><img id="maze-photo-image" alt="Local play-area reference"><svg id="maze-photo-labels" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg></button><div id="maze-photo-keyboard" hidden><p class="maze-hint">Keyboard alternative: set image percentages, then add the next corner.</p><div class="maze-pair"><div><label for="maze-photo-x">Image X · %</label><input id="maze-photo-x" type="number" min="0" max="100" value="50"></div><div><label for="maze-photo-y">Image Y · %</label><input id="maze-photo-y" type="number" min="0" max="100" value="50"></div></div><button id="maze-photo-add" class="maze-button maze-wide">Label next corner</button></div><ol id="maze-photo-corners" aria-label="Reference photo corner labels">${cornerNames.map((name) => `<li>${name}: Not labelled</li>`).join("")}</ol><button id="maze-photo-reset" class="maze-button maze-wide" disabled>Clear labels</button></details></section>`;
+  return `<section class="maze-panel"><details id="maze-corners"><summary>Label play-area corners</summary><p class="maze-hint">Load a local photo and mark the four floor corners in order. These labels are for planning.</p><label for="maze-photo">Reference photo · stays in this page</label><input id="maze-photo" type="file" accept="image/png,image/jpeg,image/webp"><p id="maze-photo-status" class="maze-hint" role="status">No photo loaded. No upload or storage.</p><button id="maze-photo-zone" type="button" class="maze-photo-zone" aria-label="Label next corner on reference photo" hidden><img id="maze-photo-image" alt="Local play-area reference"><svg id="maze-photo-labels" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg></button><div id="maze-photo-keyboard" hidden><p class="maze-hint">Keyboard alternative: set image percentages, then add the next corner.</p><div class="maze-pair"><div><label for="maze-photo-x">Image X · %</label><input id="maze-photo-x" type="number" min="0" max="100" value="50"></div><div><label for="maze-photo-y">Image Y · %</label><input id="maze-photo-y" type="number" min="0" max="100" value="50"></div></div><button id="maze-photo-add" class="maze-button maze-wide">Label next corner</button></div><ol id="maze-photo-corners" aria-label="Reference photo corner labels">${cornerNames.map((name) => `<li>${name}: Not labelled</li>`).join("")}</ol><button id="maze-photo-reset" class="maze-button maze-wide" disabled>Clear labels</button></details></section>`;
 }
 
 /** Own the local photo, annotation listeners and decode callbacks as one disposable unit. */
@@ -38,7 +38,7 @@ export function mountMazePhotoCorners(root: HTMLElement) {
     setMazeText(
       get("maze-photo-status"),
       photoLabels.length === 4
-        ? "All four corners labelled. Image annotations only; metric calibration remains unavailable."
+        ? "All four corners labelled for planning."
         : `Label ${photoLabels.length + 1}/4: ${cornerNames[photoLabels.length]}. Click the photo or enter percentages.`,
     );
     get<HTMLButtonElement>("maze-photo-add").disabled = photoLabels.length >= 4;
@@ -64,7 +64,7 @@ export function mountMazePhotoCorners(root: HTMLElement) {
     get("maze-photo-labels").innerHTML = photoLabels
       .map(
         (p, i) =>
-          `<circle cx="${p.x}" cy="${p.y}" r="1.4" fill="#235ac4" stroke="white" stroke-width=".4"/><text x="${Math.min(p.x + 2, 94)}" y="${Math.max(p.y - 2, 4)}" font-size="4" font-weight="700" fill="white" stroke="#24344b" stroke-width=".2">${i + 1}</text>`,
+          `<circle cx="${p.x}" cy="${p.y}" r="1.4" fill="#99580f" stroke="white" stroke-width=".4"/><text x="${Math.min(p.x + 2, 94)}" y="${Math.max(p.y - 2, 4)}" font-size="4" font-weight="700" fill="white" stroke="#0d1f1a" stroke-width=".2">${i + 1}</text>`,
       )
       .join("");
   }

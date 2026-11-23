@@ -23,30 +23,55 @@ const markup = `
   <a class="skip-link" href="#rig-workspace">Skip to two-view workspace</a>
   <header class="app-header"><a class="brand" href="./">Motion<span class="brand-light">Studio</span><span class="subtle-badge">LAB</span></a><span class="header-section">Operator / two-view workspace</span><a class="rig-console-link" href="./diagnostics.html">Single-camera console ↗</a></header>
   <main class="rig-workspace" id="rig-workspace">
-    <div class="page-heading"><div><p class="eyebrow">RIG SETUP / FUTURE SPATIAL INPUT</p><h1>Two views. One shared space.</h1></div><span class="rig-origin-badge">Synthetic rehearsal</span></div>
-    <p class="rig-intro">Explore how two camera angles become a position in meters. Plan camera roles separately. Live two-camera capture and maze input remain unavailable.</p>
+    <div class="page-heading"><h1>Two-camera workspace</h1><p>Explore shared coordinates and plan camera roles.</p><span class="rig-origin-badge subtle-badge">Synthetic rehearsal</span></div>
     <p id="rig-load-error" class="rig-note" role="alert" hidden></p>
     <div class="rig-mode-tabs" role="tablist" aria-label="Workspace mode"><button type="button" role="tab" id="rig-tab-rehearsal" aria-controls="rig-rehearsal" aria-selected="true">Rehearse coordinates</button><button type="button" role="tab" id="rig-tab-planning" aria-controls="rig-planning" aria-selected="false" tabindex="-1">Plan physical rig</button></div>
     <section id="rig-rehearsal" role="tabpanel" aria-labelledby="rig-tab-rehearsal">
       <div class="rig-rehearsal-grid">
         <aside class="rig-panel rig-controls" aria-label="Rehearsal controls">
-          <p class="eyebrow">01 / RECORDED SYNTHETIC SAMPLES</p><h2>Choose a situation</h2>
+          <h2>Rehearsal controls</h2>
           <label class="field-label" for="rig-scenario">Scenario</label><select id="rig-scenario"></select><p id="rig-scenario-description" class="field-help"></p>
-          <p id="rig-scenario-risk" class="rig-note"></p>
+          <p id="rig-scenario-risk" class="field-help"></p>
           <div class="rig-play-controls"><button type="button" id="rig-play" class="primary-button" aria-pressed="false">Play samples</button><button type="button" id="rig-reset" class="secondary-button">Reset</button></div>
-          <label class="field-label" for="rig-frame">Recorded sample <output id="rig-frame-label" for="rig-frame">—</output></label><input id="rig-frame" type="range" min="0" max="0" step="1" value="0"><div class="rig-step-controls"><button type="button" id="rig-previous">← Previous</button><button type="button" id="rig-next">Next →</button></div>
-          <p class="field-help">Playback steps through a bounded recording at 4 samples/s. It does not measure camera, inference or display FPS.</p>
-          <dl class="rig-source-facts"><div><dt>Source sequence</dt><dd id="rig-sequence">—</dd></div><div><dt>Source time</dt><dd id="rig-source-time">—</dd></div><div><dt>Pair skew / uncertainty</dt><dd id="rig-pair-timing">—</dd></div><div><dt>Solver</dt><dd>Closest-ray midpoint</dd></div></dl>
-          <p class="field-help">Anatomical left/right stays unchanged. View diagrams use canonical, unmirrored image pixels.</p>
+          <label class="field-label" for="rig-frame">Recorded sample <output id="rig-frame-label" for="rig-frame">—</output></label>
+          <div class="rig-frame-controls"><input id="rig-frame" type="range" min="0" max="0" step="1" value="0"><div class="rig-step-controls"><button type="button" id="rig-previous" class="secondary-button" aria-label="Previous sample"><span aria-hidden="true">←</span><span class="rig-step-label"> Previous</span></button><button type="button" id="rig-next" class="secondary-button" aria-label="Next sample"><span class="rig-step-label">Next </span><span aria-hidden="true">→</span></button></div></div>
+          <details class="rig-details"><summary>Recording timing &amp; solver</summary>
+            <dl class="rig-source-facts"><div><dt>Source sequence</dt><dd id="rig-sequence">—</dd></div><div><dt>Source time</dt><dd id="rig-source-time">—</dd></div><div><dt>Pair skew / uncertainty</dt><dd id="rig-pair-timing">—</dd></div><div><dt>Solver</dt><dd>Closest-ray midpoint</dd></div></dl>
+            <p class="field-help">Playback runs at 4 recorded samples/s. Camera, inference and display FPS require separate measurements. View diagrams use unmirrored image pixels and preserve anatomical left and right.</p>
+          </details>
         </aside>
         <div class="rig-observation-area">
           <div class="rig-view-pair" id="rig-view-pair" tabindex="0" aria-label="Synthetic camera views. Left and right arrow keys step samples; Space plays or pauses.">
-            <article class="rig-panel rig-view-card"><div class="rig-panel-heading"><h2>Primary · reference view</h2><span class="subtle-badge">Synthetic</span></div><div id="rig-reference-view" class="rig-view-diagram"></div><p id="rig-reference-context" class="field-help rig-view-context"></p></article>
-            <article class="rig-panel rig-view-card"><div class="rig-panel-heading"><h2>Secondary · supporting view</h2><span class="subtle-badge">Synthetic</span></div><div id="rig-support-view" class="rig-view-diagram"></div><p id="rig-support-context" class="field-help rig-view-context"></p></article>
+            <article class="rig-panel rig-view-card"><div class="rig-panel-heading"><h2>Primary · reference view</h2></div><div id="rig-reference-view" class="rig-view-diagram"></div><p id="rig-reference-context" class="field-help rig-view-context"></p></article>
+            <article class="rig-panel rig-view-card"><div class="rig-panel-heading"><h2>Secondary · supporting view</h2></div><div id="rig-support-view" class="rig-view-diagram"></div><p id="rig-support-context" class="field-help rig-view-context"></p></article>
           </div>
-          <section class="rig-panel rig-space-panel" aria-label="Reconstructed rig coordinates"><div class="rig-panel-heading"><div><p class="eyebrow">02 / SHARED RIG SPACE</p><h2>Where is the participant?</h2></div><span id="rig-sample-state" class="subtle-badge">—</span></div><div class="rig-space-layout"><div><div id="rig-space" class="rig-space-diagram"></div><p class="rig-map-legend"><span><i class="rig-estimate-dot"></i>Reconstructed estimate</span><span><i class="rig-reference-dot"></i>Synthetic reference</span></p><p class="field-help">Plot: X −3 to 3 m, Z 0 to 6 m, including the display area. Synthetic gate volume: X −3 to 3 m, Y 0 to 2.6 m, Z 1 to 6 m. Camera markers show solver calibration; no physical volume is validated.</p></div><div class="rig-coordinate-panel"><h3>Hip midpoint · meters</h3><div class="rig-coordinate-table"><table><caption class="rig-visually-hidden">Reconstructed root compared with synthetic reference truth</caption><thead><tr><th scope="col">Axis</th><th scope="col">Estimate</th><th scope="col">Reference</th></tr></thead><tbody><tr><th scope="row">X</th><td id="rig-x">—</td><td id="rig-reference-x">—</td></tr><tr><th scope="row">Y</th><td id="rig-y">—</td><td id="rig-reference-y">—</td></tr><tr><th scope="row">Z</th><td id="rig-z">—</td><td id="rig-reference-z">—</td></tr></tbody></table></div><p id="rig-root-state" class="field-help"></p><p class="rig-difference">Reference difference <strong id="rig-reference-difference">—</strong></p><p class="field-help">Reference values exist only because this recording is synthetic. Small residuals cannot establish physical accuracy.</p><dl class="rig-source-facts"><div><dt>Accepted joints</dt><dd id="rig-joint-count">—</dd></div><div><dt>Rig association</dt><dd id="rig-track">—</dd></div><div><dt>Solver / reference baseline</dt><dd id="rig-baseline">—</dd></div></dl></div></div><div id="rig-quality" class="rig-quality" role="status" aria-live="polite"></div></section>
+          <section class="rig-panel rig-space-panel" aria-label="Reconstructed rig coordinates">
+            <div class="rig-panel-heading"><h2>Shared space</h2><span id="rig-sample-state" class="subtle-badge">—</span></div>
+            <div class="rig-space-layout">
+              <div><div id="rig-space" class="rig-space-diagram"></div><p class="rig-map-legend"><span><i class="rig-estimate-dot"></i>Reconstructed estimate</span><span><i class="rig-reference-dot"></i>Synthetic reference</span></p></div>
+              <div class="rig-coordinate-panel">
+                <h3>Hip midpoint · meters</h3>
+                <div class="rig-coordinate-table"><table><caption class="rig-visually-hidden">Reconstructed root compared with synthetic reference truth</caption><thead><tr><th scope="col">Axis</th><th scope="col">Estimate</th><th scope="col">Reference</th></tr></thead><tbody><tr><th scope="row">X</th><td id="rig-x">—</td><td id="rig-reference-x">—</td></tr><tr><th scope="row">Y</th><td id="rig-y">—</td><td id="rig-reference-y">—</td></tr><tr><th scope="row">Z</th><td id="rig-z">—</td><td id="rig-reference-z">—</td></tr></tbody></table></div>
+                <p id="rig-root-state" class="field-help"></p><p class="rig-difference">Reference difference <strong id="rig-reference-difference">—</strong></p>
+                <dl class="rig-source-facts"><div><dt>Accepted joints</dt><dd id="rig-joint-count">—</dd></div><div><dt>Rig association</dt><dd id="rig-track">—</dd></div><div><dt>Solver / reference baseline</dt><dd id="rig-baseline">—</dd></div></dl>
+              </div>
+            </div>
+            <div id="rig-quality" class="rig-quality" role="status" aria-live="polite"></div>
+            <details class="rig-details"><summary>Volume &amp; reference notes</summary><p class="field-help">Plot: X −3 to 3 m, Z 0 to 6 m, including the display area. Synthetic gate volume: X −3 to 3 m, Y 0 to 2.6 m, Z 1 to 6 m. Camera markers show solver calibration. Reference values come from the synthetic recording. Physical volume and accuracy require independent measurements.</p></details>
+          </section>
           <details id="rig-joint-details" class="rig-panel rig-joint-details" hidden><summary>Inspect named joint rejections</summary><ul id="rig-rejected-joints" tabindex="0" aria-label="Rejected anatomical joints"></ul></details>
-          <section class="rig-panel rig-gameplay-panel" aria-label="Player gameplay rehearsal"><div class="rig-panel-heading"><div><p class="eyebrow">03 / PLAYER GAMEPLAY</p><h2>Slap a Mole · selected camera scene</h2></div><span class="subtle-badge">Pointer / keyboard rehearsal</span></div><p class="field-help">Both camera observations stay above for the operator. The player sees one selected synthetic scene with real game targets and scoring. Recorded bodies and XYZ do not control hits.</p><div class="rig-gameplay-selection" id="rig-gameplay-selection"><div><label class="field-label" for="rig-displayed-camera">Player gameplay camera</label><select id="rig-displayed-camera" aria-describedby="rig-display-preference-note"></select><p id="rig-display-preference-note" class="field-help">Chooses the player’s scene without changing camera roles or XYZ. Saved on this browser.</p></div><div class="rig-gameplay-source" aria-label="Selected gameplay source"><strong id="rig-selected-title">Waiting for a recorded view</strong><span id="rig-selected-state" class="subtle-badge">Unavailable</span><p id="rig-selected-context" class="field-help"></p><p id="rig-selected-unavailable" class="rig-note" hidden></p><p id="rig-selected-warning" class="field-help" role="status" aria-live="polite"></p></div></div><div id="rig-gameplay-host"></div></section>
+          <section class="rig-panel rig-gameplay-panel" aria-label="Player gameplay rehearsal">
+            <h2>Slap a Mole practice</h2>
+            <div class="rig-gameplay-selection" id="rig-gameplay-selection">
+              <div><label class="field-label" for="rig-displayed-camera">Player gameplay camera</label><select id="rig-displayed-camera" aria-describedby="rig-display-preference-note"></select><p id="rig-display-preference-note" class="field-help">Chooses the player’s scene without changing camera roles or XYZ. Saved on this browser.</p></div>
+              <div class="rig-gameplay-source" aria-label="Selected gameplay source">
+                <strong id="rig-selected-title">Waiting for a recorded view</strong><span id="rig-selected-state" class="subtle-badge">Unavailable</span>
+                <p id="rig-selected-unavailable" class="rig-note" hidden></p><p id="rig-selected-warning" class="field-help" role="status" aria-live="polite"></p>
+                <details class="rig-details"><summary>Selected source metadata</summary><p id="rig-selected-context" class="field-help"></p></details>
+              </div>
+            </div>
+            <div id="rig-gameplay-host"></div>
+          </section>
         </div>
       </div>
     </section>
@@ -56,11 +81,10 @@ const markup = `
         <fieldset class="rig-panel"><legend>Primary · reference camera</legend><p class="field-help">The reference role anchors the operator view. It does not mean the person standing on one side.</p>${cameraChoiceMarkupFor("reference")}</fieldset>
         <fieldset class="rig-panel"><legend>Secondary · supporting camera</legend><p class="field-help">An additional angle should cover the same volume. Role assignment follows the device identity through list reordering.</p>${cameraChoiceMarkupFor("support")}</fieldset>
         <section class="rig-panel rig-plan-notes" aria-label="Operator setup notes"><h2>Record the installation plan</h2><p class="field-help">Notes stay in this page’s memory and reset on reload; each field allows 1,000 characters. Operator records are distinct from measured evidence.</p><label class="field-label" for="rig-placement-notes">Placement and intended volume</label><textarea id="rig-placement-notes" rows="3" maxlength="1000" placeholder="Camera heights, approximate baseline, shared coverage and clear movement area"></textarea><label class="field-label" for="rig-calibration-notes">Calibration references to collect</label><textarea id="rig-calibration-notes" rows="2" maxlength="1000" placeholder="Exact image geometry, metric board, held-out distances, calibration revision"></textarea><label class="field-label" for="rig-timing-notes">Exposure and synchronization evidence to collect</label><textarea id="rig-timing-notes" rows="2" maxlength="1000" placeholder="Exposure source, clock mapping, offset/drift, uncertainty and fast-motion checks"></textarea><button class="primary-button rig-plan-check" type="submit">Check role plan</button><div id="rig-plan-result" class="rig-quality" role="status" aria-live="polite">Choose two different named devices, then check the plan. No capture starts.</div></section>
-        <section class="rig-panel rig-readiness" aria-label="Physical input readiness"><p class="eyebrow">REQUIRED BEFORE LIVE SPATIAL INPUT</p><h2>Physical readiness remains unverified</h2><ul><li><strong>Two-view live capture</strong><span>Not implemented in this workspace</span></li><li><strong>Metric calibration</strong><span>Unverified · independent scale references required</span></li><li><strong>Exposure timing</strong><span>Unverified · host read time is insufficient</span></li><li><strong>Cross-view identity</strong><span>Unverified · no guessed score ownership</span></li><li><strong>Physical volume and accuracy</strong><span>Unverified · held-out static and dynamic trials required</span></li></ul><div class="rig-locked-status"><strong>Physical XYZ unavailable</strong><span>Future maze input remains disabled.</span></div></section>
+        <section class="rig-panel rig-readiness" aria-label="Physical input readiness"><h2>Physical readiness remains unverified</h2><ul><li><strong>Two-view live capture</strong><span>Not implemented in this workspace</span></li><li><strong>Metric calibration</strong><span>Unverified · independent scale references required</span></li><li><strong>Exposure timing</strong><span>Unverified · host read time is insufficient</span></li><li><strong>Cross-view identity</strong><span>Unverified · no guessed score ownership</span></li><li><strong>Physical volume and accuracy</strong><span>Unverified · held-out static and dynamic trials required</span></li></ul></section>
       </form>
     </section>
-    <section class="rig-persistent-limit" aria-label="Input availability"><span class="rig-origin-badge">Synthetic rehearsal</span><p><strong id="rig-physical-state">Physical XYZ unavailable</strong> · <span id="rig-maze-state">Maze input disabled</span>. Setup notes and sample playback cannot unlock either.</p></section>
-    <footer><span>Camera tracks → rig association → future session input</span><span>Absolute position requires verified calibration, timing and identity.</span></footer>
+    <section class="rig-persistent-limit" aria-label="Input availability"><span id="rig-physical-state" class="subtle-badge">Physical XYZ unavailable</span><span id="rig-maze-state" class="subtle-badge">Maze input disabled</span></section>
   </main>`;
 
 const reasonLabels: Record<string, string> = {
@@ -207,8 +231,7 @@ export function createRigWorkspace(
     );
     write(
       "rig-selected-warning",
-      explanations.join(" · ") ||
-        "Recorded synthetic source only. Calibration, exposure timing and identity are not physically validated.",
+      selected.drawable ? explanations.join(" · ") : "",
     );
     if (!preferenceAvailable) saveDisplayPreference();
     gameplay.setSource(frame, displayedCameraId);

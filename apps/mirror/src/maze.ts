@@ -1,5 +1,5 @@
 import { mountAppNavigation } from "./app-navigation";
-import "./style.css";
+import "./studio-tokens.css";
 import "./maze.css";
 import { mountMaze } from "./maze-viewer";
 

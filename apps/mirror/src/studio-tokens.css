@@ -1,0 +1,49 @@
+/* ═══════════════════════════════════════════════════════
+   Motion Studio · Shared Design System Tokens
+   Warm paper canvas, deep forest ink, teal & lime accents
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --studio-font:
+    "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --studio-mono: "Cascadia Code", ui-monospace, Consolas, monospace;
+
+  /* Core palette */
+  --studio-paper: #f5f7f0;
+  --studio-surface: #ffffff;
+  --studio-surface-subtle: #eff3ea;
+  --studio-ink: #0d1f1a;
+  --studio-muted: #4d6156;
+  --studio-border: #d5dfd6;
+  --studio-border-strong: #b6c6b8;
+
+  /* Brand accents */
+  --studio-teal: #1a7a5e;
+  --studio-teal-dark: #125642;
+  --studio-teal-soft: #e4f2ec;
+  --studio-lime: #c8f03a;
+  --studio-lime-dark: #9bbe1c;
+
+  /* Semantic states (reserve amber/red strictly for real issues) */
+  --studio-success: #1a7a5e;
+  --studio-success-bg: #e7f4ee;
+  --studio-warning: #7c5214;
+  --studio-warning-bg: #fff6e2;
+  --studio-warning-border: #dfc084;
+  --studio-danger: #a8332a;
+  --studio-danger-bg: #fff1ef;
+  --studio-danger-border: #e5b3ae;
+
+  /* Radii & focus */
+  --studio-radius-sm: 8px;
+  --studio-radius-md: 12px;
+  --studio-radius-lg: 16px;
+  --studio-focus: #1a7a5e;
+
+  /* Modal theming defaults (overrideable per game) */
+  --setup-header-bg: linear-gradient(135deg, #173328 0%, #0d1f1a 100%);
+  --setup-accent: var(--studio-teal);
+  --setup-accent-dark: var(--studio-teal-dark);
+  --setup-btn-bg: var(--studio-ink);
+  --setup-btn-fg: var(--studio-lime);
+  --setup-btn-shadow: var(--studio-teal);
+}

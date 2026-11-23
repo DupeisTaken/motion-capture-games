@@ -1,3 +1,4 @@
+import "./studio-tokens.css";
 import "./camera-choice.css";
 
 const choice = (name: string, value: string) =>
@@ -19,8 +20,8 @@ export function cameraChoiceMarkupFor(prefix = "") {
   <div class="camera-choice">
     <label class="field-label" for="${id("camera-choice")}">Choose camera</label>
     <div class="camera-choice-row"><select id="${id("camera-choice")}" aria-describedby="${id("camera-choice-status")}"><option value="">Choose a camera</option><option value="manual">Manual camera index</option></select><button id="${id("refresh-cameras")}" type="button">Refresh</button></div>
-    <p id="${id("camera-choice-status")}" class="field-note field-help" role="status">Refresh to find built-in and USB cameras. Nothing is recorded.</p>
-    <div id="${id("manual-camera")}" class="camera-choice-manual" hidden><label class="field-label" for="${id("camera-index")}">Native camera index</label><input id="${id("camera-index")}" type="number" min="0" max="9" step="1" value="0" required><p class="field-note field-help">Advanced fallback. Indices can change after reconnecting a camera.</p></div>
+    <p id="${id("camera-choice-status")}" class="field-note field-help" role="status">Press Refresh to find connected cameras.</p>
+    <div id="${id("manual-camera")}" class="camera-choice-manual" hidden><label class="field-label" for="${id("camera-index")}">Native camera index</label><input id="${id("camera-index")}" type="number" min="0" max="9" step="1" value="0" required><p class="field-note field-help">Fallback index (0–9); indices can shift after reconnecting.</p></div>
   </div>`;
 }
 
@@ -135,7 +136,7 @@ export class CameraChoice {
     const own = ++this.revision;
     const previous = this.select.value;
     this.loading = true;
-    this.status.textContent = "Finding connected cameras…";
+    this.status.textContent = "Finding cameras…";
     this.update();
     this.notify();
     const abort = new AbortController();
@@ -143,8 +144,12 @@ export class CameraChoice {
     const timeout = window.setTimeout(() => abort.abort(), 12000);
     try {
       const response = await fetch("/api/cameras", { signal: abort.signal });
-      const data: { cameras?: Camera[]; detail?: string } =
-        await response.json();
+      let data: { cameras?: Camera[]; detail?: string };
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Can’t reach the local camera service.");
+      }
       if (!response.ok)
         throw new Error(data.detail || "Camera discovery unavailable.");
       const cameras = data.cameras;
@@ -184,17 +189,23 @@ export class CameraChoice {
           : "";
       this.status.textContent =
         previous && !retained
-          ? "Selected camera disconnected. Choose a camera again; no replacement was selected."
+          ? "Selected camera disconnected. Choose a camera again."
           : cameras.length
-            ? `${cameras.length} camera${cameras.length === 1 ? "" : "s"} available. Stop capture before changing cameras. Missing USB camera? Check its connection and accessory approval, then Refresh.`
-            : "No cameras detected. Reconnect the USB camera, allow OS camera/accessory access, then Refresh.";
+            ? `${cameras.length} camera${cameras.length === 1 ? "" : "s"} available.`
+            : "No cameras detected. Check USB connection and OS permission, then Refresh.";
     } catch (error) {
       if (own !== this.revision || this.disposed) return;
       this.select.replaceChildren(
         choice("Choose a camera", ""),
         choice("Manual camera index", "manual"),
       );
-      this.status.textContent = `${error instanceof Error && error.name !== "AbortError" ? error.message : "Camera discovery timed out."} Retry Refresh or choose the manual index.`;
+      const friendly =
+        error instanceof SyntaxError
+          ? "Can’t reach the local camera service."
+          : error instanceof Error && error.name !== "AbortError"
+            ? error.message
+            : "Camera discovery timed out.";
+      this.status.textContent = `${friendly} Retry Refresh or choose the manual index.`;
     } finally {
       window.clearTimeout(timeout);
       if (this.pendingRequest === abort) this.pendingRequest = null;
